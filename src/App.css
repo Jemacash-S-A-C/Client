@@ -1,0 +1,13 @@
+.landing {
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #e5ece3;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing--blog {
+  background: linear-gradient(180deg, #f4faf6 0%, #ecf4ef 100%);
+}
