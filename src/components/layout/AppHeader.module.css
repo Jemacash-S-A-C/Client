@@ -1,0 +1,167 @@
+.topbar {
+  width: 100%;
+  background: #f6fbf1;
+  border-bottom: 1px solid rgba(48, 67, 56, 0.12);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.topbar_inner {
+  max-width: 1440px;
+  min-height: 72px;
+  margin: 0 auto;
+  padding: 0.8rem clamp(0.95rem, 2vw, 1.9rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  color: #0f7d3f;
+  font-size: 1.35rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.brand_button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font-family: "Inter", sans-serif;
+}
+
+.menu {
+  display: flex;
+  gap: clamp(0.95rem, 1.7vw, 1.6rem);
+  align-items: center;
+}
+
+.menu_link {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  color: #4c5c53;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.2rem 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.menu_link_active {
+  color: #0f7d3f;
+  border-bottom-color: #0f7d3f;
+}
+
+.menu_link_ghost:hover {
+  color: #0f7d3f;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.pill_btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.58rem 1.1rem;
+  background: #126d27;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menu_toggle {
+  display: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgba(18, 109, 39, 0.26);
+  border-radius: 0.65rem;
+  background: #eef7ee;
+  color: #0f7d3f;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.mobile_menu {
+  display: none;
+}
+
+@media (max-width: 1080px) {
+  .menu {
+    display: none;
+  }
+
+  .pill_btn {
+    display: none;
+  }
+
+  .menu_toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile_menu {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0 1rem 0.9rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: max-height 0.2s ease, opacity 0.2s ease;
+  }
+
+  .mobile_menu_open {
+    max-height: 280px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile_menu .menu_link {
+    text-align: left;
+    width: fit-content;
+    padding: 0.55rem 0;
+  }
+
+  .mobile_cta {
+    margin-top: 0.4rem;
+    border: 0;
+    border-radius: 999px;
+    background: #126d27;
+    color: #fff;
+    width: fit-content;
+    padding: 0.6rem 0.95rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar_inner {
+    min-height: 64px;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .brand {
+    font-size: 1.2rem;
+  }
+
+  .menu_toggle {
+    width: 2.05rem;
+    height: 2.05rem;
+  }
+}

@@ -1,0 +1,429 @@
+/* ─── TasacionResultadosView styles ─────────────────────────────────────── */
+
+.tas_page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f4f8ee 0%, #eaf1e2 100%);
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+}
+
+.tas_header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(68, 84, 72, 0.1);
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tas_brand {
+  color: #0a4f2b;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.tas_back_btn {
+  border: 0;
+  background: none;
+  color: #7a857e;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.4rem 0;
+}
+
+.tas_back_btn:hover {
+  color: var(--green);
+}
+
+.tas_main {
+  flex: 1;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.tas_scan_badge {
+  display: inline-flex;
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tas_title {
+  color: #1a221c;
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.tas_title_green {
+  color: var(--green);
+}
+
+.tas_subtitle {
+  color: #5c675e;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  max-width: 480px;
+}
+
+/* Content grid */
+
+.tas_content_grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.tas_left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Specs grid */
+
+.tas_specs_grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.tas_spec_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.1rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.tas_spec_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.tas_spec_icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: var(--surface-soft);
+  color: #5c675e;
+  display: inline-grid;
+  place-items: center;
+}
+
+.tas_spec_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tas_spec_check svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.tas_spec_label {
+  color: #9aa39d;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.tas_spec_value {
+  color: #1a221c;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+/* Device card */
+
+.tas_device_card {
+  position: relative;
+  border-radius: 1.2rem;
+  overflow: hidden;
+  aspect-ratio: 1.9;
+}
+
+.tas_device_img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.35) saturate(0.4);
+}
+
+.tas_device_overlay {
+  position: absolute;
+  bottom: 1.2rem;
+  left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.tas_device_overlay span {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tas_device_overlay strong {
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Right column */
+
+.tas_right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Value card */
+
+.tas_value_card {
+  background: linear-gradient(145deg, #3a3fa8 0%, #5060d0 100%);
+  border-radius: 1.35rem;
+  padding: 1.4rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.tas_value_bg_icon {
+  position: absolute;
+  right: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9rem;
+  color: rgba(255, 255, 255, 0.06);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tas_value_label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  position: relative;
+}
+
+.tas_value_amount {
+  font-size: 1rem;
+  font-weight: 800;
+  position: relative;
+  line-height: 1;
+}
+
+.tas_value_amount span {
+  font-size: 2.6rem;
+  letter-spacing: -0.04em;
+}
+
+.tas_value_card > p {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  position: relative;
+}
+
+.tas_accept_btn {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  position: relative;
+  transition: transform 0.12s ease;
+}
+
+.tas_accept_btn:hover {
+  transform: translateY(-1px);
+}
+
+.tas_value_perks {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.65);
+  position: relative;
+}
+
+/* Seals card */
+
+.tas_seals_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 10px 22px rgba(46, 63, 49, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tas_seals_card h3 {
+  color: #1a221c;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.tas_seals_grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.tas_seal {
+  background: var(--surface-soft);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tas_seal_icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tas_seal_icon svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.tas_seal div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+}
+
+.tas_seal div strong {
+  color: #1a221c;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tas_seal div span {
+  color: #7a857e;
+  font-size: 0.7rem;
+}
+
+.tas_seals_card > p {
+  color: #7a857e;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(68, 84, 72, 0.08);
+}
+
+/* Footer */
+
+.tas_footer {
+  background: #2a3060;
+  padding: 1.1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.tas_footer_left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.tas_footer_left strong {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.tas_footer_left span {
+  font-size: 0.74rem;
+}
+
+.tas_footer_links {
+  display: flex;
+  gap: 1.2rem;
+  margin-left: auto;
+}
+
+.tas_footer_link {
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.14s ease;
+}
+
+.tas_footer_link:hover {
+  color: #fff;
+}
+
+.tas_footer_icons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tas_footer_icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: inline-grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+}

@@ -1,0 +1,561 @@
+/* ─── MisSolicitudesView styles ──────────────────────────────────────────── */
+
+.view_grid {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.view_header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.view_title {
+  color: #1a221c;
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.view_sub {
+  margin-top: 0.3rem;
+  color: #5c675e;
+  font-size: 0.95rem;
+}
+
+.section_title {
+  color: #1a221c;
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.pay_btn {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
+  color: #fff;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(15, 125, 63, 0.22);
+}
+
+.link_button_green {
+  border: 0;
+  background: none;
+  color: var(--green);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Featured solicitud */
+
+.featured_solicitud {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.5rem;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 16px 30px rgba(46, 63, 49, 0.08);
+  display: grid;
+  gap: 1.2rem;
+}
+
+.featured_left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.featured_icon_wrap {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.featured_icon_wrap svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.featured_info {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.featured_info strong {
+  color: #1a221c;
+  font-size: 1.05rem;
+}
+
+.featured_info span {
+  color: #7a857e;
+  font-size: 0.82rem;
+}
+
+.featured_actions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.outline_btn_dark {
+  border: 1px solid rgba(68, 84, 72, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: #4a5450;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+}
+
+/* Timeline */
+
+.timeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding-top: 0.4rem;
+}
+
+.timeline_step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+}
+
+.timeline_node {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.timeline_node svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.node_done {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 125, 63, 0.3);
+}
+
+.node_active {
+  background: #fff;
+  color: var(--green);
+  border: 2.5px solid var(--green);
+  box-shadow: 0 4px 12px rgba(15, 125, 63, 0.15);
+}
+
+.node_pending {
+  background: #e8ece9;
+  color: #9aa39d;
+  border: 2px solid #d0d8d2;
+}
+
+.timeline_line {
+  position: absolute;
+  top: 1.2rem;
+  left: calc(50% + 1.2rem);
+  right: calc(-50% + 1.2rem);
+  height: 2.5px;
+  border-radius: 999px;
+}
+
+.line_done {
+  background: var(--green);
+}
+
+.line_pending {
+  background: #d0d8d2;
+}
+
+.timeline_label {
+  margin-top: 0.55rem;
+  text-align: center;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.tl_done {
+  color: var(--green);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.tl_active {
+  color: #1a221c;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.tl_pending {
+  color: #9aa39d;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.tl_date {
+  color: #8a958d;
+  font-size: 0.73rem;
+}
+
+/* Trámites + Acción Requerida layout */
+
+.tramites_layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.tramites_section {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.tramites_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tramites_list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tramite_row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 8px 18px rgba(46, 63, 49, 0.06);
+}
+
+.tramite_icon_wrap {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--surface-soft);
+  color: #5c675e;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tramite_icon_wrap svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.tramite_info {
+  display: grid;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tramite_info strong {
+  color: #1a221c;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tramite_info span {
+  color: #7a857e;
+  font-size: 0.76rem;
+}
+
+.tramite_badge {
+  flex-shrink: 0;
+  border-radius: 0.4rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.badge_green {
+  background: var(--green-soft);
+  color: #0d5732;
+}
+
+.badge_purple_text {
+  background: var(--blue-soft);
+  color: #3042a8;
+}
+
+.tramite_arrow {
+  border: 0;
+  background: none;
+  color: #9aa39d;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tramite_arrow svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Acción Requerida card */
+
+.action_required_card {
+  background: linear-gradient(135deg, #3f3fa8 0%, #4f5cc8 100%);
+  border-radius: 1.35rem;
+  padding: 1.2rem;
+  color: #fff;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ar_header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ar_icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ar_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.ar_header h3 {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.action_required_card > p {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.4;
+}
+
+.ar_docs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ar_docs li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 0.55rem;
+  padding: 0.5rem 0.7rem;
+}
+
+.ar_doc_icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.ar_doc_icon svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.ar_download {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0;
+}
+
+.ar_download svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.ar_cta {
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #3f3fa8;
+  font-size: 0.88rem;
+  font-weight: 800;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Historial solicitudes */
+
+.historial_section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.historial_grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.historial_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.2rem;
+  padding: 1rem;
+  box-shadow: 0 10px 22px rgba(46, 63, 49, 0.07);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.historial_card_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.historial_month {
+  color: #8a958d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.historial_status {
+  border-radius: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.hs_green {
+  background: var(--green-soft);
+  color: #0d5732;
+}
+
+.hs_red {
+  background: #fde8e8;
+  color: #a83030;
+}
+
+.historial_name {
+  color: #1a221c;
+  font-size: 0.92rem;
+}
+
+.historial_amount {
+  color: #1a221c;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.historial_note {
+  color: #7a857e;
+  font-size: 0.76rem;
+  margin-top: 0.1rem;
+}
+
+.historial_card_cta {
+  background: linear-gradient(135deg, #2b5c3a 0%, #1a4028 100%);
+  border-radius: 1.2rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #fff;
+}
+
+.historial_card_cta strong {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+}
+
+.historial_card_cta p {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+  flex: 1;
+}
+
+.historial_plus_btn {
+  border: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.historial_plus_btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 940px) {
+  .historial_grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tramites_layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .historial_grid {
+    grid-template-columns: 1fr;
+  }
+}

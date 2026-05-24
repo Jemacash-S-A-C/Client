@@ -1,0 +1,506 @@
+/* ─── AuditorTecnicoView styles ──────────────────────────────────────────── */
+
+.aud_page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f4f8ee 0%, #eaf1e2 100%);
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+}
+
+.aud_header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(68, 84, 72, 0.1);
+  padding: 0.85rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.aud_brand {
+  color: #0a4f2b;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.aud_back_btn {
+  border: 0;
+  background: none;
+  color: #7a857e;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.4rem 0;
+}
+
+.aud_back_btn:hover {
+  color: var(--green);
+}
+
+.aud_layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 300px;
+  grid-template-rows: auto auto;
+  gap: 1.2rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.8rem 2rem 2rem;
+}
+
+/* Main panel */
+
+.aud_main {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Hero card */
+
+.aud_hero_card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1.5rem;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.4rem;
+  box-shadow: 0 16px 30px rgba(46, 63, 49, 0.08);
+}
+
+.aud_ring_wrap {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  flex-shrink: 0;
+}
+
+.aud_ring_svg {
+  width: 100%;
+  height: 100%;
+}
+
+.aud_ring_label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.aud_ring_label strong {
+  color: #1a221c;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.aud_ring_label span {
+  color: var(--green);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.aud_hero_copy {
+  text-align: center;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.aud_hero_copy h1 {
+  color: #1a221c;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.aud_hero_copy p {
+  color: #5c675e;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+/* Terminal */
+
+.aud_terminal {
+  background: #0d1117;
+  border-radius: 1.2rem;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+.aud_term_header {
+  background: #161b22;
+  padding: 0.65rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.aud_term_dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.aud_term_dots span {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+}
+
+.dot_red    { background: #ff5f57; }
+.dot_yellow { background: #ffbd2e; }
+.dot_green_dot { background: #28c840; }
+
+.aud_term_title {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-family: 'Courier New', monospace;
+}
+
+.aud_term_body {
+  padding: 1rem 1.2rem 1.2rem;
+  min-height: 180px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
+.aud_log_line {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  border-radius: 0.35rem;
+  padding: 0.12rem 0.4rem;
+}
+
+.aud_log_active {
+  background: rgba(15, 125, 63, 0.12);
+}
+
+.aud_log_time {
+  color: rgba(255, 255, 255, 0.32);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+}
+
+.aud_log_sep {
+  color: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+.aud_log_text {
+  color: rgba(255, 255, 255, 0.75);
+  flex: 1;
+}
+
+.aud_log_text_active {
+  color: #4df08a;
+}
+
+.aud_verified_tag {
+  flex-shrink: 0;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  background: rgba(15, 125, 63, 0.25);
+  color: #4df08a;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.aud_cursor {
+  color: #4df08a;
+  font-family: 'Courier New', monospace;
+  font-size: 0.78rem;
+  animation: blink 1s step-end infinite;
+  width: fit-content;
+}
+
+.aud_results_btn {
+  border: 0;
+  border-radius: 0.5rem;
+  background: rgba(15, 125, 63, 0.18);
+  color: #4df08a;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  margin-top: 0.4rem;
+  transition: background 0.14s ease;
+  width: fit-content;
+}
+
+.aud_results_btn:hover {
+  background: rgba(15, 125, 63, 0.28);
+}
+
+/* Right sidebar */
+
+.aud_sidebar {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Secure card */
+
+.aud_secure_card {
+  background: linear-gradient(145deg, #3a3fa8 0%, #4d55be 100%);
+  border-radius: 1.35rem;
+  padding: 1.3rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  color: #fff;
+}
+
+.aud_secure_icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.18);
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+}
+
+.aud_secure_icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.aud_secure_card h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.aud_secure_card p {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.45;
+}
+
+.aud_secure_list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.aud_secure_list li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.aud_check {
+  display: inline-flex;
+  color: #4df08a;
+  flex-shrink: 0;
+}
+
+.aud_check svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+/* Estimate card */
+
+.aud_estimate_card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1.35rem;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 12px 26px rgba(46, 63, 49, 0.08);
+  display: grid;
+  gap: 0.4rem;
+}
+
+.aud_est_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.aud_est_label {
+  color: #8a958d;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.aud_est_amount {
+  color: #1a221c;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.aud_est_amount span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a857e;
+  letter-spacing: 0;
+}
+
+.aud_est_sub {
+  color: #8a958d;
+  font-size: 0.76rem;
+}
+
+.aud_est_state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(68, 84, 72, 0.1);
+}
+
+.aud_est_state span {
+  color: #7a857e;
+  font-size: 0.82rem;
+}
+
+.aud_est_state strong {
+  color: var(--green);
+  font-size: 0.88rem;
+}
+
+.tasa_badge {
+  border-radius: 0.45rem;
+  padding: 0.28rem 0.7rem;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Shield promo card */
+
+.aud_shield_card {
+  background: linear-gradient(145deg, #1c5230 0%, #163d24 100%);
+  border-radius: 1.35rem;
+  padding: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.aud_shield_visual {
+  font-size: 3.5rem;
+  color: rgba(255, 255, 255, 0.12);
+  line-height: 1;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aud_shield_label {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Footer */
+
+.aud_footer {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  background: #1a211c;
+  border-radius: 1.2rem;
+  padding: 1.1rem 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+}
+
+.aud_footer_brand {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-right: 0.5rem;
+}
+
+.aud_footer_links {
+  margin-left: auto;
+  display: flex;
+  gap: 1.2rem;
+}
+
+.aud_footer_link {
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.14s ease;
+}
+
+.aud_footer_link:hover {
+  color: #fff;
+}

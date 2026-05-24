@@ -1,0 +1,130 @@
+.footer {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: auto;
+  background: linear-gradient(180deg, #dbe6d7 0%, #d2dfcf 100%);
+  border-top: 1px solid rgba(28, 53, 33, 0.14);
+  padding: clamp(1.45rem, 2.4vw, 2rem) clamp(0.95rem, 2vw, 1.9rem) clamp(1rem, 2vw, 1.4rem);
+}
+
+.inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.75fr) minmax(0, 1fr);
+  gap: clamp(1rem, 2vw, 2rem);
+}
+
+.brand h4 {
+  margin: 0;
+  color: #0f7d35;
+  font-size: clamp(1.2rem, 1.45vw, 1.7rem);
+}
+
+.brand p {
+  margin: 0.75rem 0 0;
+  color: #455348;
+  max-width: 45ch;
+  font-size: clamp(0.92rem, 1vw, 1.08rem);
+  line-height: 1.45;
+}
+
+.links h5,
+.newsletter h5 {
+  margin: 0;
+  color: #1d2921;
+  font-size: clamp(0.98rem, 1.05vw, 1.15rem);
+}
+
+.links {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.links a {
+  color: #39483b;
+  text-decoration: none;
+  font-size: clamp(0.9rem, 0.95vw, 1rem);
+}
+
+.links a:hover {
+  color: #0f7d35;
+  text-decoration: underline;
+}
+
+.newsletter p {
+  margin: 0.65rem 0 0;
+  color: #4e5b51;
+  font-size: clamp(0.9rem, 0.95vw, 1rem);
+  line-height: 1.4;
+}
+
+.newsletter form {
+  margin-top: 0.85rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.newsletter input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(15, 125, 53, 0.16);
+  border-radius: 0.7rem;
+  padding: 0.68rem 0.8rem;
+  background: #eef4ec;
+  color: #213126;
+  font-size: 1rem;
+}
+
+.newsletter button {
+  border: 0;
+  border-radius: 0.7rem;
+  background: #0f7d35;
+  color: #eff9f1;
+  padding: 0.68rem 0.95rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.bottom {
+  max-width: 1440px;
+  margin: clamp(1rem, 1.8vw, 1.25rem) auto 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(28, 53, 33, 0.14);
+}
+
+.bottom p {
+  margin: 0;
+  color: #4f5f52;
+  font-size: clamp(0.8rem, 0.88vw, 0.9rem);
+}
+
+@media (max-width: 980px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter form {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .inner {
+    gap: 1.2rem;
+  }
+
+  .newsletter form {
+    gap: 0.4rem;
+  }
+
+  .newsletter input,
+  .newsletter button {
+    width: 100%;
+  }
+
+  .bottom {
+    text-align: center;
+  }
+}

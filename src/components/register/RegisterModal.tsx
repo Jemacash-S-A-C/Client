@@ -1,11 +1,20 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, type CSSProperties } from 'react'
 import { IconLock, IconMail, IconPhone, IconUser } from './RegisterIcons'
 import styles from './RegisterModal.module.css'
+
+type RegisterPayload = {
+  fullName: string
+  email: string
+  phone: string
+  password: string
+  termsAccepted: boolean
+}
 
 type RegisterModalProps = {
   open: boolean
   onClose: () => void
-  onNavigateToLogin: () => void
+  onNavigateToLogin: (prefillIdentifier?: string) => void
+  onSubmit: (payload: RegisterPayload) => Promise<{ success: boolean; message?: string }>
   heroBackgroundSrc: string
 }
 
@@ -13,6 +22,7 @@ export function RegisterModal({
   open,
   onClose,
   onNavigateToLogin,
+  onSubmit,
   heroBackgroundSrc,
 }: RegisterModalProps) {
   const [name, setName] = useState('')
@@ -20,34 +30,51 @@ export function RegisterModal({
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const titleId = useId()
 
+  const asideStyle = {
+    ['--register-hero-image' as string]: `url(${heroBackgroundSrc})`,
+  } as CSSProperties
+
   useEffect(() => {
-    if (!open) {
-      return
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
+    if (!open) return
+    setError('')
+    setLoading(false)
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKeyDown)
-    const previousOverflow = document.body.style.overflow
+    const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = previousOverflow
+      document.body.style.overflow = prev
     }
   }, [open, onClose])
 
-  if (!open) {
-    return null
+  if (!open) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const result = await onSubmit({ fullName: name, email, phone, password, termsAccepted })
+      if (!result.success) {
+        setError(result.message ?? 'No fue posible completar el registro.')
+        return
+      }
+      // Success → go to login pre-filled
+      onNavigateToLogin(email)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className={styles.register_overlay} role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className={styles.register_split}>
-        <aside className={styles.register_aside} style={{ backgroundImage: `url(${heroBackgroundSrc})` }}>
+        <aside className={styles.register_aside} style={asideStyle}>
           <div className={styles.register_aside_scrim} />
           <div className={styles.register_aside_content}>
             <p className={styles.register_aside_brand}>Jemacash</p>
@@ -62,13 +89,16 @@ export function RegisterModal({
         </aside>
 
         <div className={styles.register_panel}>
-          <button type="button" className={styles.register_close} onClick={onClose} aria-label="Cerrar registro">
-            ×
+          <button
+            type="button"
+            className={styles.register_close}
+            onClick={onClose}
+            aria-label="Cerrar registro"
+          >
+            <span aria-hidden="true">×</span>
           </button>
 
-          <form className={styles.register_form} onSubmit={(event) => {
-            event.preventDefault()
-          }}>
+          <form className={styles.register_form} onSubmit={handleSubmit}>
             <header className={styles.register_form_header}>
               <h2 id={titleId}>Crear Usuario</h2>
               <p>Comienza tu viaje financiero hoy mismo.</p>
@@ -77,9 +107,7 @@ export function RegisterModal({
             <div className={styles.register_field}>
               <label htmlFor="reg-fullname">Nombre completo</label>
               <div className={styles.register_input_row}>
-                <span className={styles.register_input_icon}>
-                  <IconUser />
-                </span>
+                <span className={styles.register_input_icon}><IconUser /></span>
                 <input
                   id="reg-fullname"
                   name="fullname"
@@ -87,7 +115,8 @@ export function RegisterModal({
                   autoComplete="name"
                   placeholder="Ej. Juan Pérez"
                   value={name}
-                  onChange={(event) => setName(event.target.value)}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -95,9 +124,7 @@ export function RegisterModal({
             <div className={styles.register_field}>
               <label htmlFor="reg-email">Correo electrónico</label>
               <div className={styles.register_input_row}>
-                <span className={styles.register_input_icon}>
-                  <IconMail />
-                </span>
+                <span className={styles.register_input_icon}><IconMail /></span>
                 <input
                   id="reg-email"
                   name="email"
@@ -105,7 +132,8 @@ export function RegisterModal({
                   autoComplete="email"
                   placeholder="nombre@ejemplo.com"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -113,9 +141,7 @@ export function RegisterModal({
             <div className={styles.register_field}>
               <label htmlFor="reg-phone">Número de teléfono</label>
               <div className={styles.register_input_row}>
-                <span className={styles.register_input_icon}>
-                  <IconPhone />
-                </span>
+                <span className={styles.register_input_icon}><IconPhone /></span>
                 <input
                   id="reg-phone"
                   name="phone"
@@ -123,7 +149,8 @@ export function RegisterModal({
                   autoComplete="tel"
                   placeholder="+51 987 654 321"
                   value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -131,9 +158,7 @@ export function RegisterModal({
             <div className={styles.register_field}>
               <label htmlFor="reg-password">Contraseña</label>
               <div className={styles.register_input_row}>
-                <span className={styles.register_input_icon}>
-                  <IconLock />
-                </span>
+                <span className={styles.register_input_icon}><IconLock /></span>
                 <input
                   id="reg-password"
                   name="password"
@@ -142,7 +167,8 @@ export function RegisterModal({
                   placeholder="Mínimo 8 caracteres"
                   minLength={8}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -151,7 +177,8 @@ export function RegisterModal({
               <input
                 type="checkbox"
                 checked={termsAccepted}
-                onChange={(event) => setTermsAccepted(event.target.checked)}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                disabled={loading}
               />
               <span>
                 Acepto los <a href="#">Términos y Condiciones</a> y la{' '}
@@ -159,13 +186,24 @@ export function RegisterModal({
               </span>
             </label>
 
-            <button type="submit" className={styles.register_submit}>
-              Crear cuenta
+            <button type="submit" className={styles.register_submit} disabled={loading}>
+              {loading ? 'Creando cuenta…' : 'Crear cuenta'}
             </button>
+
+            {error ? (
+              <p className={styles.register_error} role="alert">
+                {error}
+              </p>
+            ) : null}
 
             <p className={styles.register_login_prompt}>
               ¿Ya tienes cuenta?{' '}
-              <button type="button" className={styles.register_login_link} onClick={onNavigateToLogin}>
+              <button
+                type="button"
+                className={styles.register_login_link}
+                onClick={() => onNavigateToLogin(email)}
+                disabled={loading}
+              >
                 Inicia sesión
               </button>
             </p>

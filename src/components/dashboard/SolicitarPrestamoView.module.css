@@ -1,0 +1,649 @@
+/* ─── SolicitarPrestamoView styles ───────────────────────────────────────── */
+
+.view_sub {
+  color: #7a857e;
+  font-size: 0.88rem;
+  margin-top: 0.3rem;
+  line-height: 1.45;
+}
+
+.sol_layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.sol_main {
+  display: grid;
+  gap: 1rem;
+}
+
+.sol_header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sol_title {
+  color: #1a221c;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.sol_back_btn {
+  border: 0;
+  background: none;
+  color: #7a857e;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0.4rem 0;
+  flex-shrink: 0;
+}
+
+.sol_back_btn:hover {
+  color: var(--green);
+}
+
+/* Card shared */
+
+.sol_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.5rem;
+  padding: 1.3rem 1.4rem;
+  box-shadow: 0 14px 28px rgba(46, 63, 49, 0.08);
+  display: grid;
+  gap: 1.1rem;
+}
+
+.sol_card_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sol_card_title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sol_card_title h2 {
+  color: #1a221c;
+  font-size: 1.02rem;
+  font-weight: 800;
+}
+
+.sec_card_icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: var(--green-soft);
+  color: var(--green);
+  display: inline-grid;
+  place-items: center;
+}
+
+.sec_card_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tasa_badge {
+  border-radius: 0.45rem;
+  padding: 0.28rem 0.7rem;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.sol_card_hint {
+  color: #8a958d;
+  font-size: 0.84rem;
+}
+
+/* Amount display */
+
+.sol_amount_row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sol_amount_label {
+  color: #9aa39d;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.sol_amount_value {
+  color: var(--green);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+/* Slider */
+
+.sol_slider_wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sol_slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--green) 0%,
+    var(--green) var(--pct),
+    #dce6de var(--pct),
+    #dce6de 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+
+.sol_slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(15, 125, 63, 0.4);
+  cursor: pointer;
+}
+
+.sol_slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(15, 125, 63, 0.4);
+  cursor: pointer;
+}
+
+.sol_slider_labels {
+  display: flex;
+  justify-content: space-between;
+  color: #9aa39d;
+  font-size: 0.75rem;
+}
+
+/* Plazo pills */
+
+.sol_plazo_section {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sol_plazo_label {
+  color: #9aa39d;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.sol_plazo_pills {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.sol_plazo_pill {
+  border: 1.5px solid rgba(68, 84, 72, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: #5c675e;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.sol_plazo_pill_active {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(15, 125, 63, 0.05);
+  font-weight: 700;
+}
+
+/* Garantías */
+
+.sol_garantias_grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.sol_garantia_card {
+  border: 1.5px solid rgba(68, 84, 72, 0.14);
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1.1rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.sol_garantia_card:hover {
+  border-color: rgba(68, 84, 72, 0.28);
+}
+
+.sol_garantia_selected {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(15, 125, 63, 0.1);
+}
+
+.sol_garantia_icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.7rem;
+  display: inline-grid;
+  place-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.sol_garantia_icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.sol_garantia_icon_blue {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.sol_garantia_icon_green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.sol_garantia_card strong {
+  color: #1a221c;
+  font-size: 0.94rem;
+}
+
+.sol_garantia_card p {
+  color: #7a857e;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.sol_garantia_cta {
+  color: var(--green);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+
+.sol_garantia_new {
+  border: 2px dashed rgba(68, 84, 72, 0.18);
+  border-radius: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0.8rem;
+  text-align: center;
+}
+
+.sol_garantia_new_icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: rgba(68, 84, 72, 0.08);
+  color: #8a958d;
+  display: inline-grid;
+  place-items: center;
+}
+
+.sol_garantia_new_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sol_garantia_new strong {
+  color: #8a958d;
+  font-size: 0.84rem;
+}
+
+/* Advisory banner */
+
+.sol_advisory {
+  background: linear-gradient(135deg, #3a3fa8 0%, #4d55be 100%);
+  border-radius: 1.35rem;
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.sol_advisory_copy {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 440px;
+}
+
+.sol_advisory_copy h3 {
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.sol_advisory_copy p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.sol_advisory_btn {
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #3a3fa8;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 0.75rem 1.4rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+}
+
+/* Sidebar summary */
+
+.sol_sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.sol_summary_card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1.35rem;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 14px 30px rgba(46, 63, 49, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sol_summary_head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sol_summary_icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.65rem;
+  background: var(--green-soft);
+  color: var(--green);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sol_summary_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sol_summary_head > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.sol_summary_head strong {
+  color: #1a221c;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.sol_summary_head span {
+  color: #8a958d;
+  font-size: 0.74rem;
+}
+
+.sol_summary_sep {
+  height: 1px;
+  background: rgba(68, 84, 72, 0.1);
+}
+
+.sol_summary_rows {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sol_summary_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sol_summary_row span {
+  color: #6b756f;
+  font-size: 0.82rem;
+}
+
+.sol_summary_row strong {
+  color: #1a221c;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.sol_cuota_block {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sol_cuota_block span {
+  color: #6b756f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+}
+
+.sol_cuota_block strong {
+  color: var(--blue);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.sol_cuota_note {
+  color: #9aa39d;
+  font-size: 0.72rem;
+  margin-top: -0.3rem;
+}
+
+.sol_schedule {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.sol_schedule_label {
+  color: #9aa39d;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+
+.sol_schedule_row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+}
+
+.sol_schedule_row span:nth-child(2) {
+  flex: 1;
+  color: #5c675e;
+}
+
+.sol_schedule_row strong {
+  color: #1a221c;
+  font-weight: 700;
+}
+
+.sol_dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.sol_dot_dark { background: #1a221c; }
+.sol_dot_mid  { background: #8a958d; }
+.sol_dot_light {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  background: #ccd5ce;
+}
+
+.sol_schedule_rest {
+  color: #9aa39d !important;
+  font-style: italic;
+}
+
+.sol_submit_btn {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
+  color: #fff;
+  font-size: 0.96rem;
+  font-weight: 800;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 10px 24px rgba(15, 125, 63, 0.28);
+}
+
+.sol_terms {
+  color: #9aa39d;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.sol_terms_link {
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* SBS badge */
+
+.sol_sbs_badge {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  box-shadow: 0 8px 18px rgba(46, 63, 49, 0.08);
+  align-self: flex-end;
+}
+
+.sol_sbs_icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sol_sbs_icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.sol_sbs_badge > div {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.sol_sbs_badge span {
+  color: #9aa39d;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sol_sbs_badge strong {
+  color: #1a221c;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 940px) {
+  .sol_layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sol_garantias_grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sol_advisory {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

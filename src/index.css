@@ -1,4 +1,5 @@
 :root {
+  font-size: clamp(13px, 0.6vw + 7px, 14px);
   font-family: "Inter", sans-serif;
   color: #1f2a1f;
   background: radial-gradient(
@@ -10,6 +11,19 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Dashboard design tokens */
+  --page-bg: #eef4e7;
+  --surface: #ffffff;
+  --surface-soft: #f6f8f1;
+  --ink: #17211b;
+  --muted: #65706b;
+  --green: #0f7d3f;
+  --green-soft: #d9f0da;
+  --blue: #5d6ed8;
+  --blue-soft: #dfe4ff;
+  --rose: #d574a3;
+  --rose-soft: #f6dfe9;
 }
 
 * {

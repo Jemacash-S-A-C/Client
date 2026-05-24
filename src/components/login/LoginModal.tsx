@@ -2,40 +2,69 @@ import { useEffect, useId, useState } from 'react'
 import { IconEye, IconEyeOff, IconGoogle, IconPasskey } from './LoginIcons'
 import styles from './LoginModal.module.css'
 
+type LoginPayload = {
+  identifier: string
+  password: string
+  remember: boolean
+}
+
 type LoginModalProps = {
   open: boolean
   onClose: () => void
   onNavigateToRegister: () => void
+  onSubmit: (payload: LoginPayload) => Promise<{ success: boolean; message?: string }>
+  defaultIdentifier?: string
 }
 
-export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalProps) {
+export function LoginModal({
+  open,
+  onClose,
+  onNavigateToRegister,
+  onSubmit,
+  defaultIdentifier,
+}: LoginModalProps) {
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const titleId = useId()
   const passwordId = useId()
 
   useEffect(() => {
-    if (!open) {
-      return
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
+    if (!open) return
+    setIdentifier(defaultIdentifier ?? '')
+    setPassword('')
+    setRemember(false)
+    setShowPassword(false)
+    setError('')
+    setLoading(false)
+
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKeyDown)
-    const previousOverflow = document.body.style.overflow
+    const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = previousOverflow
+      document.body.style.overflow = prev
     }
-  }, [open, onClose])
+  }, [defaultIdentifier, onClose, open])
 
-  if (!open) {
-    return null
+  if (!open) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const result = await onSubmit({ identifier, password, remember })
+      if (!result.success) {
+        setError(result.message ?? 'No fue posible iniciar sesión.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -43,6 +72,8 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
       <div className={styles.login_split}>
         <aside className={styles.login_aside} aria-label="Jemacash">
           <div className={styles.login_aside_building} aria-hidden="true" />
+          <div className={styles.login_aside_orb} aria-hidden="true" />
+          <div className={styles.login_aside_arc} aria-hidden="true" />
           <div className={styles.login_aside_scrim} />
           <div className={styles.login_aside_content}>
             <p className={styles.login_aside_brand}>Jemacash</p>
@@ -69,12 +100,10 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
 
         <div className={styles.login_panel}>
           <button type="button" className={styles.login_close} onClick={onClose} aria-label="Cerrar">
-            ×
+            <span aria-hidden="true">×</span>
           </button>
 
-          <form className={styles.login_form} onSubmit={(event) => {
-            event.preventDefault()
-          }}>
+          <form className={styles.login_form} onSubmit={handleSubmit}>
             <header className={styles.login_form_header}>
               <h2 id={titleId}>Iniciar Sesión</h2>
               <p>Bienvenido de nuevo. Acceda a su panel de control.</p>
@@ -89,7 +118,8 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
                 autoComplete="username"
                 placeholder="nombre@ejemplo.com"
                 value={identifier}
-                onChange={(event) => setIdentifier(event.target.value)}
+                onChange={(e) => setIdentifier(e.target.value)}
+                disabled={loading}
               />
             </div>
 
@@ -108,7 +138,8 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
                   autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -125,25 +156,32 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
               <input
                 type="checkbox"
                 checked={remember}
-                onChange={(event) => setRemember(event.target.checked)}
+                onChange={(e) => setRemember(e.target.checked)}
+                disabled={loading}
               />
               <span>Mantenerme conectado</span>
             </label>
 
-            <button type="submit" className={styles.login_submit}>
-              Iniciar sesión <span aria-hidden="true">→</span>
+            <button type="submit" className={styles.login_submit} disabled={loading}>
+              {loading ? 'Iniciando…' : <>Iniciar sesión <span aria-hidden="true">→</span></>}
             </button>
+
+            {error ? (
+              <p className={styles.login_error} role="alert">
+                {error}
+              </p>
+            ) : null}
 
             <div className={styles.login_divider}>
               <span>O continuar con</span>
             </div>
 
             <div className={styles.login_oauth_row}>
-              <button type="button" className={styles.login_oauth_btn}>
+              <button type="button" className={styles.login_oauth_btn} disabled>
                 <IconGoogle className={styles.login_oauth_icon} />
                 Google
               </button>
-              <button type="button" className={styles.login_oauth_btn}>
+              <button type="button" className={styles.login_oauth_btn} disabled>
                 <IconPasskey className={`${styles.login_oauth_icon} ${styles.login_oauth_icon_stroke}`} />
                 Passkey
               </button>
@@ -151,7 +189,12 @@ export function LoginModal({ open, onClose, onNavigateToRegister }: LoginModalPr
 
             <p className={styles.login_register_prompt}>
               ¿No tiene una cuenta?{' '}
-              <button type="button" className={styles.login_register_link} onClick={onNavigateToRegister}>
+              <button
+                type="button"
+                className={styles.login_register_link}
+                onClick={onNavigateToRegister}
+                disabled={loading}
+              >
                 Regístrese gratis
               </button>
             </p>
