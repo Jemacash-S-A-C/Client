@@ -67,19 +67,19 @@ export function TasacionResultadosView({
   applicationId,
 }: {
   onBack: () => void
-  onAccept: () => void
+  onAccept: (amount: number | null) => void
   applicationId?: string | null
 }) {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
 
   useEffect(() => {
     if (!applicationId) return
-    getEvaluation(applicationId).then(setEvaluation).catch(() => {/* fallback to static display */})
+    getEvaluation(applicationId).then(setEvaluation).catch(() => {/* no-op */})
   }, [applicationId])
 
-  const displayAmount = evaluation?.approved_amount
+  const displayAmount = evaluation?.approved_amount != null
     ? Number(evaluation.approved_amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
-    : '4,850.00'
+    : '—'
   return (
     <div className={styles.tas_page}>
 
@@ -139,7 +139,7 @@ export function TasacionResultadosView({
               <span className={styles.tas_value_label}>VALOR DE RESPALDO FINAL</span>
               <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
               <p>Oferta garantizada por 24 horas basada en el estado actual y valor de mercado editorial.</p>
-              <button type="button" className={styles.tas_accept_btn} onClick={onAccept}>
+              <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(evaluation?.approved_amount ?? null)}>
                 Aceptar Oferta y Firmar Contrato
               </button>
               <div className={styles.tas_value_perks}>

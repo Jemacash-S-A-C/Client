@@ -2,71 +2,13 @@ import { useEffect, useState } from 'react'
 import { getApplications } from '../../services/application.service'
 import type { LoanApplication } from '../../types/api.types'
 import {
-  IconCar,
-  IconHome,
-  IconBriefcase,
   IconCheck,
   IconDocument,
   IconWarning,
-  IconDownload,
-  IconCalendar,
-  IconArrowRight,
   IconPlus,
+  IconArrowRight,
 } from './icons'
 import styles from './MisSolicitudesView.module.css'
-
-const timelineSteps = [
-  { label: 'Registro', date: '12 Mar, 2024', done: true },
-  { label: 'Inspección', date: '14 Mar, 2024', done: true },
-  { label: 'Oferta Final', date: 'En Curso', done: false, active: true },
-  { label: 'Desembolso', date: 'Pendiente', done: false, active: false },
-] as const
-
-const tramitesActivos = [
-  {
-    name: 'Hipotecario Depto. Miraflores',
-    amount: 'S/ 280,000.00',
-    meta: 'Creado hace 5 días',
-    badge: 'ANÁLISIS DE RIESGO',
-    badgeTone: 'purple',
-    icon: IconHome,
-  },
-  {
-    name: 'Capital de Trabajo Editorial',
-    amount: 'S/ 15,000.00',
-    meta: 'Creado el 10 Mar',
-    badge: 'APROBADO',
-    badgeTone: 'green',
-    icon: IconBriefcase,
-  },
-] as const
-
-const historialSolicitudes = [
-  {
-    month: 'ENE 2024',
-    status: 'FINALIZADO',
-    statusTone: 'green',
-    name: 'Préstamo Personal',
-    amount: 'S/ 5,000.00',
-    note: 'Desembolsado con éxito',
-  },
-  {
-    month: 'DIC 2023',
-    status: 'CANCELADO',
-    statusTone: 'red',
-    name: 'Línea de Crédito',
-    amount: 'S/ 2,500.00',
-    note: 'Cancelado por el usuario',
-  },
-  {
-    month: 'NOV 2023',
-    status: 'FINALIZADO',
-    statusTone: 'green',
-    name: 'Valuación Kia Rio',
-    amount: 'S/ 32,000.00',
-    note: 'Crédito otorgado',
-  },
-] as const
 
 const STATUS_LABELS: Record<LoanApplication['status'], string> = {
   draft:     'BORRADOR',
@@ -76,24 +18,46 @@ const STATUS_LABELS: Record<LoanApplication['status'], string> = {
   signed:    'FIRMADO',
 }
 
-const STATUS_TONES: Record<LoanApplication['status'], string> = {
+const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple' | 'blue'> = {
   draft:     'purple',
-  submitted: 'purple',
+  submitted: 'blue',
   approved:  'green',
   rejected:  'red',
   signed:    'green',
 }
 
-export function MisSolicitudesView() {
+const STATUS_CFG = {
+  draft:     { color: '#7c3aed', bg: '#ede9fe' },
+  submitted: { color: '#2563eb', bg: '#dbeafe' },
+  approved:  { color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:  { color: '#dc2626', bg: '#fef2f2' },
+  signed:    { color: '#0f7d3f', bg: '#d9f0da' },
+} as const
+
+function fmtAmount(n: number) {
+  return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
+
+interface Props {
+  onDetalle: (app: LoanApplication) => void
+}
+
+export function MisSolicitudesView({ onDetalle }: Props) {
   const [applications, setApplications] = useState<LoanApplication[]>([])
-  const [loadingApps, setLoadingApps] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     getApplications()
       .then(setApplications)
-      .catch(() => { /* keep empty */ })
-      .finally(() => setLoadingApps(false))
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
+
+  const active   = applications.filter(a => a.status === 'submitted' || a.status === 'approved')
+  const others   = applications.filter(a => a.status !== 'submitted' && a.status !== 'approved')
+
   return (
     <div className={styles.view_grid}>
       <div className={styles.view_header}>
@@ -103,63 +67,56 @@ export function MisSolicitudesView() {
         </div>
       </div>
 
-      <article className={styles.featured_solicitud}>
-        <div className={styles.featured_left}>
-          <div className={styles.featured_icon_wrap}>
-            <IconCar />
-          </div>
-          <div className={styles.featured_info}>
-            <strong>Valuación de Camioneta Toyota</strong>
-            <span>Solicitud ID: #EP-2024-9981 · S/ 45,000.00</span>
-          </div>
+      {/* ── Stats ── */}
+      <div className={styles.sol_stats}>
+        <div className={styles.sol_stat}>
+          <strong>{applications.length}</strong>
+          <span>Total</span>
         </div>
-        <div className={styles.featured_actions}>
-          <button type="button" className={styles.outline_btn_dark}>Ver Detalle</button>
-          <button type="button" className={styles.pay_btn}>Continuar Proceso</button>
+        <div className={styles.sol_stat}>
+          <strong>{active.length}</strong>
+          <span>En curso</span>
         </div>
+        <div className={styles.sol_stat}>
+          <strong>{applications.filter(a => a.status === 'approved').length}</strong>
+          <span>Aprobadas</span>
+        </div>
+        <div className={styles.sol_stat}>
+          <strong>{applications.filter(a => a.status === 'signed').length}</strong>
+          <span>Firmadas</span>
+        </div>
+      </div>
 
-        <div className={styles.timeline}>
-          {timelineSteps.map((step, i) => (
-            <div key={step.label} className={styles.timeline_step}>
-              <div className={`${styles.timeline_node} ${step.done ? styles.node_done : step.active ? styles.node_active : styles.node_pending}`}>
-                {step.done ? <IconCheck /> : <IconDocument />}
-              </div>
-              {i < timelineSteps.length - 1 && (
-                <div className={`${styles.timeline_line} ${step.done ? styles.line_done : styles.line_pending}`} />
-              )}
-              <div className={styles.timeline_label}>
-                <span className={step.done ? styles.tl_done : step.active ? styles.tl_active : styles.tl_pending}>
-                  {step.label}
-                </span>
-                <span className={styles.tl_date}>{step.date}</span>
-              </div>
-            </div>
-          ))}
+      {/* ── Active applications ── */}
+      {loading ? (
+        <div className={styles.sol_skeleton}>
+          <div className={styles.sol_skel_card} />
+          <div className={styles.sol_skel_card} />
         </div>
-      </article>
-
-      <div className={styles.tramites_layout}>
-        <section className={styles.tramites_section}>
-          <div className={styles.tramites_head}>
-            <h2 className={styles.section_title}>Trámites Activos</h2>
-            <button type="button" className={styles.link_button_green}>Ver todos</button>
-          </div>
-          <div className={styles.tramites_list}>
-            {tramitesActivos.map((t) => {
-              const TIcon = t.icon
+      ) : active.length > 0 && (
+        <section className={styles.sol_section}>
+          <h2 className={styles.section_title}>Trámites Activos</h2>
+          <div className={styles.sol_list}>
+            {active.map(app => {
+              const cfg = STATUS_CFG[app.status]
               return (
-                <div key={t.name} className={styles.tramite_row}>
-                  <span className={styles.tramite_icon_wrap}>
-                    <TIcon />
+                <div key={app.id} className={styles.sol_row} onClick={() => onDetalle(app)}>
+                  <span className={styles.sol_row_icon_wrap}>
+                    <IconDocument />
                   </span>
-                  <div className={styles.tramite_info}>
-                    <strong>{t.name}</strong>
-                    <span>{t.amount} · {t.meta}</span>
+                  <div className={styles.sol_row_info}>
+                    <strong>Préstamo Personal</strong>
+                    <span>S/ {fmtAmount(Number(app.amount))} · {app.term_months} meses · {shortId(app.id)}</span>
                   </div>
-                  <span className={`${styles.tramite_badge} ${t.badgeTone === 'green' ? styles.badge_green : styles.badge_purple_text}`}>
-                    {t.badge}
+                  <span className={styles.sol_status_badge} style={{ color: cfg.color, background: cfg.bg }}>
+                    {STATUS_LABELS[app.status]}
                   </span>
-                  <button type="button" className={styles.tramite_arrow} aria-label="Ver detalle">
+                  <button
+                    type="button"
+                    className={styles.sol_arrow}
+                    aria-label="Ver detalle"
+                    onClick={(e) => { e.stopPropagation(); onDetalle(app) }}
+                  >
                     <IconArrowRight />
                   </button>
                 </div>
@@ -167,95 +124,114 @@ export function MisSolicitudesView() {
             })}
           </div>
         </section>
+      )}
 
-        <aside className={styles.action_required_card}>
-          <div className={styles.ar_header}>
-            <span className={styles.ar_icon}><IconWarning /></span>
-            <h3>Acción Requerida</h3>
-          </div>
-          <p>Tienes 3 documentos pendientes que están retrasando tus solicitudes.</p>
-          <ul className={styles.ar_docs}>
-            <li>
-              <span className={styles.ar_doc_icon}><IconDocument /></span>
-              SOAT Vigente (Toyota)
-              <button type="button" className={styles.ar_download} aria-label="Subir SOAT"><IconDownload /></button>
-            </li>
-            <li>
-              <span className={styles.ar_doc_icon}><IconCalendar /></span>
-              Copia DNI (Cónyuge)
-              <button type="button" className={styles.ar_download} aria-label="Subir DNI"><IconDownload /></button>
-            </li>
-          </ul>
-          <button type="button" className={styles.ar_cta}>Subir Documentos Ahora</button>
-        </aside>
-      </div>
+      {/* ── All applications ── */}
+      <section className={styles.sol_section}>
+        <h2 className={styles.section_title}>{active.length > 0 ? 'Historial' : 'Mis Solicitudes'}</h2>
 
-      {/* ── Real applications from backend ─────────────── */}
-      <section className={styles.historial_section}>
-        <h2 className={styles.section_title}>Mis Solicitudes</h2>
-        {loadingApps ? (
-          <p style={{ fontSize: '0.85rem', color: '#666', padding: '1rem 0' }}>Cargando solicitudes…</p>
+        {loading ? (
+          <p className={styles.sol_loading}>Cargando solicitudes…</p>
         ) : applications.length === 0 ? (
-          <p style={{ fontSize: '0.85rem', color: '#666', padding: '1rem 0' }}>
-            No tienes solicitudes aún. ¡Solicita tu primer préstamo!
-          </p>
+          <div className={styles.sol_empty}>
+            <span className={styles.sol_empty_icon}><IconDocument /></span>
+            <strong>Sin solicitudes aún</strong>
+            <p>Cuando presentes tu primera solicitud, aparecerá aquí.</p>
+          </div>
         ) : (
           <div className={styles.historial_grid}>
-            {applications.map((app) => {
+            {others.map(app => {
+              const tone = STATUS_TONES[app.status]
               const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
                 month: 'short', year: 'numeric',
               }).toUpperCase()
-              const tone = STATUS_TONES[app.status]
               return (
-                <article key={app.id} className={styles.historial_card}>
+                <article
+                  key={app.id}
+                  className={styles.historial_card}
+                  onClick={() => onDetalle(app)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
+                >
                   <div className={styles.historial_card_top}>
                     <span className={styles.historial_month}>{dateLabel}</span>
-                    <span
-                      className={`${styles.historial_status} ${tone === 'green' ? styles.hs_green : styles.hs_red}`}
-                    >
+                    <span className={`${styles.historial_status} ${
+                      tone === 'green' ? styles.hs_green :
+                      tone === 'red'   ? styles.hs_red   :
+                      tone === 'blue'  ? styles.hs_blue  :
+                                        styles.hs_purple
+                    }`}>
                       {STATUS_LABELS[app.status]}
                     </span>
                   </div>
                   <strong className={styles.historial_name}>Préstamo Personal</strong>
                   <span className={styles.historial_amount}>
-                    S/ {Number(app.amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                    S/ {fmtAmount(Number(app.amount))}
                   </span>
                   <span className={styles.historial_note}>
-                    {app.term_months} meses · #{app.id.slice(0, 8).toUpperCase()}
+                    {app.term_months} meses · {shortId(app.id)}
                   </span>
+                  <div className={styles.historial_card_footer}>
+                    <span>Ver detalle →</span>
+                  </div>
                 </article>
               )
             })}
+
+            {active.map(app => {
+              const cfg = STATUS_CFG[app.status]
+              const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
+                month: 'short', year: 'numeric',
+              }).toUpperCase()
+              return (
+                <article
+                  key={app.id}
+                  className={styles.historial_card}
+                  onClick={() => onDetalle(app)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
+                >
+                  <div className={styles.historial_card_top}>
+                    <span className={styles.historial_month}>{dateLabel}</span>
+                    <span className={styles.historial_status} style={{ color: cfg.color, background: cfg.bg }}>
+                      {STATUS_LABELS[app.status]}
+                    </span>
+                  </div>
+                  <strong className={styles.historial_name}>Préstamo Personal</strong>
+                  <span className={styles.historial_amount}>
+                    S/ {fmtAmount(Number(app.amount))}
+                  </span>
+                  <span className={styles.historial_note}>
+                    {app.term_months} meses · {shortId(app.id)}
+                  </span>
+                  <div className={styles.historial_card_footer}>
+                    <span>Ver detalle →</span>
+                  </div>
+                </article>
+              )
+            })}
+
+            <article className={styles.historial_card_cta}>
+              <strong>¿NECESITAS MÁS?</strong>
+              <p>Aumenta tu capacidad de crédito ahora.</p>
+              <button type="button" className={styles.historial_plus_btn} aria-label="Solicitar más crédito">
+                <IconPlus />
+              </button>
+            </article>
           </div>
         )}
       </section>
 
-      <section className={styles.historial_section}>
-        <h2 className={styles.section_title}>Historial de Solicitudes</h2>
-        <div className={styles.historial_grid}>
-          {historialSolicitudes.map((h) => (
-            <article key={h.name + h.month} className={styles.historial_card}>
-              <div className={styles.historial_card_top}>
-                <span className={styles.historial_month}>{h.month}</span>
-                <span className={`${styles.historial_status} ${h.statusTone === 'green' ? styles.hs_green : styles.hs_red}`}>
-                  {h.status}
-                </span>
-              </div>
-              <strong className={styles.historial_name}>{h.name}</strong>
-              <span className={styles.historial_amount}>{h.amount}</span>
-              <span className={styles.historial_note}>✓ {h.note}</span>
-            </article>
-          ))}
-
-          <article className={styles.historial_card_cta}>
-            <strong>¿NECESITAS MÁS?</strong>
-            <p>Aumenta tu capacidad de crédito ahora.</p>
-            <button type="button" className={styles.historial_plus_btn} aria-label="Solicitar más crédito">
-              <IconPlus />
-            </button>
-          </article>
+      {/* ── Info notice ── */}
+      <div className={styles.sol_notice}>
+        <span><IconWarning /></span>
+        <div>
+          <strong>¿Tienes dudas sobre tu solicitud?</strong>
+          <p>Haz clic en cualquier solicitud para ver el detalle completo, el estado de la evaluación y tus opciones.</p>
         </div>
-      </section>
+      </div>
     </div>
   )
 }

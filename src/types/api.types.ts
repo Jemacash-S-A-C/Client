@@ -19,6 +19,7 @@ export type LoanApplication = {
   id: string
   user_id: string
   guarantee_id: string | null
+  guarantee?: Guarantee | null   // populated when fetched via findAll
   amount: number
   term_months: number
   status: 'draft' | 'submitted' | 'approved' | 'rejected' | 'signed'
@@ -37,6 +38,14 @@ export type Evaluation = {
   updated_at: string
 }
 
+export type GuaranteeSpecs = {
+  processor?: string
+  ram?: string
+  storage?: string
+  battery_health?: string
+  screen_size?: string
+}
+
 export type Guarantee = {
   id: string
   user_id: string
@@ -45,6 +54,29 @@ export type Guarantee = {
   description: string | null
   estimated_value: number
   status: 'active' | 'pledged' | 'released'
+  created_at: string
+  // Technology-specific (present when type === 'tecnologia')
+  device_category?: string | null
+  brand?: string | null
+  model?: string | null
+  manufacture_year?: string | null
+  serial_number?: string | null
+  condition?: string | null
+  specs?: GuaranteeSpecs | null
+  photo_urls?: string[] | null
+}
+
+export type PaymentMethod = 'bcp' | 'bbva' | 'yape' | 'plin' | 'efectivo'
+
+export type Payment = {
+  id: string
+  application_id: string
+  user_id: string
+  amount: number
+  payment_method: PaymentMethod
+  status: 'completed' | 'failed'
+  cuota_number: number
+  reference_number: string
   created_at: string
 }
 

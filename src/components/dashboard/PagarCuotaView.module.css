@@ -1,0 +1,354 @@
+/* ─── PagarCuotaView ─────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--bg, #f2f5f2);
+}
+
+.container {
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  gap: 1.4rem;
+}
+
+/* Back button */
+
+.back_btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  background: none;
+  color: #5c675e;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  width: fit-content;
+}
+
+.back_btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Header */
+
+.header {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.title {
+  color: #1a221c;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.sub {
+  color: #5c675e;
+  font-size: 0.95rem;
+}
+
+/* Loan summary */
+
+.loan_summary {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 1.1rem 1.3rem;
+  display: grid;
+  gap: 0.55rem;
+  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
+}
+
+.summary_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.summary_row span {
+  color: #7a857e;
+  font-size: 0.87rem;
+}
+
+.summary_row strong {
+  color: #1a221c;
+  font-size: 0.93rem;
+}
+
+.summary_amount {
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em;
+  color: #0f7d3f !important;
+}
+
+.summary_divider {
+  height: 1px;
+  background: rgba(68, 84, 72, 0.08);
+}
+
+/* Methods */
+
+.methods_title {
+  color: #1a221c;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.methods_grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.method_card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1.1rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(68, 84, 72, 0.12);
+  border-radius: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(46, 63, 49, 0.04);
+  position: relative;
+}
+
+.method_card:hover {
+  border-color: rgba(68, 84, 72, 0.28);
+}
+
+.method_card_selected {
+  border-color: var(--method-color, #138a41);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--method-color, #138a41) 12%, transparent);
+}
+
+.method_icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.65rem;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.method_icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.method_info {
+  flex: 1;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.method_info strong {
+  color: #1a221c;
+  font-size: 0.95rem;
+}
+
+.method_info span {
+  color: #7a857e;
+  font-size: 0.78rem;
+}
+
+.method_check {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.method_check svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* Confirm card */
+
+.confirm_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 1.3rem;
+  display: grid;
+  gap: 0.65rem;
+  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
+}
+
+.confirm_amount_block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confirm_amount_block span {
+  color: #7a857e;
+  font-size: 0.87rem;
+}
+
+.confirm_amount {
+  font-size: 2rem !important;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #1a221c;
+}
+
+.confirm_divider {
+  height: 1px;
+  background: rgba(68, 84, 72, 0.08);
+}
+
+.confirm_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.confirm_row span {
+  color: #7a857e;
+  font-size: 0.85rem;
+}
+
+.confirm_row strong {
+  color: #1a221c;
+  font-size: 0.9rem;
+}
+
+.confirm_disclaimer {
+  color: #8a958d;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Primary button */
+
+.primary_btn {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(15, 125, 63, 0.28);
+  transition: opacity 0.15s;
+}
+
+.primary_btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Error */
+
+.error_msg {
+  color: #dc2626;
+  font-size: 0.88rem;
+  background: #fef2f2;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+/* Success */
+
+.success_wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.success_icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(15, 125, 63, 0.35);
+  margin-bottom: 0.25rem;
+}
+
+.success_icon svg {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.success_title {
+  color: #1a221c;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.success_sub {
+  color: #5c675e;
+  font-size: 0.95rem;
+  max-width: 300px;
+}
+
+.receipt_card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 1.2rem 1.4rem;
+  display: grid;
+  gap: 0.6rem;
+  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
+  margin: 0.4rem 0 0.6rem;
+}
+
+.receipt_row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.receipt_row span {
+  color: #7a857e;
+  font-size: 0.85rem;
+}
+
+.receipt_row strong {
+  color: #1a221c;
+  font-size: 0.9rem;
+}
+
+.receipt_divider {
+  height: 1px;
+  background: rgba(68, 84, 72, 0.08);
+}
+
+.receipt_ref {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem !important;
+  color: #0f7d3f !important;
+  letter-spacing: 0.04em;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 580px) {
+  .page {
+    padding: 1.2rem 0.75rem;
+  }
+}

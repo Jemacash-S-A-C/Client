@@ -559,3 +559,231 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── New data-driven styles ─────────────────────────────────────────────── */
+
+.sol_stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.sol_stat {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.2rem;
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.1rem;
+  box-shadow: 0 8px 18px rgba(46, 63, 49, 0.07);
+}
+
+.sol_stat strong {
+  color: #1a221c;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.sol_stat span {
+  color: #8a958d;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.sol_skeleton {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.sol_skel_card {
+  height: 5rem;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #eef2ee 25%, #e0e8e0 50%, #eef2ee 75%);
+  background-size: 200% 100%;
+  animation: sol_shimmer 1.4s infinite;
+}
+
+@keyframes sol_shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.sol_section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.sol_list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.sol_row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 8px 18px rgba(46, 63, 49, 0.06);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.sol_row:hover {
+  box-shadow: 0 12px 24px rgba(46, 63, 49, 0.12);
+}
+
+.sol_row_icon_wrap {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sol_row_icon_wrap svg { width: 1.1rem; height: 1.1rem; }
+
+.sol_row_info {
+  flex: 1;
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.sol_row_info strong {
+  color: #1a221c;
+  font-size: 0.94rem;
+  font-weight: 800;
+}
+
+.sol_row_info span {
+  color: #7a857e;
+  font-size: 0.76rem;
+}
+
+.sol_status_badge {
+  border-radius: 0.4rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sol_arrow {
+  border: 0;
+  background: none;
+  color: #9aa39d;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sol_arrow svg { width: 1.1rem; height: 1.1rem; }
+
+.sol_loading {
+  font-size: 0.85rem;
+  color: #7a857e;
+  padding: 0.5rem 0;
+}
+
+.sol_empty {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  box-shadow: 0 8px 18px rgba(46, 63, 49, 0.06);
+}
+
+.sol_empty_icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  display: inline-grid;
+  place-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.sol_empty_icon svg { width: 1.3rem; height: 1.3rem; }
+
+.sol_empty strong { color: #1a221c; font-size: 1rem; }
+.sol_empty p { color: #7a857e; font-size: 0.87rem; }
+
+.historial_card {
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+
+.historial_card:hover {
+  box-shadow: 0 14px 28px rgba(46, 63, 49, 0.13);
+}
+
+.historial_card_footer {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(71, 88, 76, 0.08);
+}
+
+.historial_card_footer span {
+  color: var(--green);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hs_blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.hs_purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.sol_notice {
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 1.2rem;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.sol_notice > span {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #fef3c7;
+  color: #d97706;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sol_notice > span svg { width: 1rem; height: 1rem; }
+
+.sol_notice div { display: grid; gap: 0.1rem; }
+.sol_notice strong { color: #1a221c; font-size: 0.86rem; font-weight: 800; }
+.sol_notice p { color: #7a857e; font-size: 0.8rem; line-height: 1.4; }
+
+@media (max-width: 940px) {
+  .sol_stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

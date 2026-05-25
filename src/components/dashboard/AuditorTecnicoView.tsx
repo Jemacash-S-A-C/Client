@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { IconShield, IconCheck } from './icons'
 import styles from './AuditorTecnicoView.module.css'
+import { getApplication } from '../../services/application.service'
+import { updateEvaluation } from '../../services/evaluation.service'
 
 const ALL_LOG_LINES = [
   { time: '14:22:01', text: 'Iniciando protocolo de seguridad SSL (TLS 1.3)...', type: 'normal' as const },
@@ -15,16 +17,30 @@ const ALL_LOG_LINES = [
 export function AuditorTecnicoView({
   onBack,
   onComplete,
-  applicationId: _applicationId,
+  applicationId,
 }: {
   onBack: () => void
   onComplete: () => void
-  /** Passed through for downstream views — not used in this animation step */
   applicationId?: string | null
 }) {
   const [progress, setProgress] = useState(0)
   const [visibleLines, setVisibleLines] = useState(0)
   const terminalRef = useRef<HTMLDivElement>(null)
+  const [approving, setApproving] = useState(false)
+
+  async function handleViewResults() {
+    if (!applicationId) { onComplete(); return }
+    setApproving(true)
+    try {
+      const app = await getApplication(applicationId)
+      await updateEvaluation(applicationId, { status: 'approved', approved_amount: app.amount })
+    } catch {
+      // evaluation may already be approved — proceed regardless
+    } finally {
+      setApproving(false)
+    }
+    onComplete()
+  }
 
   useEffect(() => {
     const target = 65
@@ -120,8 +136,8 @@ export function AuditorTecnicoView({
                 <span className={styles.aud_cursor}>█</span>
               )}
               {visibleLines >= ALL_LOG_LINES.length && (
-                <button type="button" className={styles.aud_results_btn} onClick={onComplete}>
-                  Ver Resultados del Diagnóstico →
+                <button type="button" className={styles.aud_results_btn} onClick={handleViewResults} disabled={approving}>
+                  {approving ? 'Procesando…' : 'Ver Resultados del Diagnóstico →'}
                 </button>
               )}
             </div>

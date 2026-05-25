@@ -1,0 +1,369 @@
+/* ── Page ─────────────────────────────────────────────────── */
+.gar_page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.25rem 0 2rem;
+  max-width: 900px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.gar_header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.gar_title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #14230a;
+  margin: 0 0 0.25rem;
+}
+
+.gar_sub {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.gar_add_btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  background: #0f7d3f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.gar_add_btn svg { width: 16px; height: 16px; }
+.gar_add_btn:hover { background: #0a5c2e; }
+
+/* ── Stats row ────────────────────────────────────────────── */
+.gar_stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.gar_stat_card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.gar_stat_icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f0f9f2;
+  border-radius: 8px;
+  color: #0f7d3f;
+  flex-shrink: 0;
+}
+.gar_stat_icon svg { width: 18px; height: 18px; }
+
+.gar_stat_card strong {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #14230a;
+  line-height: 1;
+}
+.gar_stat_card span {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* ── Section ──────────────────────────────────────────────── */
+.gar_section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gar_section_head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.gar_section_label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.gar_section_label h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #14230a;
+  margin: 0;
+}
+
+.gar_section_icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: #f0f9f2;
+  border-radius: 6px;
+  color: #0f7d3f;
+  font-size: 1rem;
+}
+.gar_section_icon svg { width: 16px; height: 16px; }
+
+.gar_count_badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: #0f7d3f;
+  color: #fff;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.gar_coming_badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.gar_section_add {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.85rem;
+  background: #f0f9f2;
+  color: #0f7d3f;
+  border: 1px solid #d9f0da;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gar_section_add svg { width: 13px; height: 13px; }
+.gar_section_add:hover { background: #d9f0da; }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.gar_empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.gar_empty_icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: #f0f9f2;
+  border-radius: 12px;
+  color: #0f7d3f;
+  margin-bottom: 0.25rem;
+}
+.gar_empty_icon svg { width: 28px; height: 28px; }
+
+.gar_empty strong {
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+.gar_empty p {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 340px;
+  margin: 0;
+}
+
+.gar_empty_cta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding: 0.55rem 1.2rem;
+  background: #0f7d3f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gar_empty_cta svg { width: 15px; height: 15px; }
+.gar_empty_cta:hover { background: #0a5c2e; }
+
+/* ── Guarantee list ───────────────────────────────────────── */
+.gar_list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Guarantee card ───────────────────────────────────────── */
+.gar_card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+.gar_card:last-child { border-bottom: none; }
+.gar_card:hover { background: #fafffe; }
+
+.gar_card_icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #f0f9f2;
+  border-radius: 10px;
+  color: #0f7d3f;
+  flex-shrink: 0;
+}
+.gar_card_icon svg { width: 22px; height: 22px; }
+
+.gar_card_body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.gar_card_top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.gar_card_name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #14230a;
+}
+
+.gar_card_year {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.gar_status_badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.gar_card_meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.gar_card_meta strong { color: #1e293b; }
+
+.gar_card_specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.gar_spec_chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.gar_spec_chip svg { width: 11px; height: 11px; color: #0f7d3f; }
+
+.gar_card_value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  flex-shrink: 0;
+  text-align: right;
+}
+.gar_card_value span { font-size: 0.72rem; color: #64748b; }
+.gar_card_value strong { font-size: 1rem; font-weight: 700; color: #0f7d3f; }
+
+/* ── Coming soon card ─────────────────────────────────────── */
+.gar_coming_card {
+  padding: 1.5rem 1.25rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* ── Info banner ──────────────────────────────────────────── */
+.gar_info_banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background: #f0f9f2;
+  border: 1px solid #d9f0da;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.gar_info_banner > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #d9f0da;
+  border-radius: 8px;
+  color: #0f7d3f;
+  flex-shrink: 0;
+}
+.gar_info_banner svg { width: 16px; height: 16px; }
+.gar_info_banner strong { display: block; color: #0f7d3f; font-size: 0.875rem; margin-bottom: 0.2rem; }
+.gar_info_banner p { margin: 0; color: #3d6b47; }

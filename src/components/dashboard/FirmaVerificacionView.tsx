@@ -1,6 +1,6 @@
-import { type ReactElement, useState, useRef } from 'react'
+import { type ReactElement, useState, useRef, useEffect } from 'react'
 import type { UserSession } from '../../types/api.types'
-import { createSignature } from '../../services/signature.service'
+import { createSignature, getSignature } from '../../services/signature.service'
 import {
   IconDocument,
   IconShield,
@@ -34,9 +34,11 @@ const DOCS: { id: string; label: string; icon: () => ReactElement; colorClass: s
 function SignaturePad({
   onSigned,
   onConfirm,
+  disabled,
 }: {
   onSigned: (v: boolean) => void
   onConfirm: (base64: string) => void
+  disabled?: boolean
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawing = useRef(false)
@@ -60,6 +62,7 @@ function SignaturePad({
   }
 
   function startDraw(e: React.MouseEvent | React.TouchEvent) {
+    if (disabled) return
     e.preventDefault()
     drawing.current = true
     const ctx = canvasRef.current!.getContext('2d')!
@@ -69,6 +72,7 @@ function SignaturePad({
   }
 
   function draw(e: React.MouseEvent | React.TouchEvent) {
+    if (disabled) return
     e.preventDefault()
     if (!drawing.current) return
     const ctx = canvasRef.current!.getContext('2d')!
@@ -98,6 +102,7 @@ function SignaturePad({
         width={560}
         height={160}
         className={styles.sig_canvas}
+        style={disabled ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
         onMouseDown={startDraw}
         onMouseMove={draw}
         onMouseUp={stopDraw}
@@ -110,14 +115,15 @@ function SignaturePad({
         <span className={styles.sig_placeholder}>Área ✏️ Firma</span>
       )}
       <div className={styles.sig_actions}>
-        <button type="button" className={styles.sig_clear_btn} onClick={clear}>
+        <button type="button" className={styles.sig_clear_btn} onClick={clear} disabled={disabled}>
           <IconRefresh /> Limpiar
         </button>
         <button
           type="button"
-          className={`${styles.sig_confirm_btn} ${hasStrokes ? styles.sig_confirm_active : ''}`}
-          disabled={!hasStrokes}
+          className={`${styles.sig_confirm_btn} ${hasStrokes && !disabled ? styles.sig_confirm_active : ''}`}
+          disabled={!hasStrokes || disabled}
           onClick={() => {
+            if (!window.confirm('¿Seguro que quiere registrar esta firma?')) return
             const base64 = canvasRef.current?.toDataURL('image/png') ?? ''
             onConfirm(base64)
           }}
@@ -131,18 +137,36 @@ function SignaturePad({
 
 export function FirmaVerificacionView({
   onBack,
+  onFinalize,
   user,
   applicationId,
+  approvedAmount,
 }: {
   onBack: () => void
+  onFinalize: () => void
   user: UserSession
   applicationId?: string | null
+  approvedAmount?: number | null
 }) {
   const [, setSigned] = useState(false)
   const [uploaded, setUploaded] = useState<Set<string>>(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitDone, setSubmitDone] = useState(false)
+  const [alreadySigned, setAlreadySigned] = useState(false)
+
+  useEffect(() => {
+    if (!applicationId) return
+    getSignature(applicationId)
+      .then(() => { setAlreadySigned(true); setSubmitDone(true) })
+      .catch(() => { /* no signature yet */ })
+  }, [applicationId])
+
+  const isSignedOrDone = alreadySigned || submitDone
+
+  const displayAmount = approvedAmount != null
+    ? Number(approvedAmount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
+    : '—'
 
   function toggleDoc(id: string) {
     setUploaded((prev) => {
@@ -202,7 +226,7 @@ export function FirmaVerificacionView({
                 <strong>Resumen del préstamo</strong>
               </div>
               <div className={styles.frm_summary_vals}>
-                <div><span>Monto</span><strong>S/ 4,850.00</strong></div>
+                <div><span>Monto</span><strong>S/ {displayAmount}</strong></div>
                 <div><span>Plazo</span><strong>12 meses</strong></div>
                 <div><span>TEA</span><strong>18.5%</strong></div>
               </div>
@@ -230,7 +254,12 @@ export function FirmaVerificacionView({
             <div className={styles.frm_section}>
               <h2 className={styles.frm_section_title}>Módulo de Firma Digital</h2>
               <p className={styles.frm_section_sub}>Dibuja tu firma tal como aparece en tu DNI</p>
-              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} />
+              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone} />
+              {isSignedOrDone && (
+                <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
+                  Firma ya registrada
+                </p>
+              )}
               {submitting && (
                 <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
                   Guardando firma…
@@ -239,11 +268,6 @@ export function FirmaVerificacionView({
               {submitError && (
                 <p role="alert" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem' }}>
                   {submitError}
-                </p>
-              )}
-              {submitDone && (
-                <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                  ✓ Firma guardada correctamente
                 </p>
               )}
             </div>
@@ -301,7 +325,7 @@ export function FirmaVerificacionView({
         <button
           type="button"
           className={styles.frm_finalize_btn}
-          onClick={onBack}
+          onClick={submitDone ? onFinalize : onBack}
           disabled={submitting}
         >
           {submitDone ? 'Solicitud Completada ✓' : 'Finalizar y Solicitar Desembolso →'}

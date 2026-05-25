@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   IconChart,
   IconShield,
   IconDocument,
-  IconCar,
+  IconCheck,
   IconPlus,
 } from './icons'
 import styles from './SolicitarPrestamoView.module.css'
 import { createApplication, submitApplication } from '../../services/application.service'
+import { getGuarantees } from '../../services/guarantee.service'
+import type { Guarantee } from '../../types/api.types'
 
 type Plazo = 12 | 24 | 36 | 48
-type GarantiaId = 'tecnologia' | 'vehiculos' | null
 
 const TASA_MENSUAL = 0.0125
 const MIN_AMOUNT = 1000
@@ -27,48 +28,55 @@ function formatSoles(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const GARANTIAS = [
-  {
-    id: 'tecnologia' as const,
-    label: 'Tecnología',
-    desc: 'Laptops, Smartphones de alta gama y equipos IT.',
-    icon: IconDocument,
-    color: 'blue',
-  },
-  {
-    id: 'vehiculos' as const,
-    label: 'Vehículos',
-    desc: 'Autos, motos y camionetas de fabricación reciente.',
-    icon: IconCar,
-    color: 'green',
-  },
-]
+function IconLaptop() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M0 19h24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 19l1-2h4l1 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 export function SolicitarPrestamoView({
   onBack,
   onContinue,
+  onAddGuarantee,
 }: {
   onBack: () => void
   onContinue: (applicationId: string) => void
+  onAddGuarantee: () => void
 }) {
   const [amount, setAmount] = useState(15000)
   const [plazo, setPlazo] = useState<Plazo>(12)
-  const [garantia, setGarantia] = useState<GarantiaId>(null)
+  const [selectedGuaranteeId, setSelectedGuaranteeId] = useState<string | null>(null)
+  const [guarantees, setGuarantees] = useState<Guarantee[]>([])
+  const [loadingGuarantees, setLoadingGuarantees] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    getGuarantees()
+      .then((gs) => setGuarantees(gs.filter((g) => g.status === 'active')))
+      .catch(() => {})
+      .finally(() => setLoadingGuarantees(false))
+  }, [])
+
   const cuota = calcCuota(amount, plazo)
   const pct = ((amount - MIN_AMOUNT) / (MAX_AMOUNT - MIN_AMOUNT)) * 100
+
+  const selectedGuarantee = guarantees.find((g) => g.id === selectedGuaranteeId) ?? null
 
   const handleSubmit = async () => {
     setError(null)
     setLoading(true)
     try {
-      // 1. Create draft application
-      const app = await createApplication({ amount, term_months: plazo })
-      // 2. Submit → backend auto-creates evaluation (pending)
+      const app = await createApplication({
+        amount,
+        term_months: plazo,
+        ...(selectedGuaranteeId ? { guarantee_id: selectedGuaranteeId } : {}),
+      })
       await submitApplication(app.id)
-      // 3. Advance to audit view with real application id
       onContinue(app.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la solicitud.')
@@ -159,35 +167,81 @@ export function SolicitarPrestamoView({
             <span className={styles.sol_card_hint}>Selecciona el respaldo para tu solicitud</span>
           </div>
 
-          <div className={styles.sol_garantias_grid}>
-            {GARANTIAS.map((g) => {
-              const GIcon = g.icon
-              const selected = garantia === g.id
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  className={`${styles.sol_garantia_card} ${selected ? styles.sol_garantia_selected : ''}`}
-                  onClick={() => setGarantia(selected ? null : g.id)}
-                  disabled={loading}
-                >
-                  <span className={`${styles.sol_garantia_icon} ${styles[`sol_garantia_icon_${g.color}`]}`}>
-                    <GIcon />
-                  </span>
-                  <strong>{g.label}</strong>
-                  <p>{g.desc}</p>
-                  <span className={styles.sol_garantia_cta}>
-                    {selected ? '✓ Seleccionado' : 'Seleccionar →'}
-                  </span>
-                </button>
-              )
-            })}
-
-            <div className={styles.sol_garantia_new}>
-              <span className={styles.sol_garantia_new_icon}><IconPlus /></span>
-              <strong>Agregar Nueva Garantía</strong>
+          {loadingGuarantees ? (
+            <p style={{ padding: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
+              Cargando garantías…
+            </p>
+          ) : guarantees.length === 0 ? (
+            <div style={{ padding: '1rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
+                No tienes garantías registradas. Registra un dispositivo de tecnología para usarlo como respaldo.
+              </p>
+              <button
+                type="button"
+                className={styles.sol_garantia_new}
+                onClick={onAddGuarantee}
+                disabled={loading}
+                style={{ cursor: 'pointer', width: '100%' }}
+              >
+                <span className={styles.sol_garantia_new_icon}><IconPlus /></span>
+                <strong>Registrar Garantía de Tecnología</strong>
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className={styles.sol_garantias_grid}>
+              {guarantees.map((g) => {
+                const isSelected = selectedGuaranteeId === g.id
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className={`${styles.sol_garantia_card} ${isSelected ? styles.sol_garantia_selected : ''}`}
+                    onClick={() => setSelectedGuaranteeId(isSelected ? null : g.id)}
+                    disabled={loading}
+                  >
+                    <span className={`${styles.sol_garantia_icon} ${styles.sol_garantia_icon_blue}`}>
+                      <IconLaptop />
+                    </span>
+                    <strong>{g.name}</strong>
+                    <p>
+                      {g.condition ? `${g.condition.charAt(0).toUpperCase() + g.condition.slice(1)} · ` : ''}
+                      Valor: S/ {Number(g.estimated_value).toLocaleString('es-PE')}
+                    </p>
+                    <span className={styles.sol_garantia_cta}>
+                      {isSelected ? <><IconCheck /> Seleccionado</> : 'Seleccionar →'}
+                    </span>
+                  </button>
+                )
+              })}
+
+              <button
+                type="button"
+                className={styles.sol_garantia_new}
+                onClick={onAddGuarantee}
+                disabled={loading}
+              >
+                <span className={styles.sol_garantia_new_icon}><IconPlus /></span>
+                <strong>Agregar Nueva Garantía</strong>
+              </button>
+            </div>
+          )}
+
+          {selectedGuarantee && (
+            <div style={{
+              margin: '0 0 0.5rem',
+              padding: '0.6rem 1rem',
+              background: '#f0f9f2',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              color: '#0f7d3f',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}>
+              <IconCheck />
+              Garantía seleccionada: <strong>{selectedGuarantee.name}</strong>
+            </div>
+          )}
         </div>
 
         {/* Advisory banner */}

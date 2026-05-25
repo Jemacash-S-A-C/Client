@@ -430,9 +430,103 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* ─── Stats row ──────────────────────────────────────────────────────────── */
+
+.stats_row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.stat_card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 1.25rem;
+  padding: 0.95rem 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  box-shadow: 0 10px 22px rgba(46, 63, 49, 0.07);
+}
+
+.stat_icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.stat_icon svg { width: 1.1rem; height: 1.1rem; }
+
+.stat_icon_green  { background: var(--green-soft); color: var(--green); }
+.stat_icon_blue   { background: var(--blue-soft);  color: var(--blue);  }
+.stat_icon_violet { background: #ede9fe; color: #7c3aed; }
+.stat_icon_amber  { background: #fef3c7; color: #d97706; }
+
+.stat_body {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+.stat_body span   { color: #7a857e; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat_body strong { color: #1a221c; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── Activity extras ────────────────────────────────────────────────────── */
+
+.activity_empty {
+  color: #8a958d;
+  font-size: 0.88rem;
+  padding: 1rem 0;
+}
+
+.activity_icon_amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* ─── Payment card extras ────────────────────────────────────────────────── */
+
+.payment_loan_label {
+  color: #8a958d;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.04em;
+}
+
+.payment_none {
+  color: #8a958d !important;
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem) !important;
+}
+
+/* ─── Loading skeleton ───────────────────────────────────────────────────── */
+
+.res_skel_text,
+.res_skel_badge,
+.res_skel_stat,
+.res_skel_section {
+  border-radius: 0.85rem;
+  background: linear-gradient(90deg, #eef2ee 25%, #e0e8e0 50%, #eef2ee 75%);
+  background-size: 200% 100%;
+  animation: res_shimmer 1.4s infinite;
+}
+
+.res_skel_text    { height: 3.5rem; width: 60%; }
+.res_skel_badge   { height: 2.2rem; width: 9rem; border-radius: 999px; }
+.res_skel_stat    { height: 5rem; }
+.res_skel_section { height: 12rem; }
+
+@keyframes res_shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 940px) {
+  .stats_row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .activity_grid {
     grid-template-columns: 1fr;
   }
