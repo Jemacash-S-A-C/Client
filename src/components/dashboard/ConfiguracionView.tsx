@@ -1,5 +1,8 @@
-import { useState } from 'react'
-import type { UserSession } from '../../types/api.types'
+import { useEffect, useState } from 'react'
+import type { UserProfile, UserSession } from '../../types/api.types'
+import { profileToSession } from '../../types/api.types'
+import { getMe } from '../../services/auth.service'
+import { updateProfile, changePassword } from '../../services/user.service'
 import {
   IconPerson,
   IconCalendar,
@@ -21,10 +24,12 @@ import {
   IconChevronDown,
   IconBadgeCheck,
   IconLock2,
+  IconCheck,
+  IconWarning,
 } from './icons'
 import styles from './ConfiguracionView.module.css'
 
-// ─── Shared Toggle component ──────────────────────────────────────────────────
+// ─── Toggle ───────────────────────────────────────────────────────────────────
 
 function Toggle({ on }: { on: boolean }) {
   return (
@@ -34,11 +39,80 @@ function Toggle({ on }: { on: boolean }) {
   )
 }
 
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+type ToastKind = 'success' | 'error'
+
+function Toast({ kind, msg }: { kind: ToastKind; msg: string }) {
+  return (
+    <div className={`${styles.toast} ${kind === 'success' ? styles.toast_ok : styles.toast_err}`}>
+      {kind === 'success' ? <IconCheck /> : <IconWarning />}
+      {msg}
+    </div>
+  )
+}
+
 // ─── PerfilView ───────────────────────────────────────────────────────────────
 
-function PerfilView({ user }: { user: UserSession }) {
+function PerfilView({
+  user,
+  onUpdate,
+}: {
+  user: UserSession
+  onUpdate: (updated: UserSession) => void
+}) {
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [fullName, setFullName] = useState(user.displayName)
+  const [phone, setPhone]       = useState(user.phone ?? '')
+  const [saving, setSaving]     = useState(false)
+  const [toast, setToast]       = useState<{ kind: ToastKind; msg: string } | null>(null)
+
+  useEffect(() => {
+    getMe().then((p) => {
+      setProfile(p)
+      setFullName(p.full_name)
+      setPhone(p.phone ?? '')
+    }).catch(() => {})
+  }, [])
+
+  function fmtMemberSince(dateStr?: string) {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
+  }
+
+  function showToast(kind: ToastKind, msg: string) {
+    setToast({ kind, msg })
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  async function handleSave() {
+    const trimmedName = fullName.trim()
+    if (!trimmedName) { showToast('error', 'El nombre no puede estar vacío.'); return }
+    setSaving(true)
+    try {
+      const updated = await updateProfile({
+        full_name: trimmedName,
+        phone: phone.trim() || undefined,
+      })
+      setProfile(updated)
+      onUpdate(profileToSession(updated))
+      showToast('success', 'Cambios guardados correctamente.')
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Error al guardar.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleCancel() {
+    setFullName(profile?.full_name ?? user.displayName)
+    setPhone(profile?.phone ?? user.phone ?? '')
+  }
+
   return (
     <div className={styles.perfil_grid}>
+      {toast && <Toast kind={toast.kind} msg={toast.msg} />}
+
       <div className={styles.perfil_header_card}>
         <div className={styles.perfil_avatar_wrap}>
           <div className={styles.perfil_avatar}>
@@ -49,10 +123,10 @@ function PerfilView({ user }: { user: UserSession }) {
           </button>
         </div>
         <div className={styles.perfil_header_info}>
-          <h2>{user.displayName}</h2>
+          <h2>{fullName || user.displayName}</h2>
           <span className={styles.perfil_since}>
             <IconCalendar />
-            Miembro desde Enero 2023
+            Miembro desde {fmtMemberSince(profile?.created_at)}
           </span>
         </div>
         <span className={styles.perfil_verified_badge}>
@@ -70,15 +144,22 @@ function PerfilView({ user }: { user: UserSession }) {
           <div className={styles.perfil_fields}>
             <label className={styles.perfil_field}>
               <span>NOMBRE COMPLETO</span>
-              <input type="text" defaultValue={user.displayName} />
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Tu nombre completo"
+              />
             </label>
             <label className={styles.perfil_field}>
-              <span>FECHA DE NACIMIENTO</span>
-              <input type="text" defaultValue="12 de Mayo, 1990" />
-            </label>
-            <label className={styles.perfil_field}>
-              <span>DNI / DOCUMENTO DE IDENTIDAD</span>
-              <input type="text" defaultValue="72.441.902-K" />
+              <span>CORREO ELECTRÓNICO</span>
+              <input
+                type="email"
+                value={user.email}
+                readOnly
+                className={styles.field_readonly}
+                title="El correo no se puede cambiar desde aquí"
+              />
             </label>
           </div>
         </div>
@@ -90,17 +171,18 @@ function PerfilView({ user }: { user: UserSession }) {
           </div>
           <div className={styles.perfil_fields}>
             <label className={styles.perfil_field}>
-              <span>CORREO ELECTRÓNICO</span>
-              <input type="email" defaultValue={user.identifier} />
-            </label>
-            <label className={styles.perfil_field}>
               <span>NÚMERO DE TELÉFONO</span>
-              <input type="tel" defaultValue={user.phone ?? ''} />
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+51 999 999 999"
+              />
             </label>
-            <label className={styles.perfil_field}>
-              <span>DIRECCIÓN RESIDENCIAL</span>
-              <input type="text" defaultValue="Calle Mayor 123, 4B, Madrid" />
-            </label>
+            <div className={styles.perfil_field}>
+              <span>ID DE CUENTA</span>
+              <p className={styles.field_mono}>{profile?.id?.slice(0, 16).toUpperCase() ?? '—'}…</p>
+            </div>
           </div>
         </div>
       </div>
@@ -111,8 +193,17 @@ function PerfilView({ user }: { user: UserSession }) {
           <span>Tus datos están protegidos con encriptación de grado bancario.</span>
         </div>
         <div className={styles.perfil_action_btns}>
-          <button type="button" className={styles.cancel_btn}>Cancelar</button>
-          <button type="button" className={styles.pay_btn}>Guardar Cambios</button>
+          <button type="button" className={styles.cancel_btn} onClick={handleCancel} disabled={saving}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className={styles.pay_btn}
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Guardando…' : 'Guardar Cambios'}
+          </button>
         </div>
       </div>
     </div>
@@ -122,15 +213,13 @@ function PerfilView({ user }: { user: UserSession }) {
 // ─── MetodosPagoView ──────────────────────────────────────────────────────────
 
 const bankAccounts = [
-  { bank: 'BCP', name: 'Cuenta Ahorros Soles', account: '•••• 1930 4582 9102', status: 'Verificada' },
-  { bank: 'BBVA', name: 'Cuenta Corriente Dólares', account: '•••• 0011 2045 6678', status: 'Verificada' },
+  { bank: 'BCP',  name: 'Cuenta Ahorros Soles',      account: '•••• 1930 4582 9102', status: 'Verificada' },
+  { bank: 'BBVA', name: 'Cuenta Corriente Dólares',   account: '•••• 0011 2045 6678', status: 'Verificada' },
 ] as const
 
 function MetodosPagoView() {
   return (
     <div className={styles.mp_grid}>
-
-      {/* Cuentas Vinculadas */}
       <section className={styles.mp_section}>
         <div className={styles.mp_section_head}>
           <div className={styles.mp_section_title}>
@@ -141,7 +230,6 @@ function MetodosPagoView() {
         </div>
 
         <div className={styles.mp_cards_grid}>
-          {/* Tarjeta de Débito */}
           <div className={styles.debit_card}>
             <div className={styles.dc_top}>
               <span className={styles.dc_label}>Tarjeta de Débito</span>
@@ -161,7 +249,6 @@ function MetodosPagoView() {
             </div>
           </div>
 
-          {/* Billetera Digital */}
           <div className={styles.wallet_card}>
             <div className={styles.wc_top}>
               <span className={styles.wc_icon}><IconWalletDigital /></span>
@@ -175,7 +262,6 @@ function MetodosPagoView() {
             </span>
           </div>
 
-          {/* Añadir Nuevo */}
           <button type="button" className={styles.add_method_card}>
             <span className={styles.add_method_icon}><IconPlus /></span>
             <strong>Añadir Nuevo Método</strong>
@@ -184,7 +270,6 @@ function MetodosPagoView() {
         </div>
       </section>
 
-      {/* Cuentas Bancarias */}
       <section className={styles.mp_section}>
         <div className={styles.mp_section_head}>
           <div className={styles.mp_section_title}>
@@ -214,16 +299,14 @@ function MetodosPagoView() {
         </div>
       </section>
 
-      {/* Info transferencias */}
       <div className={styles.transfer_info_banner}>
         <span className={styles.tib_icon}><IconInfo /></span>
         <div>
           <strong>Información sobre transferencias</strong>
-          <p>Las transferencias a cuentas bancarias pueden tardar hasta 24 horas hábiles dependiendo de tu entidad financiera. Jemacash no cobra comisiones por retiros a cuentas vinculadas.</p>
+          <p>Las transferencias a cuentas bancarias pueden tardar hasta 24 horas hábiles. Jemacash no cobra comisiones por retiros a cuentas vinculadas.</p>
         </div>
       </div>
 
-      {/* Promo cards */}
       <div className={styles.mp_promo_grid}>
         <div className={styles.promo_dark}>
           <span className={styles.promo_tag}>NOVEDAD</span>
@@ -231,7 +314,6 @@ function MetodosPagoView() {
           <p>Hemos actualizado nuestros protocolos de encriptación para proteger tus métodos de pago.</p>
           <button type="button" className={styles.promo_btn}>Saber más</button>
         </div>
-
         <div className={styles.promo_light}>
           <span className={styles.promo_pro_label}>CONSEJO PRO</span>
           <blockquote className={styles.promo_quote}>
@@ -246,7 +328,6 @@ function MetodosPagoView() {
           </div>
         </div>
       </div>
-
     </div>
   )
 }
@@ -255,12 +336,40 @@ function MetodosPagoView() {
 
 function SeguridadView() {
   const [twoFaOn, setTwoFaOn] = useState(true)
-  const [bioOn, setBioOn] = useState(true)
+  const [bioOn,   setBioOn]   = useState(true)
+
+  // Password form
+  const [current,  setCurrent]  = useState('')
+  const [newPwd,   setNewPwd]   = useState('')
+  const [confirm,  setConfirm]  = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [toast,    setToast]    = useState<{ kind: ToastKind; msg: string } | null>(null)
+
+  function showToast(kind: ToastKind, msg: string) {
+    setToast({ kind, msg })
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  async function handleChangePassword() {
+    if (!current) { showToast('error', 'Ingresa tu contraseña actual.'); return }
+    if (newPwd.length < 8) { showToast('error', 'La nueva contraseña debe tener al menos 8 caracteres.'); return }
+    if (newPwd !== confirm) { showToast('error', 'Las contraseñas no coinciden.'); return }
+    setSaving(true)
+    try {
+      await changePassword(current, newPwd)
+      showToast('success', 'Contraseña actualizada correctamente.')
+      setCurrent(''); setNewPwd(''); setConfirm('')
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Error al cambiar contraseña.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className={styles.sec_grid}>
+      {toast && <Toast kind={toast.kind} msg={toast.msg} />}
 
-      {/* Hero panel */}
       <div className={styles.sec_hero}>
         <div className={styles.sec_hero_copy}>
           <h1 className={styles.view_title}>Panel de Seguridad</h1>
@@ -289,10 +398,7 @@ function SeguridadView() {
         </div>
       </div>
 
-      {/* Two column */}
       <div className={styles.sec_cols}>
-
-        {/* Cambiar Contraseña */}
         <div className={styles.sec_card}>
           <div className={styles.sec_card_head}>
             <span className={styles.sec_card_icon}><IconRefresh /></span>
@@ -301,24 +407,46 @@ function SeguridadView() {
           <div className={styles.sec_fields}>
             <label className={styles.perfil_field}>
               <span>Contraseña Actual</span>
-              <input type="password" defaultValue="password1" />
+              <input
+                type="password"
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
             </label>
             <label className={styles.perfil_field}>
               <span>Nueva Contraseña</span>
-              <input type="password" defaultValue="password1" />
+              <input
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
+              />
             </label>
             <label className={styles.perfil_field}>
               <span>Confirmar Nueva Contraseña</span>
-              <input type="password" defaultValue="password1" />
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="Repite la nueva contraseña"
+                autoComplete="new-password"
+              />
             </label>
           </div>
-          <button type="button" className={styles.sec_update_btn}>Actualizar Contraseña</button>
+          <button
+            type="button"
+            className={styles.sec_update_btn}
+            onClick={handleChangePassword}
+            disabled={saving}
+          >
+            {saving ? 'Actualizando…' : 'Actualizar Contraseña'}
+          </button>
         </div>
 
-        {/* Right column */}
         <div className={styles.sec_right_col}>
-
-          {/* 2FA */}
           <div className={styles.sec_card}>
             <div className={styles.sec_card_head}>
               <span className={styles.sec_card_icon}><IconShield /></span>
@@ -352,7 +480,6 @@ function SeguridadView() {
             </div>
           </div>
 
-          {/* Biometría */}
           <div className={styles.sec_card}>
             <div className={styles.sec_card_head}>
               <span className={styles.sec_card_icon}><IconFingerprint /></span>
@@ -370,7 +497,6 @@ function SeguridadView() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -380,16 +506,14 @@ function SeguridadView() {
 // ─── PreferenciasView ─────────────────────────────────────────────────────────
 
 const notificationChannels = [
-  { id: 'email', label: 'Correo Electrónico', desc: 'Resúmenes mensuales y alertas de seguridad', defaultOn: true },
-  { id: 'sms', label: 'SMS', desc: 'Alertas transaccionales críticas', defaultOn: false },
-  { id: 'push', label: 'Push Notifications', desc: 'Notificaciones en tiempo real en tu móvil', defaultOn: true },
+  { id: 'email', label: 'Correo Electrónico', desc: 'Resúmenes mensuales y alertas de seguridad', defaultOn: true  },
+  { id: 'sms',   label: 'SMS',                desc: 'Alertas transaccionales críticas',           defaultOn: false },
+  { id: 'push',  label: 'Push Notifications', desc: 'Notificaciones en tiempo real en tu móvil',  defaultOn: true  },
 ] as const
 
 function PreferenciasView() {
   const [notifState, setNotifState] = useState<Record<string, boolean>>({
-    email: true,
-    sms: false,
-    push: true,
+    email: true, sms: false, push: true,
   })
 
   return (
@@ -403,7 +527,6 @@ function PreferenciasView() {
       </div>
 
       <div className={styles.pref_cols}>
-        {/* Canales de Notificación */}
         <div className={styles.sec_card}>
           <div className={styles.sec_card_head}>
             <span className={styles.sec_card_icon}><IconBell2 /></span>
@@ -429,7 +552,6 @@ function PreferenciasView() {
           </div>
         </div>
 
-        {/* Ajustes Regionales */}
         <div className={styles.sec_card}>
           <div className={styles.sec_card_head}>
             <span className={styles.sec_card_icon}><IconGlobe /></span>
@@ -472,7 +594,6 @@ function PreferenciasView() {
         </div>
       </div>
 
-      {/* Security commitment banner */}
       <div className={styles.pref_commitment}>
         <div className={styles.pref_commitment_copy}>
           <strong>Tu seguridad es nuestro compromiso</strong>
@@ -493,13 +614,18 @@ function PreferenciasView() {
 type ConfigTab = 'perfil' | 'metodos' | 'seguridad' | 'preferencias'
 
 const configTabs: { id: ConfigTab; label: string }[] = [
-  { id: 'perfil', label: 'Perfil' },
-  { id: 'metodos', label: 'Métodos de Pago' },
-  { id: 'seguridad', label: 'Seguridad' },
-  { id: 'preferencias', label: 'Preferencias' },
+  { id: 'perfil',       label: 'Perfil'          },
+  { id: 'metodos',      label: 'Métodos de Pago' },
+  { id: 'seguridad',    label: 'Seguridad'        },
+  { id: 'preferencias', label: 'Preferencias'     },
 ]
 
-export function ConfiguracionView({ user }: { user: UserSession }) {
+interface Props {
+  user: UserSession
+  onUpdate: (updated: UserSession) => void
+}
+
+export function ConfiguracionView({ user, onUpdate }: Props) {
   const [activeTab, setActiveTab] = useState<ConfigTab>('perfil')
 
   return (
@@ -517,9 +643,9 @@ export function ConfiguracionView({ user }: { user: UserSession }) {
         ))}
       </nav>
 
-      {activeTab === 'perfil' && <PerfilView user={user} />}
-      {activeTab === 'metodos' && <MetodosPagoView />}
-      {activeTab === 'seguridad' && <SeguridadView />}
+      {activeTab === 'perfil'       && <PerfilView user={user} onUpdate={onUpdate} />}
+      {activeTab === 'metodos'      && <MetodosPagoView />}
+      {activeTab === 'seguridad'    && <SeguridadView />}
       {activeTab === 'preferencias' && <PreferenciasView />}
     </div>
   )

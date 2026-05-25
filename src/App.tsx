@@ -98,6 +98,11 @@ function App() {
     [],
   )
 
+  // ── Profile update ────────────────────────────────────────────────────────
+  const handleUserUpdate = useCallback((updated: UserSession) => {
+    setSession(updated)
+  }, [])
+
   // ── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = useCallback(async () => {
     await logoutUser()
@@ -115,7 +120,7 @@ function App() {
   }
 
   if (session) {
-    return <UserDashboard user={session} onLogout={handleLogout} />
+    return <UserDashboard user={session} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
   }
 
   return (

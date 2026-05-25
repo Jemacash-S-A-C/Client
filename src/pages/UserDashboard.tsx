@@ -50,6 +50,7 @@ type ActiveView =
 type UserDashboardProps = {
   user: UserSession
   onLogout: () => void
+  onUserUpdate: (updated: UserSession) => void
 }
 
 const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] = [
@@ -62,7 +63,7 @@ const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] 
   { view: 'calendario',    label: 'Calendario',       icon: IconCalendar },
 ]
 
-export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
+export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDashboardProps) {
   const [activeView, setActiveView] = useState<ActiveView>('resumen')
   const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null)
   const [activeApprovedAmount, setActiveApprovedAmount] = useState<number | null>(null)
@@ -244,7 +245,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
             />
           )}
           {activeView === 'documentos' && <SubirDocumentosView />}
-          {activeView === 'configuracion' && <ConfiguracionView user={user} />}
+          {activeView === 'configuracion' && <ConfiguracionView user={user} onUpdate={onUserUpdate} />}
           {activeView === 'calendario' && <CalendarioView />}
           {activeView === 'garantias' && (
             <MisGarantiasView

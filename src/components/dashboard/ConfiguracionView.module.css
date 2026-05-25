@@ -1280,3 +1280,45 @@
     align-items: flex-start;
   }
 }
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0.9rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  animation: cfg_slide_in 0.2s ease;
+}
+
+.toast svg { width: 1rem; height: 1rem; flex-shrink: 0; }
+
+.toast_ok  { background: #d9f0da; color: #0f7d3f; }
+.toast_err { background: #fde8e8; color: #a83030; }
+
+@keyframes cfg_slide_in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Read-only / mono field variants ───────────────────────────────────── */
+
+.field_readonly {
+  background: #f4f7f4 !important;
+  color: #8a958d !important;
+  cursor: not-allowed;
+}
+
+.field_mono {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: #f4f7f4;
+  border-radius: 0.65rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: #5c675e;
+  letter-spacing: 0.04em;
+}
