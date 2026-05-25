@@ -80,6 +80,24 @@ export type Payment = {
   created_at: string
 }
 
+export type DocumentType =
+  | 'dni' | 'passport' | 'pay_stub' | 'utility_bill' | 'soat' | 'vehicle_card' | 'other'
+
+export type DocumentStatus = 'pending' | 'reviewing' | 'verified' | 'rejected'
+
+export type LoanDocument = {
+  id: string
+  user_id: string
+  application_id: string | null
+  document_type: DocumentType
+  original_name: string
+  file_size: number
+  mime_type: string
+  status: DocumentStatus
+  notes: string | null
+  created_at: string
+}
+
 export type Signature = {
   id: string
   application_id: string

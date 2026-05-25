@@ -10,6 +10,7 @@ import {
   IconDocument,
   IconCalendar,
   IconShield,
+  IconDownload,
 } from '../components/dashboard/icons'
 import { ResumenView } from '../components/dashboard/ResumenView'
 import { MisPrestamosView } from '../components/dashboard/MisPrestamosView'
@@ -25,6 +26,7 @@ import { RegistrarGarantiaTecView } from '../components/dashboard/RegistrarGaran
 import { RegistrarGarantiaVehView } from '../components/dashboard/RegistrarGarantiaVehView'
 import { PagarCuotaView } from '../components/dashboard/PagarCuotaView'
 import { DetalleSolicitudView } from '../components/dashboard/DetalleSolicitudView'
+import { SubirDocumentosView } from '../components/dashboard/SubirDocumentosView'
 import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 
@@ -33,6 +35,7 @@ type ActiveView =
   | 'prestamos'
   | 'solicitudes'
   | 'garantias'
+  | 'documentos'
   | 'configuracion'
   | 'calendario'
   | 'solicitar'
@@ -54,6 +57,7 @@ const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] 
   { view: 'prestamos',     label: 'Mis Préstamos',    icon: IconWallet   },
   { view: 'garantias',     label: 'Mis Garantías',    icon: IconShield   },
   { view: 'solicitudes',   label: 'Mis Solicitudes',  icon: IconDocument },
+  { view: 'documentos',    label: 'Mis Documentos',   icon: IconDownload },
   { view: 'configuracion', label: 'Configuración',    icon: IconSettings },
   { view: 'calendario',    label: 'Calendario',       icon: IconCalendar },
 ]
@@ -239,6 +243,7 @@ export default function UserDashboard({ user, onLogout }: UserDashboardProps) {
               }}
             />
           )}
+          {activeView === 'documentos' && <SubirDocumentosView />}
           {activeView === 'configuracion' && <ConfiguracionView user={user} />}
           {activeView === 'calendario' && <CalendarioView />}
           {activeView === 'garantias' && (
