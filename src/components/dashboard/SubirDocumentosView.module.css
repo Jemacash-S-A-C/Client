@@ -28,6 +28,23 @@
   font-size: 0.95rem;
 }
 
+.back_btn {
+  flex-shrink: 0;
+  border: 1.5px solid rgba(68, 84, 72, 0.2);
+  background: #fff;
+  color: #1a221c;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.back_btn:hover {
+  background: var(--surface-soft);
+}
+
 /* ── Progress card ── */
 
 .progress_card {

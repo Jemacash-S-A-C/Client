@@ -70,6 +70,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>('garantias')
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
+  const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
 
@@ -133,6 +134,10 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         approvedAmount={activeApprovedAmount}
         onBack={() => setActiveView('tasacion')}
         onFinalize={() => setActiveView('solicitudes')}
+        onGoToDocuments={() => {
+          setReturnFromDocsTo('firma')
+          setActiveView('documentos')
+        }}
         user={user}
       />
     )
@@ -226,10 +231,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           )}
           {activeView === 'prestamos' && (
             <MisPrestamosView
-              onAddGuarantee={() => {
-                setPostGuaranteeView('garantias')
-                setActiveView('registrar-garantia-tec')
-              }}
               onPay={(info) => {
                 setActiveLoanPayment(info)
                 setActiveView('pagar-cuota')
@@ -244,7 +245,14 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
               }}
             />
           )}
-          {activeView === 'documentos' && <SubirDocumentosView />}
+          {activeView === 'documentos' && (
+            <SubirDocumentosView
+              onBack={returnFromDocsTo === 'firma' ? () => {
+                setReturnFromDocsTo(null)
+                setActiveView('firma')
+              } : undefined}
+            />
+          )}
           {activeView === 'configuracion' && <ConfiguracionView user={user} onUpdate={onUserUpdate} />}
           {activeView === 'calendario' && <CalendarioView />}
           {activeView === 'garantias' && (

@@ -1,14 +1,13 @@
-import { type ReactElement, useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
+import { getDocuments } from '../../services/document.service'
 import {
   IconDocument,
   IconShield,
   IconCheck,
-  IconDownload,
   IconRefresh,
-  IconPerson,
-  IconWallet,
+  IconWarning,
 } from './icons'
 import styles from './FirmaVerificacionView.module.css'
 
@@ -24,11 +23,10 @@ TERCERA: GARANTÍA. El CLIENTE autoriza el uso del activo registrado como garant
 
 CUARTA: RESOLUCIÓN ANTICIPADA. El CLIENTE podrá cancelar anticipadamente el préstamo sin penalidad, previa comunicación formal a LA EMPRESA con no menos de 5 días hábiles de anticipación.`
 
-const DOCS: { id: string; label: string; icon: () => ReactElement; colorClass: string }[] = [
-  { id: 'dni_front',  label: 'DNI Frontal',      icon: IconPerson,   colorClass: 'blue'  },
-  { id: 'dni_back',   label: 'DNI Posterior',    icon: IconWallet,   colorClass: 'blue'  },
-  { id: 'selfie',     label: 'Selfie con DNI',   icon: IconPerson,   colorClass: 'dark'  },
-  { id: 'contrato',   label: 'Contrato Firmado', icon: IconDocument, colorClass: 'green' },
+const REQUIRED_DOCS: { type: string; label: string }[] = [
+  { type: 'dni',          label: 'DNI / Documento de Identidad' },
+  { type: 'pay_stub',     label: 'Boleta de Pago'               },
+  { type: 'utility_bill', label: 'Recibo de Domicilio'          },
 ]
 
 function SignaturePad({
@@ -138,22 +136,25 @@ function SignaturePad({
 export function FirmaVerificacionView({
   onBack,
   onFinalize,
+  onGoToDocuments,
   user,
   applicationId,
   approvedAmount,
 }: {
   onBack: () => void
   onFinalize: () => void
+  onGoToDocuments: () => void
   user: UserSession
   applicationId?: string | null
   approvedAmount?: number | null
 }) {
   const [, setSigned] = useState(false)
-  const [uploaded, setUploaded] = useState<Set<string>>(new Set())
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitDone, setSubmitDone] = useState(false)
   const [alreadySigned, setAlreadySigned] = useState(false)
+  const [docsStatus, setDocsStatus] = useState<'loading' | 'ok' | 'missing'>('loading')
+  const [missingDocs, setMissingDocs] = useState<string[]>([])
 
   useEffect(() => {
     if (!applicationId) return
@@ -162,19 +163,26 @@ export function FirmaVerificacionView({
       .catch(() => { /* no signature yet */ })
   }, [applicationId])
 
+  useEffect(() => {
+    getDocuments()
+      .then(docs => {
+        const uploaded = new Set(docs.map(d => d.document_type))
+        const missing = REQUIRED_DOCS.filter(r => !uploaded.has(r.type)).map(r => r.label)
+        setMissingDocs(missing)
+        setDocsStatus(missing.length === 0 ? 'ok' : 'missing')
+      })
+      .catch(() => {
+        setMissingDocs(REQUIRED_DOCS.map(r => r.label))
+        setDocsStatus('missing')
+      })
+  }, [])
+
   const isSignedOrDone = alreadySigned || submitDone
+  const docsBlocking = docsStatus !== 'ok'
 
   const displayAmount = approvedAmount != null
     ? Number(approvedAmount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
-
-  function toggleDoc(id: string) {
-    setUploaded((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
 
   async function handleConfirmSignature(base64: string) {
     setSigned(true)
@@ -184,7 +192,7 @@ export function FirmaVerificacionView({
     try {
       await createSignature(applicationId, {
         signature_base64: base64,
-        document_urls: Array.from(uploaded).map((id) => `mock://${id}`),
+        document_urls: [],
       })
       setSubmitDone(true)
     } catch (err) {
@@ -254,7 +262,12 @@ export function FirmaVerificacionView({
             <div className={styles.frm_section}>
               <h2 className={styles.frm_section_title}>Módulo de Firma Digital</h2>
               <p className={styles.frm_section_sub}>Dibuja tu firma tal como aparece en tu DNI</p>
-              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone} />
+              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} />
+              {docsBlocking && docsStatus !== 'loading' && (
+                <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
+                  Sube los documentos requeridos para habilitar la firma.
+                </p>
+              )}
               {isSignedOrDone && (
                 <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
                   Firma ya registrada
@@ -274,37 +287,48 @@ export function FirmaVerificacionView({
 
             {/* Documentos */}
             <div className={styles.frm_section}>
-              <h2 className={styles.frm_section_title}>Centro de Carga de Documentos</h2>
-              <div className={styles.frm_docs_grid}>
-                {DOCS.map((doc) => {
-                  const DocIcon = doc.icon
-                  const done = uploaded.has(doc.id)
-                  return (
-                    <button
-                      key={doc.id}
-                      type="button"
-                      className={`${styles.frm_doc_card} ${done ? styles.frm_doc_done : ''}`}
-                      onClick={() => toggleDoc(doc.id)}
-                    >
-                      <span className={[
-                        styles.frm_doc_icon,
-                        done ? styles.frm_doc_icon_done : styles[`frm_doc_icon_${doc.colorClass}` as keyof typeof styles],
-                      ].join(' ')}>
-                        <DocIcon />
-                      </span>
-                      <div className={styles.frm_doc_info}>
-                        <strong>{doc.label}</strong>
-                        <span className={done ? styles.frm_doc_cargado : styles.frm_doc_pendiente}>
-                          {done ? 'CARGADO' : 'PENDIENTE'}
-                        </span>
-                      </div>
-                      <span className={styles.frm_doc_upload}>
-                        {done ? <IconCheck /> : <IconDownload />}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+              <h2 className={styles.frm_section_title}>Verificación de Documentos</h2>
+
+              {docsStatus === 'loading' && (
+                <div className={styles.frm_docs_loading}>
+                  <span className={styles.frm_docs_spinner} />
+                  <span>Verificando documentos…</span>
+                </div>
+              )}
+
+              {docsStatus === 'ok' && (
+                <div className={styles.frm_docs_ok}>
+                  <span className={styles.frm_docs_ok_icon}><IconCheck /></span>
+                  <div>
+                    <strong>Documentos en orden</strong>
+                    <span>Todos los documentos requeridos están subidos.</span>
+                  </div>
+                </div>
+              )}
+
+              {docsStatus === 'missing' && (
+                <div className={styles.frm_docs_missing}>
+                  <div className={styles.frm_docs_missing_head}>
+                    <span className={styles.frm_docs_missing_icon}><IconWarning /></span>
+                    <div>
+                      <strong>Faltan documentos requeridos</strong>
+                      <span>Sube los siguientes documentos antes de firmar:</span>
+                    </div>
+                  </div>
+                  <ul className={styles.frm_docs_missing_list}>
+                    {missingDocs.map(label => (
+                      <li key={label}>{label}</li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className={styles.frm_docs_upload_btn}
+                    onClick={onGoToDocuments}
+                  >
+                    Subir en Mis Documentos →
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -326,7 +350,7 @@ export function FirmaVerificacionView({
           type="button"
           className={styles.frm_finalize_btn}
           onClick={submitDone ? onFinalize : onBack}
-          disabled={submitting}
+          disabled={submitting || (!submitDone && docsBlocking)}
         >
           {submitDone ? 'Solicitud Completada ✓' : 'Finalizar y Solicitar Desembolso →'}
         </button>

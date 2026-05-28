@@ -14,7 +14,8 @@ import type { Guarantee } from '../../types/api.types'
 type Plazo = 12 | 24 | 36 | 48
 
 const TASA_MENSUAL = 0.0125
-const MIN_AMOUNT = 1000
+const MIN_AMOUNT = 100
+const PLAZO_MIN_AMOUNT: Record<number, number> = { 12: 0, 24: 4000, 36: 4000, 48: 4000 }
 const MAX_AMOUNT = 50000
 const SEGURO = 15
 
@@ -62,10 +63,30 @@ export function SolicitarPrestamoView({
       .finally(() => setLoadingGuarantees(false))
   }, [])
 
-  const cuota = calcCuota(amount, plazo)
-  const pct = ((amount - MIN_AMOUNT) / (MAX_AMOUNT - MIN_AMOUNT)) * 100
-
   const selectedGuarantee = guarantees.find((g) => g.id === selectedGuaranteeId) ?? null
+
+  const dynamicMax = selectedGuarantee
+    ? Math.floor(Number(selectedGuarantee.estimated_value) * 0.8)
+    : MAX_AMOUNT
+  const dynamicMin = MIN_AMOUNT
+
+  useEffect(() => {
+    if (selectedGuarantee) {
+      const max = Math.floor(Number(selectedGuarantee.estimated_value) * 0.8)
+      if (amount > max) setAmount(max)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGuaranteeId])
+
+  useEffect(() => {
+    if (plazo !== 12 && amount < 4000) setPlazo(12)
+  }, [amount, plazo])
+
+  const cuota = amount > 0 ? calcCuota(amount, plazo) : 0
+  const pct = dynamicMax > dynamicMin
+    ? ((amount - dynamicMin) / (dynamicMax - dynamicMin)) * 100
+    : 0
+  const dynamicStep = dynamicMax <= 1000 ? 10 : dynamicMax <= 5000 ? 50 : dynamicMax <= 20000 ? 100 : 500
 
   const handleSubmit = async () => {
     setError(null)
@@ -121,12 +142,19 @@ export function SolicitarPrestamoView({
             <strong className={styles.sol_amount_value}>S/ {amount.toLocaleString('es-PE')}</strong>
           </div>
 
+          {selectedGuarantee && (
+            <p style={{ fontSize: '0.78rem', color: '#4a7c59', marginBottom: '0.5rem' }}>
+              Máximo disponible: <strong>S/ {dynamicMax.toLocaleString('es-PE')}</strong>
+              {' '}(80% del valor de la garantía)
+            </p>
+          )}
+
           <div className={styles.sol_slider_wrap}>
             <input
               type="range"
-              min={MIN_AMOUNT}
-              max={MAX_AMOUNT}
-              step={500}
+              min={dynamicMin}
+              max={dynamicMax}
+              step={dynamicStep}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               className={styles.sol_slider}
@@ -134,25 +162,31 @@ export function SolicitarPrestamoView({
               disabled={loading}
             />
             <div className={styles.sol_slider_labels}>
-              <span>S/ {MIN_AMOUNT.toLocaleString('es-PE')}</span>
-              <span>S/ {MAX_AMOUNT.toLocaleString('es-PE')}</span>
+              <span>S/ {dynamicMin.toLocaleString('es-PE')}</span>
+              <span>S/ {dynamicMax.toLocaleString('es-PE')}</span>
             </div>
           </div>
+
 
           <div className={styles.sol_plazo_section}>
             <span className={styles.sol_plazo_label}>PLAZO DE PAGO (MESES)</span>
             <div className={styles.sol_plazo_pills}>
-              {([12, 24, 36, 48] as Plazo[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`${styles.sol_plazo_pill} ${plazo === m ? styles.sol_plazo_pill_active : ''}`}
-                  onClick={() => setPlazo(m)}
-                  disabled={loading}
-                >
-                  {m} Meses
-                </button>
-              ))}
+              {([12, 24, 36, 48] as Plazo[]).map((m) => {
+                const minRequired = PLAZO_MIN_AMOUNT[m] ?? 0
+                const plazoDisabled = loading || amount < minRequired
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    className={`${styles.sol_plazo_pill} ${plazo === m ? styles.sol_plazo_pill_active : ''} ${plazoDisabled && m !== 12 ? styles.sol_plazo_pill_disabled : ''}`}
+                    onClick={() => !plazoDisabled && setPlazo(m)}
+                    disabled={plazoDisabled}
+                    title={plazoDisabled && m !== 12 ? `Disponible desde S/ 4,000` : undefined}
+                  >
+                    {m} Meses
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -199,6 +233,13 @@ export function SolicitarPrestamoView({
                     onClick={() => setSelectedGuaranteeId(isSelected ? null : g.id)}
                     disabled={loading}
                   >
+                    {isSelected && (
+                      <span className={styles.sol_garantia_check_badge} aria-label="Seleccionado">
+                        <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
+                          <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    )}
                     <span className={`${styles.sol_garantia_icon} ${styles.sol_garantia_icon_blue}`}>
                       <IconLaptop />
                     </span>
@@ -208,7 +249,7 @@ export function SolicitarPrestamoView({
                       Valor: S/ {Number(g.estimated_value).toLocaleString('es-PE')}
                     </p>
                     <span className={styles.sol_garantia_cta}>
-                      {isSelected ? <><IconCheck /> Seleccionado</> : 'Seleccionar →'}
+                      {isSelected ? 'Seleccionado' : 'Seleccionar →'}
                     </span>
                   </button>
                 )
@@ -226,22 +267,6 @@ export function SolicitarPrestamoView({
             </div>
           )}
 
-          {selectedGuarantee && (
-            <div style={{
-              margin: '0 0 0.5rem',
-              padding: '0.6rem 1rem',
-              background: '#f0f9f2',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              color: '#0f7d3f',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}>
-              <IconCheck />
-              Garantía seleccionada: <strong>{selectedGuarantee.name}</strong>
-            </div>
-          )}
         </div>
 
         {/* Advisory banner */}

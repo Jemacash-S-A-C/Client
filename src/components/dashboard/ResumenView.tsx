@@ -3,7 +3,6 @@ import officeImg    from '../../assets/representative_images/main_page.png'
 import marketImg    from '../../assets/hero.png'
 import valuationImg from '../../assets/valuacion_img/valuacion_card.png'
 import {
-  IconChart,
   IconLoan,
   IconWallet,
   IconDocument,
@@ -303,29 +302,6 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
           </div>
         </div>
       </div>
-
-      {/* ── Quick actions ── */}
-      <section className={styles.quick_section} aria-labelledby="quick-actions-title">
-        <div className={styles.section_head}>
-          <h2 id="quick-actions-title">Acceso Rápido</h2>
-        </div>
-        <div className={styles.quick_grid}>
-          <button type="button" className={`${styles.quick_card} ${styles.quick_card_green}`} onClick={onGarantias}>
-            <span className={styles.quick_icon}><IconChart /></span>
-            <span className={styles.quick_copy}>
-              <strong>Mis Garantías</strong>
-              <small>Administra y registra tus activos</small>
-            </span>
-          </button>
-          <button type="button" className={`${styles.quick_card} ${styles.quick_card_blue}`} onClick={onSolicitar}>
-            <span className={styles.quick_icon}><IconLoan /></span>
-            <span className={styles.quick_copy}>
-              <strong>Solicitar Préstamo</strong>
-              <small>Créditos de libre disponibilidad</small>
-            </span>
-          </button>
-        </div>
-      </section>
 
       {/* ── Activity + Next payment ── */}
       <section className={styles.activity_grid}>

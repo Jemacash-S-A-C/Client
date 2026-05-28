@@ -80,10 +80,102 @@
   color: var(--green);
 }
 
-.loan_card input {
+.loan_slider {
+  -webkit-appearance: none;
+  appearance: none;
   margin-top: 0.5rem;
   width: 100%;
-  accent-color: var(--green);
+  height: 5px;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    var(--green) 0%,
+    var(--green) var(--pct, 0%),
+    #c8d3c6 var(--pct, 0%),
+    #c8d3c6 100%
+  );
+}
+
+.loan_slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2.5px solid var(--green);
+  box-shadow: 0 2px 6px rgba(15, 125, 63, 0.28);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+
+.loan_slider::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+}
+
+.loan_slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2.5px solid var(--green);
+  box-shadow: 0 2px 6px rgba(15, 125, 63, 0.28);
+  cursor: pointer;
+}
+
+.loan_slider_labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  color: #7a8a7c;
+  font-size: 0.68rem;
+}
+
+.loan_plazo_row {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.loan_plazo_row small {
+  color: #58635b;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.loan_pills {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.loan_pill {
+  border: 1.5px solid #c5d0c2;
+  border-radius: 999px;
+  padding: 0.26rem 0.7rem;
+  background: transparent;
+  color: #3d4d41;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+}
+
+.loan_pill:hover:not(:disabled) {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.loan_pill_active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.loan_pill_disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .loan_meta {
@@ -114,7 +206,7 @@
   font-size: 1.02rem;
 }
 
-.loan_card button {
+.loan_cta {
   margin-top: 0.8rem;
   width: 100%;
   border: 0;
@@ -124,6 +216,7 @@
   padding: 0.95rem 1rem;
   font-size: 0.94rem;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .hero_visual {

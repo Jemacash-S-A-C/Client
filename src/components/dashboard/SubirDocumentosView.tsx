@@ -258,7 +258,7 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function SubirDocumentosView() {
+export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
   const [docs, setDocs] = useState<LoanDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -314,6 +314,11 @@ export function SubirDocumentosView() {
             Sube los documentos requeridos para agilizar la evaluación de tu solicitud.
           </p>
         </div>
+        {onBack && (
+          <button type="button" className={styles.back_btn} onClick={onBack}>
+            ← Volver a Firma
+          </button>
+        )}
       </div>
 
       {/* ── Progress bar ── */}

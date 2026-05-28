@@ -535,6 +535,21 @@
   text-align: left;
 }
 
+.action_link:disabled {
+  color: #9aab9e;
+  cursor: default;
+}
+
+.action_link_pay {
+  color: #0f7d3f;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.action_link_pay:hover {
+  color: #0a5f2f;
+}
+
 .load_more {
   padding: 0.7rem 1.2rem;
   text-align: center;

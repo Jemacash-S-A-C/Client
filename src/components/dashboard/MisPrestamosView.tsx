@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   IconCalendar,
-  IconDocument,
-  IconPlus,
   IconFilter,
   IconDownload,
   IconCheck,
@@ -11,8 +9,7 @@ import {
 import styles from './MisPrestamosView.module.css'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
-import { getGuarantees } from '../../services/guarantee.service'
-import type { LoanApplication, Evaluation, Guarantee } from '../../types/api.types'
+import type { LoanApplication, Evaluation } from '../../types/api.types'
 import type { LoanPaymentInfo } from './PagarCuotaView'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -41,43 +38,6 @@ function shortId(id: string): string {
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
-
-function IconLaptop() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="2" y="4" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M0 19h24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M9 19l1-2h4l1 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function IconCar() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M4 11l1.5-4.5A2 2 0 017.4 5h9.2a2 2 0 011.9 1.5L20 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <rect x="2" y="11" width="20" height="7" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="7" cy="18" r="2" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="17" cy="18" r="2" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M9 18h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  tecnologia: 'Tecnología',
-  vehiculo:   'Vehículo',
-  inmueble:   'Inmueble',
-  joya:       'Joyería',
-}
-
-function typeLabel(raw: string): string {
-  return TYPE_LABELS[raw.toLowerCase()] ?? raw.charAt(0).toUpperCase() + raw.slice(1)
-}
-
-function isVehicle(type: string) {
-  return type.toLowerCase() === 'vehiculo'
-}
 
 function IconCreditCard() {
   return (
@@ -120,6 +80,7 @@ interface Movement {
   date: string
   amount: number
   status: 'pagado' | 'pendiente'
+  paymentInfo: LoanPaymentInfo | null
 }
 
 function buildLoanData(app: LoanApplication, evaluation: Evaluation | null): LoanData {
@@ -157,6 +118,7 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null): Loa
       date: fmtShortDate(d),
       amount: cuota,
       status: 'pagado',
+      paymentInfo: null,
     })
   }
   // If there's a pending cuota (next payment is in future but we're past a period)
@@ -167,6 +129,15 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null): Loa
       date: fmtShortDate(nextPaymentDate),
       amount: cuota,
       status: 'pendiente',
+      paymentInfo: {
+        applicationId: app.id,
+        loanLabel: shortId(app.id),
+        cuota,
+        cuotaNumber: monthsElapsed + 1,
+        totalCuotas: app.term_months,
+        nextPaymentDate,
+        loanAmount,
+      },
     })
   }
   movements.reverse() // Most recent first
@@ -185,14 +156,12 @@ const STATUS_INFO: Record<string, { label: string; color: string; bg: string; ic
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
-  onAddGuarantee?: () => void
   onPay?: (info: LoanPaymentInfo) => void
 }
 
-export function MisPrestamosView({ onAddGuarantee, onPay }: Props) {
+export function MisPrestamosView({ onPay }: Props) {
   const [apps, setApps] = useState<LoanApplication[]>([])
   const [loans, setLoans] = useState<LoanData[]>([])
-  const [guarantees, setGuarantees] = useState<Guarantee[]>([])
   const [loading, setLoading] = useState(true)
   const [showAllMovements, setShowAllMovements] = useState(false)
 
@@ -222,9 +191,6 @@ export function MisPrestamosView({ onAddGuarantee, onPay }: Props) {
 
         setLoans(loanData)
 
-        // Fetch guarantees independently — source of truth for "Tus Garantías Activas"
-        const gs = await getGuarantees().catch(() => [])
-        if (!cancelled) setGuarantees(gs.filter((g) => g.status !== 'released'))
       } catch {
         // Network error — show empty state
       } finally {
@@ -238,10 +204,6 @@ export function MisPrestamosView({ onAddGuarantee, onPay }: Props) {
 
   const activeLoans = loans
   const inProcess   = apps.filter((a) => a.status === 'submitted' || a.status === 'approved')
-  // Source of truth: all non-released guarantees from /guarantees endpoint,
-  // regardless of whether they are tied to a loan right now.
-  const activeGuarantees = guarantees
-
   // Aggregate all movements from all loans, most recent first
   const allMovements = loans
     .flatMap((l) => l.movements)
@@ -382,56 +344,6 @@ export function MisPrestamosView({ onAddGuarantee, onPay }: Props) {
         </section>
       )}
 
-      {/* ── Active guarantees (always visible) ── */}
-      <section className={styles.guarantees_section}>
-        <h2 className={styles.section_title}>Tus Garantías Activas</h2>
-        <div className={styles.guarantees_grid}>
-          {activeGuarantees.map((g) => {
-            const vehicle = isVehicle(g.type)
-            const photoSrc = g.photo_urls?.[0] ?? null
-            const subtitle = g.serial_number
-              ? `S/N: ${g.serial_number.slice(0, 10)}…`
-              : vehicle
-                ? (g.description ?? g.condition ?? 'Vehículo')
-                : (g.condition ?? 'Tecnología')
-            return (
-              <article key={g.id} className={styles.guarantee_card}>
-                <div className={styles.guarantee_img_wrap}>
-                  {photoSrc ? (
-                    <img src={photoSrc} alt={g.name} />
-                  ) : (
-                    <div className={styles.guarantee_img_placeholder}>
-                      {vehicle ? <IconCar /> : <IconLaptop />}
-                    </div>
-                  )}
-                  <span className={styles.guarantee_tag}>{typeLabel(g.type)}</span>
-                </div>
-                <div className={styles.guarantee_body}>
-                  <strong>{g.name}</strong>
-                  <span>{subtitle}</span>
-                  <div className={styles.guarantee_value}>
-                    <span>Valor Estimado</span>
-                    <strong>S/ {fmt(Number(g.estimated_value))}</strong>
-                  </div>
-                  <button type="button" className={styles.doc_btn}>
-                    <IconDocument />
-                    Ver Documentos Legales
-                  </button>
-                </div>
-              </article>
-            )
-          })}
-
-          <article className={styles.guarantee_card_new}>
-            <button type="button" className={styles.new_guarantee_btn} onClick={onAddGuarantee}>
-              <span className={styles.new_guarantee_icon}><IconPlus /></span>
-              <strong>Vincular Nueva Garantía</strong>
-              <span>Aumenta tu capacidad de crédito vinculando nuevos activos.</span>
-            </button>
-          </article>
-        </div>
-      </section>
-
       {/* ── Movement history ── */}
       {allMovements.length > 0 && (
         <section className={styles.movements_section}>
@@ -472,7 +384,12 @@ export function MisPrestamosView({ onAddGuarantee, onPay }: Props) {
                 <span className={`${styles.status_badge} ${m.status === 'pagado' ? styles.status_paid : styles.status_pending}`}>
                   {m.status === 'pagado' ? 'PAGADO' : 'PENDIENTE'}
                 </span>
-                <button type="button" className={styles.action_link}>
+                <button
+                  type="button"
+                  className={`${styles.action_link} ${m.status === 'pendiente' ? styles.action_link_pay : ''}`}
+                  onClick={() => m.paymentInfo && onPay?.(m.paymentInfo)}
+                  disabled={m.status === 'pagado'}
+                >
                   {m.status === 'pagado' ? 'Detalles' : 'Pagar'}
                 </button>
               </div>

@@ -1,7 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import heroImg from "../assets/hero.png";
 import promoImg from "../assets/valuacion_img/valuacion_card.png";
 import styles from "./Home.module.css";
+
+// ── Loan simulator constants (idénticos a SolicitarPrestamoView) ─────────────
+const TASA_MENSUAL = 0.0125
+const SIM_MIN = 100
+const SIM_MAX = 50000
+const PLAZO_MIN_AMOUNT: Record<number, number> = { 12: 0, 24: 4000, 36: 4000, 48: 4000 }
+type SimPlazo = 12 | 24 | 36 | 48
+
+function calcCuota(monto: number, meses: SimPlazo): number {
+  const r = TASA_MENSUAL
+  return (monto * r) / (1 - Math.pow(1 + r, -meses))
+}
+
+function fmtSoles(n: number) {
+  return n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 function IconScan() {
   return (
@@ -33,9 +49,16 @@ function IconPaid() {
 }
 
 function Home() {
-  const [amountNeeded, setAmountNeeded] = useState("15000");
-  const [weeklyPayment] = useState("850");
-  const [term] = useState("24 Meses");
+  const [amount, setAmount] = useState(15000)
+  const [plazo, setPlazo]   = useState<SimPlazo>(12)
+
+  useEffect(() => {
+    if (plazo !== 12 && amount < 4000) setPlazo(12)
+  }, [amount, plazo])
+
+  const cuota    = calcCuota(amount, plazo)
+  const pct      = ((amount - SIM_MIN) / (SIM_MAX - SIM_MIN)) * 100
+  const dynStep  = SIM_MAX <= 1000 ? 10 : SIM_MAX <= 5000 ? 50 : SIM_MAX <= 20000 ? 100 : 500
 
   return (
     <div className={styles.home_page}>
@@ -54,28 +77,57 @@ function Home() {
             <h2>Calcula tu préstamo</h2>
             <div className={styles.loan_row}>
               <span>¿Cuánto necesitas?</span>
-              <strong>S/ {amountNeeded}</strong>
+              <strong>S/ {amount.toLocaleString("es-PE")}</strong>
             </div>
             <input
               type="range"
-              min={1000}
-              max={50000}
-              step={500}
-              value={amountNeeded}
-              onChange={(e) => setAmountNeeded(e.target.value)}
+              min={SIM_MIN}
+              max={SIM_MAX}
+              step={dynStep}
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
               aria-label="Monto de préstamo"
+              style={{ "--pct": `${pct}%` } as React.CSSProperties}
+              className={styles.loan_slider}
             />
+            <div className={styles.loan_slider_labels}>
+              <span>S/ {SIM_MIN.toLocaleString("es-PE")}</span>
+              <span>S/ {SIM_MAX.toLocaleString("es-PE")}</span>
+            </div>
+
+            <div className={styles.loan_plazo_row}>
+              <small>PLAZO DE PAGO</small>
+              <div className={styles.loan_pills}>
+                {([12, 24, 36, 48] as SimPlazo[]).map((m) => {
+                  const minReq   = PLAZO_MIN_AMOUNT[m] ?? 0
+                  const disabled = amount < minReq
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      className={`${styles.loan_pill} ${plazo === m ? styles.loan_pill_active : ""} ${disabled && m !== 12 ? styles.loan_pill_disabled : ""}`}
+                      onClick={() => !disabled && setPlazo(m)}
+                      disabled={disabled}
+                      title={disabled && m !== 12 ? "Disponible desde S/ 4,000" : undefined}
+                    >
+                      {m}m
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             <div className={styles.loan_meta}>
               <div>
-                <small>PAGO SEMANAL</small>
-                <strong>S/ {weeklyPayment}</strong>
+                <small>CUOTA MENSUAL</small>
+                <strong>S/ {fmtSoles(cuota)}</strong>
               </div>
               <div>
                 <small>PLAZO</small>
-                <strong>{term}</strong>
+                <strong>{plazo} meses</strong>
               </div>
             </div>
-            <button type="button">Iniciar solicitud ahora</button>
+            <button type="button" className={styles.loan_cta}>Iniciar solicitud ahora</button>
           </article>
         </div>
 
