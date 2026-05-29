@@ -86,7 +86,7 @@ async function request<T>(
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
 
-  if (res.status === 401 && !isRetry) {
+  if (res.status === 401 && !isRetry && token) {
     const refreshed = await tryRefresh()
     if (refreshed) return request<T>(path, options, true)
     clearTokens()

@@ -10,6 +10,7 @@ type AppHeaderProps = {
   onGoNosotros: () => void
   onGoValuar: () => void
   onPidePrestamo: () => void
+  onLogin: () => void
 }
 
 export function AppHeader({
@@ -19,6 +20,7 @@ export function AppHeader({
   onGoNosotros,
   onGoValuar,
   onPidePrestamo,
+  onLogin,
 }: AppHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,6 +79,9 @@ export function AppHeader({
           <button className={styles.pill_btn} type="button" onClick={onPidePrestamo}>
             Pide tu préstamo
           </button>
+          <button type="button" className={styles.login_link} onClick={onLogin}>
+            Iniciar sesión
+          </button>
           <button
             type="button"
             className={styles.menu_toggle}
@@ -121,6 +126,9 @@ export function AppHeader({
         </button>
         <button className={styles.mobile_cta} type="button" onClick={onPidePrestamo}>
           Pide tu préstamo
+        </button>
+        <button type="button" className={styles.mobile_login_link} onClick={onLogin}>
+          Iniciar sesión
         </button>
       </nav>
     </header>

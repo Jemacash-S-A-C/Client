@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Pagination } from './Pagination'
 import { getApplications } from '../../services/application.service'
 import type { LoanApplication } from '../../types/api.types'
 import {
   IconCheck,
   IconDocument,
   IconWarning,
-  IconPlus,
   IconArrowRight,
 } from './icons'
 import styles from './MisSolicitudesView.module.css'
@@ -47,6 +47,8 @@ interface Props {
 export function MisSolicitudesView({ onDetalle }: Props) {
   const [applications, setApplications] = useState<LoanApplication[]>([])
   const [loading, setLoading] = useState(true)
+  const [activePage, setActivePage] = useState(0)
+  const [histPage,   setHistPage]   = useState(0)
 
   useEffect(() => {
     getApplications()
@@ -57,6 +59,16 @@ export function MisSolicitudesView({ onDetalle }: Props) {
 
   const active   = applications.filter(a => a.status === 'submitted' || a.status === 'approved')
   const others   = applications.filter(a => a.status !== 'submitted' && a.status !== 'approved')
+
+  const ACTIVE_PER_PAGE  = 4
+  const activeTotal      = Math.ceil(active.length / ACTIVE_PER_PAGE)
+  const visibleActive    = active.slice(activePage * ACTIVE_PER_PAGE, (activePage + 1) * ACTIVE_PER_PAGE)
+
+  // Historial: todos (others primero, luego activos al fondo)
+  const histAll          = [...others, ...active]
+  const HIST_PER_PAGE    = 6
+  const histTotal        = Math.ceil(histAll.length / HIST_PER_PAGE)
+  const visibleHist      = histAll.slice(histPage * HIST_PER_PAGE, (histPage + 1) * HIST_PER_PAGE)
 
   return (
     <div className={styles.view_grid}>
@@ -97,7 +109,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
         <section className={styles.sol_section}>
           <h2 className={styles.section_title}>Trámites Activos</h2>
           <div className={styles.sol_list}>
-            {active.map(app => {
+            {visibleActive.map(app => {
               const cfg = STATUS_CFG[app.status]
               return (
                 <div key={app.id} className={styles.sol_row} onClick={() => onDetalle(app)}>
@@ -123,6 +135,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
               )
             })}
           </div>
+          <Pagination page={activePage} total={activeTotal} onChange={setActivePage} />
         </section>
       )}
 
@@ -139,88 +152,55 @@ export function MisSolicitudesView({ onDetalle }: Props) {
             <p>Cuando presentes tu primera solicitud, aparecerá aquí.</p>
           </div>
         ) : (
-          <div className={styles.historial_grid}>
-            {others.map(app => {
-              const tone = STATUS_TONES[app.status]
-              const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
-                month: 'short', year: 'numeric',
-              }).toUpperCase()
-              return (
-                <article
-                  key={app.id}
-                  className={styles.historial_card}
-                  onClick={() => onDetalle(app)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
-                >
-                  <div className={styles.historial_card_top}>
-                    <span className={styles.historial_month}>{dateLabel}</span>
-                    <span className={`${styles.historial_status} ${
-                      tone === 'green' ? styles.hs_green :
-                      tone === 'red'   ? styles.hs_red   :
-                      tone === 'blue'  ? styles.hs_blue  :
-                                        styles.hs_purple
-                    }`}>
-                      {STATUS_LABELS[app.status]}
+          <>
+            <div className={styles.historial_grid}>
+              {visibleHist.map(app => {
+                const tone = STATUS_TONES[app.status]
+                const cfg  = STATUS_CFG[app.status]
+                const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
+                  month: 'short', year: 'numeric',
+                }).toUpperCase()
+                return (
+                  <article
+                    key={app.id}
+                    className={styles.historial_card}
+                    onClick={() => onDetalle(app)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
+                  >
+                    <div className={styles.historial_card_top}>
+                      <span className={styles.historial_month}>{dateLabel}</span>
+                      <span
+                        className={`${styles.historial_status} ${
+                          tone === 'green' ? styles.hs_green :
+                          tone === 'red'   ? styles.hs_red   :
+                          tone === 'blue'  ? styles.hs_blue  :
+                                            styles.hs_purple
+                        }`}
+                        style={app.status === 'submitted' || app.status === 'approved'
+                          ? { color: cfg.color, background: cfg.bg }
+                          : undefined}
+                      >
+                        {STATUS_LABELS[app.status]}
+                      </span>
+                    </div>
+                    <strong className={styles.historial_name}>Préstamo Personal</strong>
+                    <span className={styles.historial_amount}>
+                      S/ {fmtAmount(Number(app.amount))}
                     </span>
-                  </div>
-                  <strong className={styles.historial_name}>Préstamo Personal</strong>
-                  <span className={styles.historial_amount}>
-                    S/ {fmtAmount(Number(app.amount))}
-                  </span>
-                  <span className={styles.historial_note}>
-                    {app.term_months} meses · {shortId(app.id)}
-                  </span>
-                  <div className={styles.historial_card_footer}>
-                    <span>Ver detalle →</span>
-                  </div>
-                </article>
-              )
-            })}
-
-            {active.map(app => {
-              const cfg = STATUS_CFG[app.status]
-              const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
-                month: 'short', year: 'numeric',
-              }).toUpperCase()
-              return (
-                <article
-                  key={app.id}
-                  className={styles.historial_card}
-                  onClick={() => onDetalle(app)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
-                >
-                  <div className={styles.historial_card_top}>
-                    <span className={styles.historial_month}>{dateLabel}</span>
-                    <span className={styles.historial_status} style={{ color: cfg.color, background: cfg.bg }}>
-                      {STATUS_LABELS[app.status]}
+                    <span className={styles.historial_note}>
+                      {app.term_months} meses · {shortId(app.id)}
                     </span>
-                  </div>
-                  <strong className={styles.historial_name}>Préstamo Personal</strong>
-                  <span className={styles.historial_amount}>
-                    S/ {fmtAmount(Number(app.amount))}
-                  </span>
-                  <span className={styles.historial_note}>
-                    {app.term_months} meses · {shortId(app.id)}
-                  </span>
-                  <div className={styles.historial_card_footer}>
-                    <span>Ver detalle →</span>
-                  </div>
-                </article>
-              )
-            })}
-
-            <article className={styles.historial_card_cta}>
-              <strong>¿NECESITAS MÁS?</strong>
-              <p>Aumenta tu capacidad de crédito ahora.</p>
-              <button type="button" className={styles.historial_plus_btn} aria-label="Solicitar más crédito">
-                <IconPlus />
-              </button>
-            </article>
-          </div>
+                    <div className={styles.historial_card_footer}>
+                      <span>Ver detalle →</span>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+            <Pagination page={histPage} total={histTotal} onChange={setHistPage} />
+          </>
         )}
       </section>
 

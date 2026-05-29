@@ -346,14 +346,26 @@ export function FirmaVerificacionView({
             <div><strong>SSL CERTIFIED</strong><span>256-BIT</span></div>
           </div>
         </div>
-        <button
-          type="button"
-          className={styles.frm_finalize_btn}
-          onClick={submitDone ? onFinalize : onBack}
-          disabled={submitting || (!submitDone && docsBlocking)}
-        >
-          {submitDone ? 'Solicitud Completada ✓' : 'Finalizar y Solicitar Desembolso →'}
-        </button>
+        <div className={styles.frm_actions_row}>
+          {!submitDone && (
+            <button
+              type="button"
+              className={styles.frm_cancel_btn}
+              onClick={onBack}
+              disabled={submitting}
+            >
+              Cancelar
+            </button>
+          )}
+          <button
+            type="button"
+            className={styles.frm_finalize_btn}
+            onClick={submitDone ? onFinalize : onBack}
+            disabled={submitting || (!submitDone && docsBlocking)}
+          >
+            {submitDone ? 'Solicitud Completada ✓' : 'Finalizar y Solicitar Desembolso →'}
+          </button>
+        </div>
       </div>
 
     </div>

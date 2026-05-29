@@ -585,6 +585,12 @@
   box-shadow: 0 10px 24px rgba(15, 125, 63, 0.28);
 }
 
+.sol_submit_btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .sol_terms {
   color: #9aa39d;
   font-size: 0.72rem;

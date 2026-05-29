@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Pagination } from './Pagination'
 import type { Guarantee } from '../../types/api.types'
 import { getGuarantees } from '../../services/guarantee.service'
 import { IconShield, IconCheck, IconPlus } from './icons'
@@ -139,6 +140,8 @@ export function MisGarantiasView({
 }) {
   const [guarantees, setGuarantees] = useState<Guarantee[]>([])
   const [loading, setLoading] = useState(true)
+  const [techPage, setTechPage] = useState(0)
+  const [vehPage,  setVehPage]  = useState(0)
 
   useEffect(() => {
     getGuarantees()
@@ -147,8 +150,14 @@ export function MisGarantiasView({
       .finally(() => setLoading(false))
   }, [])
 
+  const GAR_PER_PAGE   = 5
   const techGuarantees = guarantees.filter(g => g.type === 'tecnologia')
   const vehGuarantees  = guarantees.filter(g => g.type === 'vehiculo')
+
+  const techTotal       = Math.ceil(techGuarantees.length / GAR_PER_PAGE)
+  const visibleTech     = techGuarantees.slice(techPage * GAR_PER_PAGE, (techPage + 1) * GAR_PER_PAGE)
+  const vehTotal        = Math.ceil(vehGuarantees.length / GAR_PER_PAGE)
+  const visibleVeh      = vehGuarantees.slice(vehPage * GAR_PER_PAGE, (vehPage + 1) * GAR_PER_PAGE)
 
   return (
     <div className={styles.gar_page}>
@@ -226,11 +235,14 @@ export function MisGarantiasView({
             </button>
           </div>
         ) : (
-          <div className={styles.gar_list}>
-            {techGuarantees.map((g) => (
-              <GuaranteeCard key={g.id} g={g} />
-            ))}
-          </div>
+          <>
+            <div className={styles.gar_list}>
+              {visibleTech.map((g) => (
+                <GuaranteeCard key={g.id} g={g} />
+              ))}
+            </div>
+            <Pagination page={techPage} total={techTotal} onChange={setTechPage} />
+          </>
         )}
       </section>
 
@@ -262,11 +274,14 @@ export function MisGarantiasView({
             </button>
           </div>
         ) : (
-          <div className={styles.gar_list}>
-            {vehGuarantees.map(g => (
-              <GuaranteeCard key={g.id} g={g} />
-            ))}
-          </div>
+          <>
+            <div className={styles.gar_list}>
+              {visibleVeh.map(g => (
+                <GuaranteeCard key={g.id} g={g} />
+              ))}
+            </div>
+            <Pagination page={vehPage} total={vehTotal} onChange={setVehPage} />
+          </>
         )}
       </section>
 

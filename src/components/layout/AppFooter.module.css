@@ -42,13 +42,21 @@
   gap: 0.55rem;
 }
 
-.links a {
+.links a,
+.links button {
   color: #39483b;
   text-decoration: none;
   font-size: clamp(0.9rem, 0.95vw, 1rem);
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-.links a:hover {
+.links a:hover,
+.links button:hover {
   color: #0f7d35;
   text-decoration: underline;
 }

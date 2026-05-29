@@ -1,41 +1,27 @@
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
 .register_overlay {
   position: fixed;
   inset: 0;
   z-index: 4000;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  margin: 0;
-  padding: 12px;
-  box-sizing: border-box;
+  height: 100dvh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
-  background:
-    radial-gradient(circle at 12% 12%, rgba(74, 146, 83, 0.08), transparent 24%),
-    linear-gradient(180deg, #f6f7f1 0%, #eef1ea 100%);
+  overflow: hidden;
 }
 
+/* ── Split layout ────────────────────────────────────────────────────────── */
 .register_split {
   width: 100%;
-  max-width: 1040px;
-  min-height: min(100dvh - 24px, 680px);
   display: grid;
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-  align-items: stretch;
-  overflow: hidden;
-  border-radius: 2px;
-  box-shadow: 0 28px 70px rgba(32, 44, 29, 0.12);
-  background: #f3f6ed;
+  grid-template-columns: 1fr 1fr;
 }
 
+/* ── Left aside (brand/image) ────────────────────────────────────────────── */
 .register_aside {
   position: relative;
-  min-height: 100%;
   overflow: hidden;
   color: #fff;
-  padding: clamp(1.1rem, 2.4vw, 1.6rem) clamp(1.2rem, 2.6vw, 1.8rem) clamp(1.2rem, 3vw, 1.7rem);
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(2rem, 5vw, 4rem);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -73,12 +59,12 @@
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .register_aside_brand {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: 800;
   font-style: italic;
   letter-spacing: -0.02em;
@@ -86,42 +72,44 @@
 
 .register_aside_title {
   margin: 0;
-  max-width: 13ch;
-  font-size: clamp(1.85rem, 3.3vw, 2.65rem);
+  max-width: 16ch;
+  font-size: clamp(2.2rem, 3.8vw, 3.5rem);
   font-weight: 800;
   line-height: 1.06;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .register_aside_footer {
   margin: 0;
-  max-width: 34ch;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  max-width: 38ch;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.92);
 }
 
+/* ── Right panel (form) ──────────────────────────────────────────────────── */
 .register_panel {
   position: relative;
-  min-height: 100%;
   background: #f6f8f0;
-  padding: clamp(1.2rem, 3vw, 2.1rem) clamp(1.1rem, 3.4vw, 2.6rem);
+  padding: clamp(2rem, 4vw, 3.5rem) clamp(2rem, 5vw, 4rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  overflow-y: auto;
 }
 
 .register_close {
   position: absolute;
-  top: 0.95rem;
-  right: 0.95rem;
-  width: 1.55rem;
-  height: 1.55rem;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 1.7rem;
+  height: 1.7rem;
   border: 0;
   border-radius: 0.35rem;
   background: #17924a;
   color: #fff;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
@@ -144,37 +132,36 @@
 
 .register_form {
   width: 100%;
-  max-width: 380px;
-  margin: 0;
+  max-width: 420px;
 }
 
 .register_form_header {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
 }
 
 .register_form_header h2 {
   margin: 0;
-  font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+  font-size: clamp(1.6rem, 2.5vw, 2.1rem);
   font-weight: 800;
   color: #111813;
   letter-spacing: -0.02em;
 }
 
 .register_form_header p {
-  margin: 0.45rem 0 0;
+  margin: 0.5rem 0 0;
   color: #57615a;
-  font-size: 0.9rem;
-  line-height: 1.45;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .register_field {
-  margin-bottom: 0.9rem;
+  margin-bottom: 1rem;
 }
 
 .register_field label {
   display: block;
-  margin-bottom: 0.45rem;
-  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #3b463f;
 }
@@ -186,7 +173,7 @@
   border: 1px solid transparent;
   border-radius: 999px;
   background: #e4e9de;
-  padding: 0.08rem 0.22rem 0.08rem 0.8rem;
+  padding: 0.1rem 0.25rem 0.1rem 1rem;
   transition:
     box-shadow 0.15s ease,
     background 0.15s ease;
@@ -204,8 +191,8 @@
 }
 
 .register_input_icon svg {
-  width: 0.98rem;
-  height: 0.98rem;
+  width: 1rem;
+  height: 1rem;
 }
 
 .register_input_row input {
@@ -214,9 +201,9 @@
   border: 0;
   outline: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #1a221c;
-  padding: 0.62rem 0.2rem;
+  padding: 0.72rem 0.2rem;
 }
 
 .register_input_row input::placeholder {
@@ -227,9 +214,9 @@
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  margin: 0.3rem 0 1rem;
-  font-size: 0.78rem;
-  line-height: 1.45;
+  margin: 0.3rem 0 1.25rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
   color: #4d5751;
   cursor: pointer;
 }
@@ -256,8 +243,8 @@
   width: 100%;
   border: 0;
   border-radius: 999px;
-  padding: 0.88rem 1rem;
-  font-size: 0.94rem;
+  padding: 0.95rem 1rem;
+  font-size: 0.97rem;
   font-weight: 700;
   color: #fff;
   cursor: pointer;
@@ -274,18 +261,18 @@
 }
 
 .register_error {
-  margin: 0.8rem 0 0;
+  margin: 0.85rem 0 0;
   color: #b63f4f;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
   line-height: 1.45;
   text-align: center;
 }
 
 .register_login_prompt {
-  margin: 1.2rem 0 0;
+  margin: 1.4rem 0 0;
   text-align: center;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   color: #5c6660;
 }
 
@@ -305,71 +292,49 @@
   text-decoration: underline;
 }
 
+/* ── Mobile: single column ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .register_overlay {
-    padding: 0;
-    align-items: stretch;
-    justify-content: stretch;
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
   }
 
   .register_split {
     grid-template-columns: 1fr;
     min-height: 100dvh;
-    border-radius: 0;
-    box-shadow: none;
   }
 
   .register_aside {
-    min-height: 270px;
-    order: -1;
+    min-height: 280px;
+    padding: 2rem 1.5rem;
   }
 
   .register_aside_title {
-    font-size: clamp(1.8rem, 7vw, 2.5rem);
+    font-size: clamp(1.9rem, 7vw, 2.6rem);
   }
 
   .register_aside_footer {
-    max-width: 30ch;
+    max-width: 34ch;
   }
 
   .register_panel {
-    padding: 1.2rem 1rem 1.6rem;
-  }
-}
-
-@media (max-width: 560px) {
-  .register_aside {
-    min-height: 240px;
+    padding: 2rem 1.5rem 2.5rem;
+    align-items: stretch;
   }
 
   .register_form {
     max-width: none;
   }
-
-  .register_terms {
-    font-size: 0.8rem;
-  }
 }
 
-@media (max-height: 760px) {
-  .register_split {
-    min-height: 100dvh;
-  }
-
+@media (max-width: 480px) {
   .register_aside {
-    min-height: 220px;
+    min-height: 240px;
+    padding: 1.5rem 1.25rem;
   }
 
   .register_panel {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
-
-  .register_aside_content {
-    gap: 0.8rem;
-  }
-
-  .register_form {
-    max-width: 360px;
+    padding: 1.75rem 1.25rem 2rem;
   }
 }

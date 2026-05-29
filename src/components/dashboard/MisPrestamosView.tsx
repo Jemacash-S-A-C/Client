@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Pagination } from './Pagination'
 import {
   IconCalendar,
   IconFilter,
@@ -9,7 +10,8 @@ import {
 import styles from './MisPrestamosView.module.css'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
-import type { LoanApplication, Evaluation } from '../../types/api.types'
+import { getPaymentsByApplication } from '../../services/payment.service'
+import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import type { LoanPaymentInfo } from './PagarCuotaView'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -67,6 +69,7 @@ interface LoanData {
   cuota: number
   totalCost: number
   monthsElapsed: number
+  paidCount: number
   paidAmount: number
   remainingAmount: number
   pct: number
@@ -79,11 +82,10 @@ interface Movement {
   id: string
   date: string
   amount: number
-  status: 'pagado' | 'pendiente'
-  paymentInfo: LoanPaymentInfo | null
+  type: 'desembolso' | 'pago'
 }
 
-function buildLoanData(app: LoanApplication, evaluation: Evaluation | null): LoanData {
+function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, payments: Payment[]): LoanData {
   const loanAmount = evaluation?.approved_amount != null
     ? Number(evaluation.approved_amount)
     : Number(app.amount)
@@ -99,50 +101,42 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null): Loa
     app.term_months,
   )
 
-  const paidAmount = Math.min(monthsElapsed * cuota, totalCost)
+  // Use actual payments to compute progress
+  const sortedPayments = [...payments].sort((a, b) => a.cuota_number - b.cuota_number)
+  const paidCount = sortedPayments.length
+  const paidAmount = Math.min(paidCount * cuota, totalCost)
   const remainingAmount = Math.max(totalCost - paidAmount, 0)
   const pct = totalCost > 0 ? Math.round((paidAmount / totalCost) * 100) : 0
 
-  // Next payment = start date + (monthsElapsed + 1) months
+  // Next payment date based on actual paid cuotas
   const nextPaymentDate = new Date(createdAt)
-  nextPaymentDate.setMonth(nextPaymentDate.getMonth() + monthsElapsed + 1)
+  nextPaymentDate.setMonth(nextPaymentDate.getMonth() + paidCount + 1)
 
-  // Generate movement history (past cuotas)
+  // Build movements: paid cuotas + disbursement event
   const movements: Movement[] = []
-  for (let i = 1; i <= monthsElapsed; i++) {
-    const d = new Date(createdAt)
-    d.setMonth(d.getMonth() + i)
-    movements.push({
-      concept: `Cuota ${String(i).padStart(2, '0')} — ${shortId(app.id)}`,
-      id: `#TRX-${app.id.slice(0, 4).toUpperCase()}-${String(i).padStart(2, '0')}`,
-      date: fmtShortDate(d),
-      amount: cuota,
-      status: 'pagado',
-      paymentInfo: null,
-    })
-  }
-  // If there's a pending cuota (next payment is in future but we're past a period)
-  if (monthsElapsed < app.term_months) {
-    movements.push({
-      concept: `Cuota ${String(monthsElapsed + 1).padStart(2, '0')} — ${shortId(app.id)}`,
-      id: `#TRX-${app.id.slice(0, 4).toUpperCase()}-${String(monthsElapsed + 1).padStart(2, '0')}`,
-      date: fmtShortDate(nextPaymentDate),
-      amount: cuota,
-      status: 'pendiente',
-      paymentInfo: {
-        applicationId: app.id,
-        loanLabel: shortId(app.id),
-        cuota,
-        cuotaNumber: monthsElapsed + 1,
-        totalCuotas: app.term_months,
-        nextPaymentDate,
-        loanAmount,
-      },
-    })
-  }
-  movements.reverse() // Most recent first
 
-  return { app, evaluation, loanAmount, cuota, totalCost, monthsElapsed, paidAmount, remainingAmount, pct, nextPaymentDate, movements }
+  // Disbursement event (oldest entry)
+  const signedAt = app.updated_at ? new Date(app.updated_at) : createdAt
+  movements.push({
+    concept: `Desembolso — ${shortId(app.id)}`,
+    id: `#DESEMBOLSO-${app.id.slice(0, 6).toUpperCase()}`,
+    date: fmtShortDate(signedAt),
+    amount: loanAmount,
+    type: 'desembolso',
+  })
+
+  // One entry per actual payment, most recent first
+  for (const p of [...sortedPayments].reverse()) {
+    movements.push({
+      concept: `Cuota ${String(p.cuota_number).padStart(2, '0')} — ${shortId(app.id)}`,
+      id: `#TRX-${p.reference_number}`,
+      date: fmtShortDate(new Date(p.created_at)),
+      amount: Number(p.amount),
+      type: 'pago',
+    })
+  }
+
+  return { app, evaluation, loanAmount, cuota, totalCost, monthsElapsed, paidCount, paidAmount, remainingAmount, pct, nextPaymentDate, movements }
 }
 
 // ── Status display ─────────────────────────────────────────────────────────────
@@ -163,7 +157,8 @@ export function MisPrestamosView({ onPay }: Props) {
   const [apps, setApps] = useState<LoanApplication[]>([])
   const [loans, setLoans] = useState<LoanData[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAllMovements, setShowAllMovements] = useState(false)
+  const [procesPage, setProcesPage] = useState(0)
+  const [movPage,    setMovPage]    = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -174,20 +169,25 @@ export function MisPrestamosView({ onPay }: Props) {
         if (cancelled) return
         setApps(all)
 
-        // Fetch evaluations for signed + approved apps in parallel
-        const needsEval = all.filter((a) => a.status === 'signed' || a.status === 'approved')
-        const evals = await Promise.all(
-          needsEval.map((a) => getEvaluation(a.id).catch(() => null))
-        )
+        const signedApps  = all.filter((a) => a.status === 'signed')
+        const needsEval   = all.filter((a) => a.status === 'signed' || a.status === 'approved')
+
+        // Fetch evaluations and payments in parallel
+        const [evals, paymentLists] = await Promise.all([
+          Promise.all(needsEval.map((a) => getEvaluation(a.id).catch(() => null))),
+          Promise.all(signedApps.map((a) => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
+        ])
         if (cancelled) return
 
         const evalMap = new Map<string, Evaluation | null>(
           needsEval.map((a, i) => [a.id, evals[i]])
         )
+        const paymentsMap = new Map<string, Payment[]>(
+          signedApps.map((a, i) => [a.id, paymentLists[i]])
+        )
 
-        const loanData = all
-          .filter((a) => a.status === 'signed')
-          .map((a) => buildLoanData(a, evalMap.get(a.id) ?? null))
+        const loanData = signedApps
+          .map((a) => buildLoanData(a, evalMap.get(a.id) ?? null, paymentsMap.get(a.id) ?? []))
 
         setLoans(loanData)
 
@@ -204,12 +204,27 @@ export function MisPrestamosView({ onPay }: Props) {
 
   const activeLoans = loans
   const inProcess   = apps.filter((a) => a.status === 'submitted' || a.status === 'approved')
+
+  // Pagination
+  const LOANS_PER_PAGE = 4
+  const [loanPage, setLoanPage] = useState(0)
+  const totalLoanPages = Math.ceil(activeLoans.length / LOANS_PER_PAGE)
+  const pagedLoans = activeLoans.slice(loanPage * LOANS_PER_PAGE, (loanPage + 1) * LOANS_PER_PAGE)
+
+  // Solicitudes en proceso — paginación de 4
+  const PROCES_PER_PAGE  = 4
+  const procesTotal      = Math.ceil(inProcess.length / PROCES_PER_PAGE)
+  const visibleInProcess = inProcess.slice(procesPage * PROCES_PER_PAGE, (procesPage + 1) * PROCES_PER_PAGE)
+
   // Aggregate all movements from all loans, most recent first
+  // Payments first, then disbursements — preserves per-loan ordering
   const allMovements = loans
     .flatMap((l) => l.movements)
-    .sort((a, b) => (a.status === 'pendiente' ? -1 : b.status === 'pendiente' ? 1 : 0))
+    .sort((a, b) => (a.type === 'pago' ? -1 : b.type === 'pago' ? 1 : 0))
 
-  const visibleMovements = showAllMovements ? allMovements : allMovements.slice(0, 5)
+  const MOV_PER_PAGE    = 5
+  const movTotal        = Math.ceil(allMovements.length / MOV_PER_PAGE)
+  const visibleMovements = allMovements.slice(movPage * MOV_PER_PAGE, (movPage + 1) * MOV_PER_PAGE)
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
@@ -263,7 +278,7 @@ export function MisPrestamosView({ onPay }: Props) {
       {/* ── Active loans ── */}
       {activeLoans.length > 0 && (
         <div className={styles.loans_grid}>
-          {activeLoans.map((l) => (
+          {pagedLoans.map((l) => (
             <article key={l.app.id} className={styles.loan_card}>
               <div className={styles.loan_top}>
                 <span className={styles.loan_icon_wrap}>
@@ -296,24 +311,59 @@ export function MisPrestamosView({ onPay }: Props) {
                     <strong>{fmtDate(l.nextPaymentDate)}</strong>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.pay_btn}
-                  onClick={() => onPay?.({
-                    applicationId: l.app.id,
-                    loanLabel: shortId(l.app.id),
-                    cuota: l.cuota,
-                    cuotaNumber: l.monthsElapsed + 1,
-                    totalCuotas: l.app.term_months,
-                    nextPaymentDate: l.nextPaymentDate,
-                    loanAmount: l.loanAmount,
-                  })}
-                >
-                  Pagar Ahora
-                </button>
+                {l.paidCount < l.app.term_months && (
+                  <button
+                    type="button"
+                    className={styles.pay_btn}
+                    onClick={() => onPay?.({
+                      applicationId: l.app.id,
+                      loanLabel: shortId(l.app.id),
+                      cuota: l.cuota,
+                      cuotaNumber: l.paidCount + 1,
+                      totalCuotas: l.app.term_months,
+                      nextPaymentDate: l.nextPaymentDate,
+                      loanAmount: l.loanAmount,
+                    })}
+                  >
+                    Pagar Ahora
+                  </button>
+                )}
               </div>
             </article>
           ))}
+        </div>
+      )}
+
+      {/* ── Loan pagination ── */}
+      {totalLoanPages > 1 && (
+        <div className={styles.prest_pagination}>
+          <button
+            type="button"
+            className={styles.prest_page_btn}
+            onClick={() => setLoanPage((p) => p - 1)}
+            disabled={loanPage === 0}
+          >
+            ← Anterior
+          </button>
+          <div className={styles.prest_page_dots}>
+            {Array.from({ length: totalLoanPages }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${styles.prest_page_dot} ${i === loanPage ? styles.prest_page_dot_active : ''}`}
+                onClick={() => setLoanPage(i)}
+                aria-label={`Página ${i + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className={styles.prest_page_btn}
+            onClick={() => setLoanPage((p) => p + 1)}
+            disabled={loanPage === totalLoanPages - 1}
+          >
+            Siguiente →
+          </button>
         </div>
       )}
 
@@ -322,7 +372,7 @@ export function MisPrestamosView({ onPay }: Props) {
         <section className={styles.prest_process_section}>
           <h2 className={styles.section_title}>Solicitudes en Proceso</h2>
           <div className={styles.prest_process_list}>
-            {inProcess.map((app) => {
+            {visibleInProcess.map((app) => {
               const info = STATUS_INFO[app.status]
               const StatusIcon = info?.icon ?? IconClock
               return (
@@ -341,6 +391,7 @@ export function MisPrestamosView({ onPay }: Props) {
               )
             })}
           </div>
+          <Pagination page={procesPage} total={procesTotal} onChange={setProcesPage} />
         </section>
       )}
 
@@ -364,15 +415,14 @@ export function MisPrestamosView({ onPay }: Props) {
               <span>CONCEPTO / ID</span>
               <span>FECHA</span>
               <span>IMPORTE</span>
-              <span>ESTADO</span>
-              <span>ACCIÓN</span>
+              <span>TIPO</span>
             </div>
 
             {visibleMovements.map((m) => (
               <div key={m.id} className={styles.table_row}>
                 <div className={styles.table_concept}>
-                  <span className={`${styles.concept_dot} ${m.status === 'pagado' ? styles.dot_green : styles.dot_purple}`}>
-                    {m.status === 'pagado' ? <IconCheck /> : <span />}
+                  <span className={`${styles.concept_dot} ${m.type === 'pago' ? styles.dot_green : styles.dot_purple}`}>
+                    {m.type === 'pago' ? <IconCheck /> : <span />}
                   </span>
                   <div>
                     <strong>{m.concept}</strong>
@@ -380,32 +430,18 @@ export function MisPrestamosView({ onPay }: Props) {
                   </div>
                 </div>
                 <span className={styles.table_date}>{m.date}</span>
-                <span className={styles.table_amount}>S/ {fmt(m.amount)}</span>
-                <span className={`${styles.status_badge} ${m.status === 'pagado' ? styles.status_paid : styles.status_pending}`}>
-                  {m.status === 'pagado' ? 'PAGADO' : 'PENDIENTE'}
+                <span className={styles.table_amount}>
+                  {m.type === 'pago' ? `- S/ ${fmt(m.amount)}` : `+ S/ ${fmt(m.amount)}`}
                 </span>
-                <button
-                  type="button"
-                  className={`${styles.action_link} ${m.status === 'pendiente' ? styles.action_link_pay : ''}`}
-                  onClick={() => m.paymentInfo && onPay?.(m.paymentInfo)}
-                  disabled={m.status === 'pagado'}
-                >
-                  {m.status === 'pagado' ? 'Detalles' : 'Pagar'}
-                </button>
+                <span className={`${styles.status_badge} ${m.type === 'pago' ? styles.status_paid : styles.status_disbursed}`}>
+                  {m.type === 'pago' ? 'PAGO' : 'DESEMBOLSO'}
+                </span>
               </div>
             ))}
 
-            {allMovements.length > 5 && (
+            {movTotal > 1 && (
               <div className={styles.load_more}>
-                <button
-                  type="button"
-                  className={styles.load_more_btn}
-                  onClick={() => setShowAllMovements((v) => !v)}
-                >
-                  {showAllMovements
-                    ? 'Mostrar menos ↑'
-                    : `Cargar ${allMovements.length - 5} movimientos más ↓`}
-                </button>
+                <Pagination page={movPage} total={movTotal} onChange={setMovPage} />
               </div>
             )}
           </div>

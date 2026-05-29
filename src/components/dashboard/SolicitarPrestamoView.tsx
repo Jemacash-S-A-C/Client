@@ -336,6 +336,12 @@ export function SolicitarPrestamoView({
             </div>
           </div>
 
+          {!selectedGuaranteeId && !loadingGuarantees && (
+            <p style={{ fontSize: '0.8rem', color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '0.5rem', padding: '0.55rem 0.75rem' }}>
+              Debes seleccionar una garantía para continuar.
+            </p>
+          )}
+
           {error && (
             <p role="alert" style={{ color: '#dc2626', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
               {error}
@@ -346,7 +352,7 @@ export function SolicitarPrestamoView({
             type="button"
             className={styles.sol_submit_btn}
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || !selectedGuaranteeId}
           >
             {loading ? 'Procesando…' : 'Continuar con la Solicitud'}
           </button>

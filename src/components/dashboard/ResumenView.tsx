@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Pagination } from './Pagination'
 import officeImg    from '../../assets/representative_images/main_page.png'
 import marketImg    from '../../assets/hero.png'
 import valuationImg from '../../assets/valuacion_img/valuacion_card.png'
@@ -97,9 +98,7 @@ function buildActivityFeed(
     })
   }
 
-  return items
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 5)
+  return items.sort((a, b) => b.date.getTime() - a.date.getTime())
 }
 
 interface NextPayment {
@@ -143,10 +142,28 @@ function getNextPayment(
 // ── Article cards (static educational content) ────────────────────────────────
 
 const ARTICLES = [
-  { tag: 'FINANZAS',   title: 'Cómo maximizar el valor de tus activos este 2024',              image: officeImg    },
-  { tag: 'ESTRATEGIA', title: 'El arte de la deuda inteligente: Liquidez vs. Pasivos',         image: marketImg    },
-  { tag: 'AHORRO',     title: 'Mitos sobre el historial crediticio en Perú',                   image: valuationImg },
-] as const
+  {
+    tag:    'FINANZAS',
+    title:  'Guía para dominar tus finanzas personales',
+    source: 'SBS Perú',
+    image:  officeImg,
+    url:    'https://www.sbs.gob.pe/portals/3/educacion-financiera-pdf/GUIA_DOMINA_TUS_FINANZAS.pdf',
+  },
+  {
+    tag:    'ESTRATEGIA',
+    title:  'Dinero inteligente: organiza mejor tus finanzas',
+    source: 'BBVA',
+    image:  marketImg,
+    url:    'https://www.bbva.com/es/mx/salud-financiera/dinero-inteligente-organiza-mejor-tus-finanzas/',
+  },
+  {
+    tag:    'AHORRO',
+    title:  'Finanzas personales: consejos para mejorar tu economía',
+    source: 'IST San Pablo',
+    image:  valuationImg,
+    url:    'https://istsanpablo.edu.pe/finanzas-personales-consejos-para-mejorar-tu-economia/',
+  },
+]
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -182,6 +199,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
   const [guarantees, setGuarantees] = useState<Guarantee[]>([])
   const [payments,   setPayments]   = useState<Payment[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [actPage,    setActPage]    = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -228,7 +246,10 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   const nextPayment = useMemo(() => getNextPayment(apps, evalMap), [apps, evalMap])
 
-  const activityFeed = useMemo(() => buildActivityFeed(apps, payments), [apps, payments])
+  const activityFeed    = useMemo(() => buildActivityFeed(apps, payments), [apps, payments])
+  const ACT_PER_PAGE    = 5
+  const actTotalPages   = Math.ceil(activityFeed.length / ACT_PER_PAGE)
+  const visibleActivity = activityFeed.slice(actPage * ACT_PER_PAGE, (actPage + 1) * ACT_PER_PAGE)
 
   // ── Hero subtitle ───────────────────────────────────────────────────────────
 
@@ -313,7 +334,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
             {activityFeed.length === 0 ? (
               <p className={styles.activity_empty}>Aún no tienes actividad registrada.</p>
             ) : (
-              activityFeed.map(item => {
+              visibleActivity.map(item => {
                 const Icon = item.icon
                 return (
                   <div key={item.key} className={styles.activity_row}>
@@ -333,6 +354,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
               })
             )}
           </div>
+          <Pagination page={actPage} total={actTotalPages} onChange={setActPage} />
         </article>
 
         <aside className={styles.payment_card} aria-labelledby="next-payment-title">
@@ -376,13 +398,26 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         </div>
         <div className={styles.article_grid}>
           {ARTICLES.map(card => (
-            <article key={card.title} className={styles.article_card}>
+            <a
+              key={card.title}
+              className={styles.article_card}
+              href={card.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${card.title} — ${card.source}`}
+            >
               <div className={styles.article_visual}>
                 <img src={card.image} alt="" aria-hidden="true" />
                 <span>{card.tag}</span>
               </div>
-              <div className={styles.article_copy}><h3>{card.title}</h3></div>
-            </article>
+              <div className={styles.article_copy}>
+                <h3>{card.title}</h3>
+                <div className={styles.article_footer}>
+                  <span className={styles.article_source}>{card.source}</span>
+                  <span className={styles.article_read}>Leer →</span>
+                </div>
+              </div>
+            </a>
           ))}
         </div>
       </section>
