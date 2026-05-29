@@ -1,4 +1,5 @@
 import { type ReactElement, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './UserDashboard.module.css'
 import type { UserSession } from '../types/api.types'
 import {
@@ -53,17 +54,18 @@ type UserDashboardProps = {
   onUserUpdate: (updated: UserSession) => void
 }
 
-const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] = [
-  { view: 'resumen',       label: 'Resumen',          icon: IconChart    },
-  { view: 'prestamos',     label: 'Mis Préstamos',    icon: IconWallet   },
-  { view: 'garantias',     label: 'Mis Garantías',    icon: IconShield   },
-  { view: 'solicitudes',   label: 'Mis Solicitudes',  icon: IconDocument },
-  { view: 'documentos',    label: 'Mis Documentos',   icon: IconDownload },
-  { view: 'configuracion', label: 'Configuración',    icon: IconSettings },
-  { view: 'calendario',    label: 'Calendario',       icon: IconCalendar },
-]
-
 export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDashboardProps) {
+  const { t } = useTranslation()
+
+  const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] = [
+    { view: 'resumen',       label: t('nav.resume'),           icon: IconChart    },
+    { view: 'prestamos',     label: t('nav.myLoans'),          icon: IconWallet   },
+    { view: 'garantias',     label: t('nav.myGuarantees'),     icon: IconShield   },
+    { view: 'solicitudes',   label: t('nav.myApplications'),   icon: IconDocument },
+    { view: 'documentos',    label: t('nav.myDocuments'),      icon: IconDownload },
+    { view: 'configuracion', label: t('nav.settings'),         icon: IconSettings },
+    { view: 'calendario',    label: t('nav.calendar'),         icon: IconCalendar },
+  ]
   const [activeView, setActiveView] = useState<ActiveView>('resumen')
   const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null)
   const [activeApprovedAmount, setActiveApprovedAmount] = useState<number | null>(null)
@@ -160,8 +162,8 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     <div className={styles.dashboard}>
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <span className={styles.brand_name}>Jemacash</span>
-          <span className={styles.brand_subtitle}>Panel de usuario</span>
+          <span className={styles.brand_name}>{t('nav.brand')}</span>
+          <span className={styles.brand_subtitle}>{t('nav.brandSubtitle')}</span>
         </div>
 
         <nav className={styles.side_nav} aria-label="Navegación del panel">
@@ -184,31 +186,31 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           onClick={() => setActiveView('solicitar')}
         >
           <span aria-hidden="true">+</span>
-          Solicitar Préstamo
+          {t('nav.requestLoan')}
         </button>
       </aside>
 
       <div className={styles.content}>
         <header className={styles.topbar}>
-          <label className={styles.search_bar} aria-label="Buscar movimientos o activos">
+          <label className={styles.search_bar} aria-label={t('topbar.searchLabel')}>
             <IconSearch />
-            <input type="search" placeholder="Buscar movimientos o activos..." />
+            <input type="search" placeholder={t('topbar.search')} />
           </label>
 
           <div className={styles.topbar_actions}>
-            <button type="button" className={styles.icon_button} aria-label="Notificaciones">
+            <button type="button" className={styles.icon_button} aria-label={t('topbar.notifications')}>
               <IconBell />
               <span className={styles.notification_dot} aria-hidden="true" />
             </button>
-            <button type="button" className={styles.icon_button} aria-label="Configuración">
+            <button type="button" className={styles.icon_button} aria-label={t('topbar.settings')}>
               <IconSettings />
             </button>
             <button
               type="button"
               className={styles.user_chip}
               onClick={onLogout}
-              title="Cerrar sesión"
-              aria-label="Cerrar sesión"
+              title={t('topbar.logout')}
+              aria-label={t('topbar.logout')}
             >
               <div className={styles.user_meta}>
                 <strong>{user.displayName}</strong>

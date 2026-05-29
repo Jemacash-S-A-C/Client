@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconLock, IconMail, IconPhone, IconUser } from './RegisterIcons'
 import styles from './RegisterModal.module.css'
 
@@ -25,6 +26,7 @@ export function RegisterModal({
   onSubmit,
   heroBackgroundSrc,
 }: RegisterModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -79,11 +81,10 @@ export function RegisterModal({
           <div className={styles.register_aside_content}>
             <p className={styles.register_aside_brand}>Jemacash</p>
             <h2 className={styles.register_aside_title}>
-              Tu aliado en el camino al éxito financiero.
+              {t('register.aside.title')}
             </h2>
             <p className={styles.register_aside_footer}>
-              Únete a la comunidad de Jemacash y gestiona tus finanzas con la seguridad de un
-              experto.
+              {t('register.aside.footer')}
             </p>
           </div>
         </aside>
@@ -93,19 +94,19 @@ export function RegisterModal({
             type="button"
             className={styles.register_close}
             onClick={onClose}
-            aria-label="Cerrar registro"
+            aria-label={t('register.close')}
           >
             <span aria-hidden="true">×</span>
           </button>
 
           <form className={styles.register_form} onSubmit={handleSubmit}>
             <header className={styles.register_form_header}>
-              <h2 id={titleId}>Crear Usuario</h2>
-              <p>Comienza tu viaje financiero hoy mismo.</p>
+              <h2 id={titleId}>{t('register.title')}</h2>
+              <p>{t('register.subtitle')}</p>
             </header>
 
             <div className={styles.register_field}>
-              <label htmlFor="reg-fullname">Nombre completo</label>
+              <label htmlFor="reg-fullname">{t('register.fullName')}</label>
               <div className={styles.register_input_row}>
                 <span className={styles.register_input_icon}><IconUser /></span>
                 <input
@@ -113,7 +114,7 @@ export function RegisterModal({
                   name="fullname"
                   type="text"
                   autoComplete="name"
-                  placeholder="Ej. Juan Pérez"
+                  placeholder={t('register.fullNamePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={loading}
@@ -122,7 +123,7 @@ export function RegisterModal({
             </div>
 
             <div className={styles.register_field}>
-              <label htmlFor="reg-email">Correo electrónico</label>
+              <label htmlFor="reg-email">{t('register.email')}</label>
               <div className={styles.register_input_row}>
                 <span className={styles.register_input_icon}><IconMail /></span>
                 <input
@@ -130,7 +131,7 @@ export function RegisterModal({
                   name="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="nombre@ejemplo.com"
+                  placeholder={t('register.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
@@ -139,7 +140,7 @@ export function RegisterModal({
             </div>
 
             <div className={styles.register_field}>
-              <label htmlFor="reg-phone">Número de teléfono</label>
+              <label htmlFor="reg-phone">{t('register.phone')}</label>
               <div className={styles.register_input_row}>
                 <span className={styles.register_input_icon}><IconPhone /></span>
                 <input
@@ -147,7 +148,7 @@ export function RegisterModal({
                   name="phone"
                   type="tel"
                   autoComplete="tel"
-                  placeholder="+51 987 654 321"
+                  placeholder={t('register.phonePlaceholder')}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   disabled={loading}
@@ -156,7 +157,7 @@ export function RegisterModal({
             </div>
 
             <div className={styles.register_field}>
-              <label htmlFor="reg-password">Contraseña</label>
+              <label htmlFor="reg-password">{t('register.password')}</label>
               <div className={styles.register_input_row}>
                 <span className={styles.register_input_icon}><IconLock /></span>
                 <input
@@ -164,7 +165,7 @@ export function RegisterModal({
                   name="password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t('register.passwordPlaceholder')}
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -181,13 +182,13 @@ export function RegisterModal({
                 disabled={loading}
               />
               <span>
-                Acepto los <a href="#">Términos y Condiciones</a> y la{' '}
-                <a href="#">Política de Privacidad</a> de Jemacash.
+                {t('register.termsAccept')} <a href="#">{t('register.termsLink')}</a> {t('register.andThe')}{' '}
+                <a href="#">{t('register.privacyLink')}</a> {t('register.of')}
               </span>
             </label>
 
             <button type="submit" className={styles.register_submit} disabled={loading}>
-              {loading ? 'Creando cuenta…' : 'Crear cuenta'}
+              {loading ? t('register.submitting') : t('register.submit')}
             </button>
 
             {error ? (
@@ -197,14 +198,14 @@ export function RegisterModal({
             ) : null}
 
             <p className={styles.register_login_prompt}>
-              ¿Ya tienes cuenta?{' '}
+              {t('register.haveAccount')}{' '}
               <button
                 type="button"
                 className={styles.register_login_link}
                 onClick={() => onNavigateToLogin(email)}
                 disabled={loading}
               >
-                Inicia sesión
+                {t('register.loginLink')}
               </button>
             </p>
           </form>

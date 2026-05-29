@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
@@ -11,17 +12,6 @@ import {
 } from './icons'
 import styles from './FirmaVerificacionView.module.css'
 
-const CONTRACT_TEXT = `CONTRATO DE PRÉSTAMO DE DINERO
-
-Conste por el presente documento el Contrato de Préstamo de Dinero que celebran de una parte JEMACASH S.A.C., con R.U.C. N° 20601234567, con domicilio en Lima, a quien en adelante se le denominará LA EMPRESA; y de la otra parte, el CLIENTE debidamente identificado con los datos proporcionados en la solicitud.
-
-PRIMERA: OBJETO DEL CONTRATO. LA EMPRESA otorga un préstamo al CLIENTE por el monto especificado en el resumen del crédito. El CLIENTE se obliga a devolver dicho monto más los intereses pactados de acuerdo al cronograma de pagos.
-
-SEGUNDA: INTERESES Y COMISIONES. Las partes acuerdan una Tasa Efectiva Anual (TEA) fija por la vigencia del crédito. En caso de mora, se aplicarán las tasas legales máximas permitidas por la Superintendencia de Banca y Seguros del Perú (SBS).
-
-TERCERA: GARANTÍA. El CLIENTE autoriza el uso del activo registrado como garantía para respaldar la operación crediticia, de conformidad con la normativa vigente.
-
-CUARTA: RESOLUCIÓN ANTICIPADA. El CLIENTE podrá cancelar anticipadamente el préstamo sin penalidad, previa comunicación formal a LA EMPRESA con no menos de 5 días hábiles de anticipación.`
 
 const REQUIRED_DOCS: { type: string; label: string }[] = [
   { type: 'dni',          label: 'DNI / Documento de Identidad' },
@@ -33,10 +23,12 @@ function SignaturePad({
   onSigned,
   onConfirm,
   disabled,
+  t,
 }: {
   onSigned: (v: boolean) => void
   onConfirm: (base64: string) => void
   disabled?: boolean
+  t: (key: string) => string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawing = useRef(false)
@@ -110,23 +102,23 @@ function SignaturePad({
         onTouchEnd={stopDraw}
       />
       {!hasStrokes && (
-        <span className={styles.sig_placeholder}>Área ✏️ Firma</span>
+        <span className={styles.sig_placeholder}>{t('firma.pad.area')}</span>
       )}
       <div className={styles.sig_actions}>
         <button type="button" className={styles.sig_clear_btn} onClick={clear} disabled={disabled}>
-          <IconRefresh /> Limpiar
+          <IconRefresh /> {t('firma.pad.clear')}
         </button>
         <button
           type="button"
           className={`${styles.sig_confirm_btn} ${hasStrokes && !disabled ? styles.sig_confirm_active : ''}`}
           disabled={!hasStrokes || disabled}
           onClick={() => {
-            if (!window.confirm('¿Seguro que quiere registrar esta firma?')) return
+            if (!window.confirm(t('firma.pad.confirmDialog'))) return
             const base64 = canvasRef.current?.toDataURL('image/png') ?? ''
             onConfirm(base64)
           }}
         >
-          <IconCheck /> Confirmar Firma
+          <IconCheck /> {t('firma.pad.confirm')}
         </button>
       </div>
     </div>
@@ -148,6 +140,7 @@ export function FirmaVerificacionView({
   applicationId?: string | null
   approvedAmount?: number | null
 }) {
+  const { t } = useTranslation()
   const [, setSigned] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -216,10 +209,8 @@ export function FirmaVerificacionView({
       {/* Main */}
       <main className={styles.frm_main}>
         <div>
-          <h1 className={styles.frm_title}>Firma y Verificación de Identidad</h1>
-          <p className={styles.frm_sub}>
-            Por favor, revisa tu contrato y completa la verificación de identidad para proceder con el desembolso de tu préstamo.
-          </p>
+          <h1 className={styles.frm_title}>{t('firma.title')}</h1>
+          <p className={styles.frm_sub}>{t('firma.subtitle')}</p>
         </div>
 
         <div className={styles.frm_grid}>
@@ -231,12 +222,12 @@ export function FirmaVerificacionView({
             <div className={styles.frm_summary}>
               <div className={styles.frm_summary_head}>
                 <span className={styles.frm_summary_icon}><IconDocument /></span>
-                <strong>Resumen del préstamo</strong>
+                <strong>{t('firma.summary.title')}</strong>
               </div>
               <div className={styles.frm_summary_vals}>
-                <div><span>Monto</span><strong>S/ {displayAmount}</strong></div>
-                <div><span>Plazo</span><strong>12 meses</strong></div>
-                <div><span>TEA</span><strong>18.5%</strong></div>
+                <div><span>{t('firma.summary.amount')}</span><strong>S/ {displayAmount}</strong></div>
+                <div><span>{t('firma.summary.term')}</span><strong>{t('firma.summary.months')}</strong></div>
+                <div><span>{t('firma.summary.tea')}</span><strong>18.5%</strong></div>
               </div>
             </div>
 
@@ -245,12 +236,12 @@ export function FirmaVerificacionView({
               <div className={styles.frm_contract_head}>
                 <div className={styles.frm_contract_title}>
                   <span className={styles.frm_contract_icon}><IconDocument /></span>
-                  <strong>Contrato de Crédito</strong>
+                  <strong>{t('firma.contract.title')}</strong>
                 </div>
-                <span className={styles.frm_page_badge}>PÁG 1 DE 8</span>
+                <span className={styles.frm_page_badge}>{t('firma.contract.page')}</span>
               </div>
               <div className={styles.frm_contract_body}>
-                <pre className={styles.frm_contract_text}>{CONTRACT_TEXT}</pre>
+                <pre className={styles.frm_contract_text}>{t('firma.contract.text')}</pre>
               </div>
             </div>
           </div>
@@ -260,22 +251,22 @@ export function FirmaVerificacionView({
 
             {/* Firma digital */}
             <div className={styles.frm_section}>
-              <h2 className={styles.frm_section_title}>Módulo de Firma Digital</h2>
-              <p className={styles.frm_section_sub}>Dibuja tu firma tal como aparece en tu DNI</p>
-              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} />
+              <h2 className={styles.frm_section_title}>{t('firma.pad.title')}</h2>
+              <p className={styles.frm_section_sub}>{t('firma.pad.sub')}</p>
+              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} t={t} />
               {docsBlocking && docsStatus !== 'loading' && (
                 <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
-                  Sube los documentos requeridos para habilitar la firma.
+                  {t('firma.pad.docsBlocking')}
                 </p>
               )}
               {isSignedOrDone && (
                 <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                  Firma ya registrada
+                  {t('firma.pad.alreadySigned')}
                 </p>
               )}
               {submitting && (
                 <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                  Guardando firma…
+                  {t('firma.pad.saving')}
                 </p>
               )}
               {submitError && (
@@ -287,12 +278,12 @@ export function FirmaVerificacionView({
 
             {/* Documentos */}
             <div className={styles.frm_section}>
-              <h2 className={styles.frm_section_title}>Verificación de Documentos</h2>
+              <h2 className={styles.frm_section_title}>{t('firma.docs.title')}</h2>
 
               {docsStatus === 'loading' && (
                 <div className={styles.frm_docs_loading}>
                   <span className={styles.frm_docs_spinner} />
-                  <span>Verificando documentos…</span>
+                  <span>{t('firma.docs.loading')}</span>
                 </div>
               )}
 
@@ -300,8 +291,8 @@ export function FirmaVerificacionView({
                 <div className={styles.frm_docs_ok}>
                   <span className={styles.frm_docs_ok_icon}><IconCheck /></span>
                   <div>
-                    <strong>Documentos en orden</strong>
-                    <span>Todos los documentos requeridos están subidos.</span>
+                    <strong>{t('firma.docs.ok.title')}</strong>
+                    <span>{t('firma.docs.ok.desc')}</span>
                   </div>
                 </div>
               )}
@@ -311,8 +302,8 @@ export function FirmaVerificacionView({
                   <div className={styles.frm_docs_missing_head}>
                     <span className={styles.frm_docs_missing_icon}><IconWarning /></span>
                     <div>
-                      <strong>Faltan documentos requeridos</strong>
-                      <span>Sube los siguientes documentos antes de firmar:</span>
+                      <strong>{t('firma.docs.missing.title')}</strong>
+                      <span>{t('firma.docs.missing.desc')}</span>
                     </div>
                   </div>
                   <ul className={styles.frm_docs_missing_list}>
@@ -325,7 +316,7 @@ export function FirmaVerificacionView({
                     className={styles.frm_docs_upload_btn}
                     onClick={onGoToDocuments}
                   >
-                    Subir en Mis Documentos →
+                    {t('firma.docs.uploadBtn')}
                   </button>
                 </div>
               )}
@@ -339,11 +330,11 @@ export function FirmaVerificacionView({
         <div className={styles.frm_bottom_seals}>
           <div className={styles.frm_seal_item}>
             <span><IconShield /></span>
-            <div><strong>SUPERVISADO POR</strong><span>LA SBS</span></div>
+            <div><strong>{t('firma.seals.supervisedBy')}</strong><span>{t('firma.seals.sbs')}</span></div>
           </div>
           <div className={styles.frm_seal_item}>
             <span><IconShield /></span>
-            <div><strong>SSL CERTIFIED</strong><span>256-BIT</span></div>
+            <div><strong>{t('firma.seals.ssl')}</strong><span>{t('firma.seals.bit')}</span></div>
           </div>
         </div>
         <div className={styles.frm_actions_row}>
@@ -354,7 +345,7 @@ export function FirmaVerificacionView({
               onClick={onBack}
               disabled={submitting}
             >
-              Cancelar
+              {t('firma.cancel')}
             </button>
           )}
           <button
@@ -363,7 +354,7 @@ export function FirmaVerificacionView({
             onClick={submitDone ? onFinalize : onBack}
             disabled={submitting || (!submitDone && docsBlocking)}
           >
-            {submitDone ? 'Solicitud Completada ✓' : 'Finalizar y Solicitar Desembolso →'}
+            {submitDone ? t('firma.finalizeComplete') : t('firma.finalize')}
           </button>
         </div>
       </div>

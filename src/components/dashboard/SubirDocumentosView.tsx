@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { LoanDocument, DocumentType } from '../../types/api.types'
 import { getDocuments, uploadDocument, deleteDocument, fileToBase64 } from '../../services/document.service'
 import { IconCheck, IconWarning, IconPlus } from './icons'
@@ -52,62 +53,72 @@ function IconImage() {
 
 interface DocSlotCfg {
   type: DocumentType
-  label: string
-  description: string
+  labelKey: string
+  descKey: string
   accepts: string
   required: boolean
+  soon?: boolean
 }
 
 const DOC_SLOTS: DocSlotCfg[] = [
   {
     type: 'dni',
-    label: 'DNI / Documento de Identidad',
-    description: 'Ambas caras del DNI vigente (JPG, PNG o PDF)',
+    labelKey: 'docs.slot.dni.label',
+    descKey:  'docs.slot.dni.desc',
     accepts: 'image/*,.pdf',
     required: true,
   },
   {
     type: 'pay_stub',
-    label: 'Boleta de Pago',
-    description: 'Última boleta de pago o recibo de honorarios (PDF)',
+    labelKey: 'docs.slot.payStub.label',
+    descKey:  'docs.slot.payStub.desc',
     accepts: 'image/*,.pdf',
     required: true,
   },
   {
     type: 'utility_bill',
-    label: 'Recibo de Domicilio',
-    description: 'Agua, luz o teléfono con dirección legible (máx. 3 meses)',
+    labelKey: 'docs.slot.utilityBill.label',
+    descKey:  'docs.slot.utilityBill.desc',
     accepts: 'image/*,.pdf',
     required: true,
   },
   {
     type: 'soat',
-    label: 'SOAT Vigente',
-    description: 'Solo si tu garantía es un vehículo',
+    labelKey: 'docs.slot.soat.label',
+    descKey:  'docs.slot.soat.desc',
     accepts: 'image/*,.pdf',
     required: false,
+    soon: true,
   },
   {
     type: 'vehicle_card',
-    label: 'Tarjeta de Propiedad Vehicular',
-    description: 'Solo si tu garantía es un vehículo',
+    labelKey: 'docs.slot.vehicleCard.label',
+    descKey:  'docs.slot.vehicleCard.desc',
     accepts: 'image/*,.pdf',
     required: false,
+    soon: true,
   },
   {
     type: 'other',
-    label: 'Otro Documento',
-    description: 'Cualquier otro respaldo adicional',
+    labelKey: 'docs.slot.other.label',
+    descKey:  'docs.slot.other.desc',
     accepts: 'image/*,.pdf,.doc,.docx',
     required: false,
   },
 ]
 
-const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  pending:   { label: 'Pendiente',    color: '#d97706', bg: '#fef3c7' },
-  reviewing: { label: 'En revisión',  color: '#2563eb', bg: '#dbeafe' },
-  verified:  { label: 'Verificado',   color: '#0f7d3f', bg: '#d9f0da' },
-  rejected:  { label: 'Rechazado',    color: '#dc2626', bg: '#fef2f2' },
+const STATUS_COLOR_CFG: Record<string, { color: string; bg: string }> = {
+  pending:   { color: '#d97706', bg: '#fef3c7' },
+  reviewing: { color: '#2563eb', bg: '#dbeafe' },
+  verified:  { color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:  { color: '#dc2626', bg: '#fef2f2' },
+}
+
+const STATUS_LABEL_KEYS: Record<string, string> = {
+  pending:   'docs.status.pending',
+  reviewing: 'docs.status.reviewing',
+  verified:  'docs.status.verified',
+  rejected:  'docs.status.rejected',
 }
 
 function fmtSize(bytes: number) {
@@ -130,6 +141,7 @@ interface SlotProps {
 }
 
 function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -155,103 +167,99 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
   const isImage = (mime: string) => mime.startsWith('image/')
 
   return (
-    <div className={`${styles.slot} ${cfg.required ? styles.slot_required : ''}`}>
+    <div className={`${styles.slot} ${cfg.required ? styles.slot_required : ''} ${cfg.soon ? styles.slot_disabled : ''}`}>
       <div className={styles.slot_header}>
         <div className={styles.slot_title_wrap}>
           <span className={styles.slot_icon}>
             {cfg.type === 'dni' || cfg.type === 'passport' ? <IconFile /> : <IconImage />}
           </span>
           <div>
-            <strong className={styles.slot_label}>
-              {cfg.label}
-              {cfg.required && <span className={styles.required_dot}>*</span>}
-            </strong>
-            <span className={styles.slot_desc}>{cfg.description}</span>
+            <strong className={styles.slot_label}>{t(cfg.labelKey)}</strong>
+            <span className={styles.slot_desc}>{t(cfg.descKey)}</span>
           </div>
         </div>
-        {uploaded.length === 0 && (
-          <span className={`${styles.slot_badge} ${styles.slot_badge_missing}`}>Sin subir</span>
-        )}
-        {uploaded.length > 0 && (
-          <span
-            className={styles.slot_badge}
-            style={{
-              color: STATUS_CFG[uploaded[0].status].color,
-              background: STATUS_CFG[uploaded[0].status].bg,
-            }}
-          >
-            {STATUS_CFG[uploaded[0].status].label}
-          </span>
-        )}
-      </div>
-
-      {/* Uploaded files */}
-      {uploaded.length > 0 && (
-        <div className={styles.uploaded_list}>
-          {uploaded.map(doc => (
-            <div key={doc.id} className={styles.uploaded_row}>
-              <span className={styles.uploaded_icon}>
-                {isImage(doc.mime_type) ? <IconImage /> : <IconFile />}
-              </span>
-              <div className={styles.uploaded_info}>
-                <strong>{doc.original_name}</strong>
-                <span>{fmtSize(doc.file_size)} · {fmtDate(doc.created_at)}</span>
-              </div>
-              <span
-                className={styles.uploaded_status}
-                style={{
-                  color: STATUS_CFG[doc.status].color,
-                  background: STATUS_CFG[doc.status].bg,
-                }}
-              >
-                {STATUS_CFG[doc.status].label}
-              </span>
-              {doc.status !== 'verified' && (
-                <button
-                  type="button"
-                  className={styles.delete_btn}
-                  onClick={() => { void onDelete(doc.id) }}
-                  aria-label="Eliminar documento"
-                >
-                  <IconTrash />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Drop zone */}
-      <div
-        className={`${styles.dropzone} ${dragging ? styles.dropzone_over : ''} ${loading ? styles.dropzone_loading : ''}`}
-        onClick={() => !loading && inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        role="button"
-        tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
-        aria-label={`Subir ${cfg.label}`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept={cfg.accepts}
-          className={styles.file_input}
-          onChange={onInputChange}
-        />
-        {loading ? (
-          <span className={styles.dropzone_spinner} />
-        ) : (
-          <>
-            <span className={styles.dropzone_icon}><IconUpload /></span>
-            <span className={styles.dropzone_text}>
-              {uploaded.length > 0 ? 'Reemplazar archivo' : 'Arrastra aquí o haz clic para subir'}
+        <span className={`${styles.slot_badge} ${cfg.soon ? styles.slot_badge_soon : styles.slot_badge_missing}`}>
+          {cfg.soon ? t('docs.status.comingSoon') : uploaded.length === 0 ? t('docs.status.notUploaded') : (
+            <span style={{ color: STATUS_COLOR_CFG[uploaded[0].status]?.color }}>
+              {t(STATUS_LABEL_KEYS[uploaded[0].status] ?? 'docs.status.pending')}
             </span>
-            <span className={styles.dropzone_hint}>PDF, JPG o PNG · máx. 5 MB</span>
-          </>
-        )}
+          )}
+        </span>
       </div>
+
+      {cfg.soon ? (
+        <div className={styles.slot_soon_body}>
+          {t('docs.soon.available')}
+        </div>
+      ) : (
+        <>
+          {/* Uploaded files */}
+          {uploaded.length > 0 && (
+            <div className={styles.uploaded_list}>
+              {uploaded.map(doc => (
+                <div key={doc.id} className={styles.uploaded_row}>
+                  <span className={styles.uploaded_icon}>
+                    {isImage(doc.mime_type) ? <IconImage /> : <IconFile />}
+                  </span>
+                  <div className={styles.uploaded_info}>
+                    <strong>{doc.original_name}</strong>
+                    <span>{fmtSize(doc.file_size)} · {fmtDate(doc.created_at)}</span>
+                  </div>
+                  <span
+                    className={styles.uploaded_status}
+                    style={{
+                      color: STATUS_COLOR_CFG[doc.status]?.color,
+                      background: STATUS_COLOR_CFG[doc.status]?.bg,
+                    }}
+                  >
+                    {t(STATUS_LABEL_KEYS[doc.status] ?? 'docs.status.pending')}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.delete_btn}
+                    onClick={() => { void onDelete(doc.id) }}
+                    aria-label={t('docs.deleteLabel')}
+                  >
+                    <IconTrash />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Drop zone */}
+          <div
+            className={`${styles.dropzone} ${dragging ? styles.dropzone_over : ''} ${loading ? styles.dropzone_loading : ''}`}
+            onClick={() => !loading && inputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
+            aria-label={t(cfg.labelKey)}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept={cfg.accepts}
+              className={styles.file_input}
+              onChange={onInputChange}
+            />
+            {loading ? (
+              <span className={styles.dropzone_spinner} />
+            ) : (
+              <>
+                <span className={styles.dropzone_icon}><IconUpload /></span>
+                <span className={styles.dropzone_text}>
+                  {uploaded.length > 0 ? t('docs.dropzone.replace') : t('docs.dropzone.upload')}
+                </span>
+                <span className={styles.dropzone_hint}>{t('docs.dropzone.hint')}</span>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -398,8 +406,8 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
           </svg>
         </div>
         <div>
-          <strong>Tus documentos están protegidos</strong>
-          <p>Toda la información es encriptada y tratada bajo la normativa SBS Perú y la Ley N° 29733 de Protección de Datos Personales.</p>
+          <strong>{t('docs.seal.title')}</strong>
+          <p>{t('docs.seal.desc')}</p>
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import styles from './Pagination.module.css'
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function Pagination({ page, total, onChange }: Props) {
+  const { t } = useTranslation()
   if (total <= 1) return null
   return (
     <div className={styles.root}>
@@ -16,7 +18,7 @@ export function Pagination({ page, total, onChange }: Props) {
         onClick={() => onChange(page - 1)}
         disabled={page === 0}
       >
-        ← Anterior
+        {t('prestamos.prev')}
       </button>
       <div className={styles.dots}>
         {Array.from({ length: total }).map((_, i) => (
@@ -35,7 +37,7 @@ export function Pagination({ page, total, onChange }: Props) {
         onClick={() => onChange(page + 1)}
         disabled={page === total - 1}
       >
-        Siguiente →
+        {t('prestamos.next')}
       </button>
     </div>
   )

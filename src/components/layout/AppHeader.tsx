@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next'
 import styles from "./AppHeader.module.css";
 
 export type AppPage = "home" | "blog" | "nosotros" | "valuar";
@@ -22,6 +23,7 @@ export function AppHeader({
   onPidePrestamo,
   onLogin,
 }: AppHeaderProps) {
+  const { t } = useTranslation()
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const goHome = () => {
@@ -50,37 +52,37 @@ export function AppHeader({
 
         <nav className={styles.menu} aria-label="Navegación principal">
           <button type="button" className={`${styles.menu_link} ${styles.menu_link_ghost}`} onClick={goHome}>
-            Préstamos
+            {t('header.loans')}
           </button>
           <button
             type="button"
             className={`${styles.menu_link} ${activePage === "valuar" ? styles.menu_link_active : styles.menu_link_ghost}`}
             onClick={goValuar}
           >
-            Valuar Equipo
+            {t('header.valuate')}
           </button>
           <button
             type="button"
             className={`${styles.menu_link} ${activePage === "nosotros" ? styles.menu_link_active : styles.menu_link_ghost}`}
             onClick={goNosotros}
           >
-            Nosotros
+            {t('header.about')}
           </button>
           <button
             type="button"
             className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
             onClick={goBlog}
           >
-            Blog
+            {t('header.blog')}
           </button>
         </nav>
 
         <div className={styles.actions}>
           <button className={styles.pill_btn} type="button" onClick={onPidePrestamo}>
-            Pide tu préstamo
+            {t('header.request')}
           </button>
           <button type="button" className={styles.login_link} onClick={onLogin}>
-            Iniciar sesión
+            {t('header.login')}
           </button>
           <button
             type="button"
@@ -88,7 +90,7 @@ export function AppHeader({
             onClick={() => setMobileOpen((v) => !v)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-site-menu"
-            aria-label="Abrir menú"
+            aria-label={t('header.openMenu')}
           >
             ☰
           </button>
@@ -101,34 +103,34 @@ export function AppHeader({
         aria-label="Navegación móvil"
       >
         <button type="button" className={`${styles.menu_link} ${styles.menu_link_ghost}`} onClick={goHome}>
-          Préstamos
+          {t('header.loans')}
         </button>
         <button
           type="button"
           className={`${styles.menu_link} ${activePage === "valuar" ? styles.menu_link_active : styles.menu_link_ghost}`}
           onClick={goValuar}
         >
-          Valuar Equipo
+          {t('header.valuate')}
         </button>
         <button
           type="button"
           className={`${styles.menu_link} ${activePage === "nosotros" ? styles.menu_link_active : styles.menu_link_ghost}`}
           onClick={goNosotros}
         >
-          Nosotros
+          {t('header.about')}
         </button>
         <button
           type="button"
           className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
           onClick={goBlog}
         >
-          Blog
+          {t('header.blog')}
         </button>
         <button className={styles.mobile_cta} type="button" onClick={onPidePrestamo}>
-          Pide tu préstamo
+          {t('header.request')}
         </button>
         <button type="button" className={styles.mobile_login_link} onClick={onLogin}>
-          Iniciar sesión
+          {t('header.login')}
         </button>
       </nav>
     </header>

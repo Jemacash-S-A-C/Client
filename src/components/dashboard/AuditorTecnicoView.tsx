@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconShield, IconCheck } from './icons'
 import styles from './AuditorTecnicoView.module.css'
 import { getApplication } from '../../services/application.service'
@@ -23,6 +24,7 @@ export function AuditorTecnicoView({
   onComplete: () => void
   applicationId?: string | null
 }) {
+  const { t } = useTranslation()
   const [progress, setProgress] = useState(0)
   const [visibleLines, setVisibleLines] = useState(0)
   const terminalRef = useRef<HTMLDivElement>(null)
@@ -73,7 +75,7 @@ export function AuditorTecnicoView({
 
       <header className={styles.aud_header}>
         <span className={styles.aud_brand}>Jemacash</span>
-        <button type="button" className={styles.aud_back_btn} onClick={onBack}>← Volver</button>
+        <button type="button" className={styles.aud_back_btn} onClick={onBack}>{t('auditor.back')}</button>
       </header>
 
       <div className={styles.aud_layout}>
@@ -99,13 +101,13 @@ export function AuditorTecnicoView({
               </svg>
               <div className={styles.aud_ring_label}>
                 <strong>{progress}%</strong>
-                <span>SINCRONIZANDO</span>
+                <span>{t('auditor.syncing')}</span>
               </div>
             </div>
 
             <div className={styles.aud_hero_copy}>
-              <h1>Descargando Auditor Técnico</h1>
-              <p>Estamos preparando el entorno seguro de grado militar para analizar la integridad de su hardware y software editorial.</p>
+              <h1>{t('auditor.title')}</h1>
+              <p>{t('auditor.desc')}</p>
             </div>
           </div>
 
@@ -137,7 +139,7 @@ export function AuditorTecnicoView({
               )}
               {visibleLines >= ALL_LOG_LINES.length && (
                 <button type="button" className={styles.aud_results_btn} onClick={handleViewResults} disabled={approving}>
-                  {approving ? 'Procesando…' : 'Ver Resultados del Diagnóstico →'}
+                  {approving ? t('auditor.processing') : t('auditor.viewResults')}
                 </button>
               )}
             </div>
@@ -151,10 +153,14 @@ export function AuditorTecnicoView({
           {/* Software 100% Seguro */}
           <div className={styles.aud_secure_card}>
             <span className={styles.aud_secure_icon}><IconShield /></span>
-            <h3>Software 100% Seguro</h3>
-            <p>El Auditor Técnico es una herramienta propietaria diseñada bajo regulaciones de la SBS. Solo accede a la información esencial para certificar su dispositivo.</p>
+            <h3>{t('auditor.secure.title')}</h3>
+            <p>{t('auditor.secure.desc')}</p>
             <ul className={styles.aud_secure_list}>
-              {['Sin acceso a fotos ni mensajes', 'Cifrado AES-256 bits', 'Auto-destrucción post-diagnóstico'].map((item) => (
+              {([
+                t('auditor.secure.noPhotos'),
+                t('auditor.secure.encryption'),
+                t('auditor.secure.autoDestroy'),
+              ]).map((item) => (
                 <li key={item}>
                   <span className={styles.aud_check}><IconCheck /></span>
                   {item}
@@ -166,14 +172,14 @@ export function AuditorTecnicoView({
           {/* Estimación */}
           <div className={styles.aud_estimate_card}>
             <div className={styles.aud_est_head}>
-              <span className={styles.aud_est_label}>ESTIMACIÓN PRELIMINAR</span>
-              <span className={styles.tasa_badge}>TASA PREFERENCIAL</span>
+              <span className={styles.aud_est_label}>{t('auditor.estimate.label')}</span>
+              <span className={styles.tasa_badge}>{t('auditor.estimate.preferential')}</span>
             </div>
             <strong className={styles.aud_est_amount}>S/ 4,250 <span>PEN</span></strong>
-            <p className={styles.aud_est_sub}>Valor máximo para el modelo detectado</p>
+            <p className={styles.aud_est_sub}>{t('auditor.estimate.maxValue')}</p>
             <div className={styles.aud_est_state}>
-              <span>Estado actual</span>
-              <strong>Excelente</strong>
+              <span>{t('auditor.estimate.status')}</span>
+              <strong>{t('auditor.estimate.statusValue')}</strong>
             </div>
           </div>
 
@@ -182,7 +188,7 @@ export function AuditorTecnicoView({
             <div className={styles.aud_shield_visual} aria-hidden="true">
               <span>⊙</span>
             </div>
-            <span className={styles.aud_shield_label}>Protegido por Jemacash Shield™</span>
+            <span className={styles.aud_shield_label}>{t('auditor.shield')}</span>
           </div>
 
         </aside>
@@ -190,10 +196,10 @@ export function AuditorTecnicoView({
         {/* ── Footer ─────────────────────────────────────── */}
         <footer className={styles.aud_footer}>
           <strong className={styles.aud_footer_brand}>Jemacash</strong>
-          <span>© 2024 Jemacash. Soluciones de liquidez inmediata bajo regulación SBS.</span>
+          <span>{t('auditor.footer')}</span>
           <div className={styles.aud_footer_links}>
-            <button type="button" className={styles.aud_footer_link}>Privacidad</button>
-            <button type="button" className={styles.aud_footer_link}>Términos</button>
+            <button type="button" className={styles.aud_footer_link}>{t('footer.privacy')}</button>
+            <button type="button" className={styles.aud_footer_link}>{t('footer.terms')}</button>
             <button type="button" className={styles.aud_footer_link}>Legal</button>
           </div>
         </footer>

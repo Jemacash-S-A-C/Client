@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pagination } from './Pagination'
 import type { Guarantee } from '../../types/api.types'
 import { getGuarantees } from '../../services/guarantee.service'
@@ -45,17 +46,7 @@ function IconCar() {
   )
 }
 
-const CONDITION_LABELS: Record<string, { label: string; color: string }> = {
-  excelente: { label: 'Excelente', color: '#0f7d3f' },
-  bueno:     { label: 'Bueno',     color: '#2563eb' },
-  regular:   { label: 'Regular',   color: '#d97706' },
-}
-
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  active:   { label: 'Activa',      color: '#0f7d3f', bg: '#d9f0da' },
-  pledged:  { label: 'En garantía', color: '#2563eb', bg: '#dbeafe' },
-  released: { label: 'Liberada',    color: '#64748b', bg: '#f1f5f9' },
-}
+// Labels are resolved at render-time via t() inside components that use useTranslation()
 
 function DeviceIcon({ type, category }: { type: string; category?: string | null }) {
   if (type === 'vehiculo') return <IconCar />
@@ -63,7 +54,23 @@ function DeviceIcon({ type, category }: { type: string; category?: string | null
   return <IconLaptop />
 }
 
+type StatusInfo = { label: string; color: string; bg: string }
+type CondInfo   = { label: string; color: string }
+
 function GuaranteeCard({ g }: { g: Guarantee }) {
+  const { t } = useTranslation()
+
+  const STATUS_LABELS: Record<string, StatusInfo> = {
+    active:   { label: t('garantias.status.active'),   color: '#0f7d3f', bg: '#d9f0da' },
+    pledged:  { label: t('garantias.status.pledged'),  color: '#2563eb', bg: '#dbeafe' },
+    released: { label: t('garantias.status.released'), color: '#64748b', bg: '#f1f5f9' },
+  }
+  const CONDITION_LABELS: Record<string, CondInfo> = {
+    excelente: { label: t('garantias.condition.excelente'), color: '#0f7d3f' },
+    bueno:     { label: t('garantias.condition.bueno'),     color: '#2563eb' },
+    regular:   { label: t('garantias.condition.regular'),   color: '#d97706' },
+  }
+
   const status = STATUS_LABELS[g.status] ?? STATUS_LABELS.active
   const cond   = g.condition ? CONDITION_LABELS[g.condition] : null
   const isVeh  = g.type === 'vehiculo'
@@ -90,15 +97,15 @@ function GuaranteeCard({ g }: { g: Guarantee }) {
         <div className={styles.gar_card_meta}>
           {isVeh ? (
             <>
-              {g.serial_number && <span>Placa: <strong>{g.serial_number}</strong></span>}
-              {g.specs?.mileage && <span>Km: <strong>{Number(g.specs.mileage).toLocaleString('es-PE')}</strong></span>}
+              {g.serial_number && <span>{t('garantias.card.plate')}: <strong>{g.serial_number}</strong></span>}
+              {g.specs?.mileage && <span>{t('garantias.card.km')}: <strong>{Number(g.specs.mileage).toLocaleString('es-PE')}</strong></span>}
               {g.specs?.fuel && <span><strong>{g.specs.fuel}</strong></span>}
             </>
           ) : (
             <>
-              {g.serial_number && <span>S/N: <strong>{g.serial_number}</strong></span>}
-              {g.specs?.ram     && <span>RAM: <strong>{g.specs.ram}</strong></span>}
-              {g.specs?.storage && <span>Almac.: <strong>{g.specs.storage}</strong></span>}
+              {g.serial_number && <span>{t('garantias.card.sn')}: <strong>{g.serial_number}</strong></span>}
+              {g.specs?.ram     && <span>{t('garantias.card.ram')}: <strong>{g.specs.ram}</strong></span>}
+              {g.specs?.storage && <span>{t('garantias.card.storage')}: <strong>{g.specs.storage}</strong></span>}
             </>
           )}
           {cond && <span style={{ color: cond.color }}>● {cond.label}</span>}
@@ -118,13 +125,13 @@ function GuaranteeCard({ g }: { g: Guarantee }) {
             </>
           )}
           {g.photo_urls && g.photo_urls.length > 0 && (
-            <span className={styles.gar_spec_chip}><IconCheck /> {g.photo_urls.length} fotos</span>
+            <span className={styles.gar_spec_chip}><IconCheck /> {t('garantias.card.photos', { count: g.photo_urls.length })}</span>
           )}
         </div>
       </div>
 
       <div className={styles.gar_card_value}>
-        <span>Valor estimado</span>
+        <span>{t('garantias.card.estimatedValue')}</span>
         <strong>S/ {Number(g.estimated_value).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>
       </div>
     </div>
@@ -138,6 +145,7 @@ export function MisGarantiasView({
   onRegisterTec: () => void
   onRegisterVeh: () => void
 }) {
+  const { t } = useTranslation()
   const [guarantees, setGuarantees] = useState<Guarantee[]>([])
   const [loading, setLoading] = useState(true)
   const [techPage, setTechPage] = useState(0)
@@ -165,13 +173,11 @@ export function MisGarantiasView({
       {/* ── Page header ── */}
       <div className={styles.gar_header}>
         <div>
-          <h1 className={styles.gar_title}>Mis Garantías</h1>
-          <p className={styles.gar_sub}>
-            Administra los activos que respaldan tus solicitudes de crédito.
-          </p>
+          <h1 className={styles.gar_title}>{t('garantias.title')}</h1>
+          <p className={styles.gar_sub}>{t('garantias.subtitle')}</p>
         </div>
         <button type="button" className={styles.gar_add_btn} onClick={onRegisterTec}>
-          <IconPlus /> Registrar Garantía
+          <IconPlus /> {t('garantias.registerBtn')}
         </button>
       </div>
 
@@ -181,28 +187,28 @@ export function MisGarantiasView({
           <span className={styles.gar_stat_icon}><IconShield /></span>
           <div>
             <strong>{guarantees.length}</strong>
-            <span>Total garantías</span>
+            <span>{t('garantias.stat.total')}</span>
           </div>
         </div>
         <div className={styles.gar_stat_card}>
           <span className={styles.gar_stat_icon}><IconLaptop /></span>
           <div>
             <strong>{techGuarantees.length}</strong>
-            <span>Tecnología</span>
+            <span>{t('garantias.stat.tech')}</span>
           </div>
         </div>
         <div className={`${styles.gar_stat_card} ${styles.gar_stat_card_disabled}`}>
           <span className={styles.gar_stat_icon}><IconCar /></span>
           <div>
             <strong>—</strong>
-            <span>Vehículos</span>
+            <span>{t('garantias.stat.vehicles')}</span>
           </div>
         </div>
         <div className={styles.gar_stat_card}>
           <span className={styles.gar_stat_icon}><IconCheck /></span>
           <div>
             <strong>{guarantees.filter(g => g.status === 'active').length}</strong>
-            <span>Disponibles</span>
+            <span>{t('garantias.stat.available')}</span>
           </div>
         </div>
       </div>
@@ -212,26 +218,26 @@ export function MisGarantiasView({
         <div className={styles.gar_section_head}>
           <div className={styles.gar_section_label}>
             <span className={styles.gar_section_icon}><IconLaptop /></span>
-            <h2>Tecnología</h2>
+            <h2>{t('garantias.section.tech')}</h2>
             <span className={styles.gar_count_badge}>{techGuarantees.length}</span>
           </div>
           <button type="button" className={styles.gar_section_add} onClick={onRegisterTec}>
-            <IconPlus /> Agregar
+            <IconPlus /> {t('garantias.section.add')}
           </button>
         </div>
 
         {loading ? (
           <div className={styles.gar_empty}>
             <span className={styles.gar_empty_icon}><IconClock /></span>
-            <p>Cargando garantías…</p>
+            <p>{t('garantias.loading')}</p>
           </div>
         ) : techGuarantees.length === 0 ? (
           <div className={styles.gar_empty}>
             <span className={styles.gar_empty_icon}><IconLaptop /></span>
-            <strong>No tienes garantías de tecnología registradas</strong>
-            <p>Registra tu laptop, smartphone u otro equipo para usarlo como respaldo en tu solicitud de crédito.</p>
+            <strong>{t('garantias.empty.title')}</strong>
+            <p>{t('garantias.empty.desc')}</p>
             <button type="button" className={styles.gar_empty_cta} onClick={onRegisterTec}>
-              <IconPlus /> Registrar ahora
+              <IconPlus /> {t('garantias.empty.cta')}
             </button>
           </div>
         ) : (
@@ -251,14 +257,14 @@ export function MisGarantiasView({
         <div className={styles.gar_section_head}>
           <div className={styles.gar_section_label}>
             <span className={styles.gar_section_icon}><IconCar /></span>
-            <h2>Vehículos</h2>
-            <span className={styles.gar_soon_badge}>Próximamente</span>
+            <h2>{t('garantias.vehicles.title')}</h2>
+            <span className={styles.gar_soon_badge}>{t('garantias.vehicles.comingSoon')}</span>
           </div>
         </div>
         <div className={styles.gar_soon_body}>
           <span className={styles.gar_soon_icon}><IconCar /></span>
-          <strong>Garantías vehiculares — próximamente</strong>
-          <p>Pronto podrás registrar tu auto, camioneta o moto como respaldo para tu solicitud de crédito.</p>
+          <strong>{t('garantias.vehicles.body')}</strong>
+          <p>{t('garantias.vehicles.desc')}</p>
         </div>
       </section>
 
@@ -266,8 +272,8 @@ export function MisGarantiasView({
       <div className={styles.gar_info_banner}>
         <span><IconShield /></span>
         <div>
-          <strong>Tus garantías están protegidas</strong>
-          <p>Todos los activos registrados son verificados y custodiados bajo regulación SBS Perú. Solo se activan si incurres en mora.</p>
+          <strong>{t('garantias.info.title')}</strong>
+          <p>{t('garantias.info.desc')}</p>
         </div>
       </div>
 

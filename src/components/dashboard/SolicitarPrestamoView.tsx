@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   IconChart,
   IconShield,
   IconDocument,
-  IconCheck,
   IconPlus,
 } from './icons'
 import styles from './SolicitarPrestamoView.module.css'
@@ -48,6 +48,7 @@ export function SolicitarPrestamoView({
   onContinue: (applicationId: string) => void
   onAddGuarantee: () => void
 }) {
+  const { t } = useTranslation()
   const [amount, setAmount] = useState(15000)
   const [plazo, setPlazo] = useState<Plazo>(12)
   const [selectedGuaranteeId, setSelectedGuaranteeId] = useState<string | null>(null)
@@ -119,11 +120,11 @@ export function SolicitarPrestamoView({
       <div className={styles.sol_main}>
         <div className={styles.sol_header}>
           <div>
-            <h1 className={styles.sol_title}>Solicita tu Préstamo</h1>
-            <p className={styles.view_sub}>Configura tu crédito ideal con las tasas más competitivas del mercado.</p>
+            <h1 className={styles.sol_title}>{t('solicitar.title')}</h1>
+            <p className={styles.view_sub}>{t('solicitar.subtitle')}</p>
           </div>
           <button type="button" className={styles.sol_back_btn} onClick={onBack} disabled={loading}>
-            ← Volver
+            {t('solicitar.back')}
           </button>
         </div>
 
@@ -132,21 +133,20 @@ export function SolicitarPrestamoView({
           <div className={styles.sol_card_head}>
             <div className={styles.sol_card_title}>
               <span className={styles.sec_card_icon}><IconChart /></span>
-              <h2>Simulador de Préstamo</h2>
+              <h2>{t('solicitar.simulator.title')}</h2>
             </div>
-            <span className={styles.tasa_badge}>TASA PREFERENCIAL</span>
+            <span className={styles.tasa_badge}>{t('solicitar.simulator.badge')}</span>
           </div>
 
           <div className={styles.sol_amount_row}>
-            <span className={styles.sol_amount_label}>MONTO A SOLICITAR</span>
+            <span className={styles.sol_amount_label}>{t('solicitar.simulator.amountLabel')}</span>
             <strong className={styles.sol_amount_value}>S/ {amount.toLocaleString('es-PE')}</strong>
           </div>
 
           {selectedGuarantee && (
-            <p style={{ fontSize: '0.78rem', color: '#4a7c59', marginBottom: '0.5rem' }}>
-              Máximo disponible: <strong>S/ {dynamicMax.toLocaleString('es-PE')}</strong>
-              {' '}(80% del valor de la garantía)
-            </p>
+            <p style={{ fontSize: '0.78rem', color: '#4a7c59', marginBottom: '0.5rem' }}
+              dangerouslySetInnerHTML={{ __html: t('solicitar.simulator.maxAvailable', { max: dynamicMax.toLocaleString('es-PE') }) }}
+            />
           )}
 
           <div className={styles.sol_slider_wrap}>
@@ -169,7 +169,7 @@ export function SolicitarPrestamoView({
 
 
           <div className={styles.sol_plazo_section}>
-            <span className={styles.sol_plazo_label}>PLAZO DE PAGO (MESES)</span>
+            <span className={styles.sol_plazo_label}>{t('solicitar.simulator.termLabel')}</span>
             <div className={styles.sol_plazo_pills}>
               {([12, 24, 36, 48] as Plazo[]).map((m) => {
                 const minRequired = PLAZO_MIN_AMOUNT[m] ?? 0
@@ -183,7 +183,7 @@ export function SolicitarPrestamoView({
                     disabled={plazoDisabled}
                     title={plazoDisabled && m !== 12 ? `Disponible desde S/ 4,000` : undefined}
                   >
-                    {m} Meses
+                    {t('solicitar.simulator.months', { m })}
                   </button>
                 )
               })}
@@ -196,19 +196,19 @@ export function SolicitarPrestamoView({
           <div className={styles.sol_card_head}>
             <div className={styles.sol_card_title}>
               <span className={styles.sec_card_icon}><IconShield /></span>
-              <h2>Gestión de Garantías</h2>
+              <h2>{t('solicitar.guarantees.title')}</h2>
             </div>
-            <span className={styles.sol_card_hint}>Selecciona el respaldo para tu solicitud</span>
+            <span className={styles.sol_card_hint}>{t('solicitar.guarantees.hint')}</span>
           </div>
 
           {loadingGuarantees ? (
             <p style={{ padding: '1rem', fontSize: '0.85rem', color: '#64748b' }}>
-              Cargando garantías…
+              {t('solicitar.guarantees.loading')}
             </p>
           ) : guarantees.length === 0 ? (
             <div style={{ padding: '1rem' }}>
               <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                No tienes garantías registradas. Registra un dispositivo de tecnología para usarlo como respaldo.
+                {t('solicitar.guarantees.empty')}
               </p>
               <button
                 type="button"
@@ -218,7 +218,7 @@ export function SolicitarPrestamoView({
                 style={{ cursor: 'pointer', width: '100%' }}
               >
                 <span className={styles.sol_garantia_new_icon}><IconPlus /></span>
-                <strong>Registrar Garantía de Tecnología</strong>
+                <strong>{t('solicitar.guarantees.registerTech')}</strong>
               </button>
             </div>
           ) : (
@@ -234,7 +234,7 @@ export function SolicitarPrestamoView({
                     disabled={loading}
                   >
                     {isSelected && (
-                      <span className={styles.sol_garantia_check_badge} aria-label="Seleccionado">
+                      <span className={styles.sol_garantia_check_badge} aria-label={t('solicitar.guarantees.selected')}>
                         <svg viewBox="0 0 12 12" width="10" height="10" fill="none">
                           <path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
@@ -249,7 +249,7 @@ export function SolicitarPrestamoView({
                       Valor: S/ {Number(g.estimated_value).toLocaleString('es-PE')}
                     </p>
                     <span className={styles.sol_garantia_cta}>
-                      {isSelected ? 'Seleccionado' : 'Seleccionar →'}
+                      {isSelected ? t('solicitar.guarantees.selected') : t('solicitar.guarantees.select')}
                     </span>
                   </button>
                 )
@@ -262,7 +262,7 @@ export function SolicitarPrestamoView({
                 disabled={loading}
               >
                 <span className={styles.sol_garantia_new_icon}><IconPlus /></span>
-                <strong>Agregar Nueva Garantía</strong>
+                <strong>{t('solicitar.guarantees.addNew')}</strong>
               </button>
             </div>
           )}
@@ -272,10 +272,10 @@ export function SolicitarPrestamoView({
         {/* Advisory banner */}
         <div className={styles.sol_advisory}>
           <div className={styles.sol_advisory_copy}>
-            <h3>¿Necesitas asesoría personalizada?</h3>
-            <p>Nuestros asesores expertos están listos para ayudarte a elegir el plan que mejor se adapte a tus necesidades financieras.</p>
+            <h3>{t('solicitar.advisory.title')}</h3>
+            <p>{t('solicitar.advisory.desc')}</p>
           </div>
-          <button type="button" className={styles.sol_advisory_btn}>Hablar con un Experto</button>
+          <button type="button" className={styles.sol_advisory_btn}>{t('solicitar.advisory.btn')}</button>
         </div>
       </div>
 
@@ -285,8 +285,8 @@ export function SolicitarPrestamoView({
           <div className={styles.sol_summary_head}>
             <span className={styles.sol_summary_icon}><IconDocument /></span>
             <div>
-              <strong>Resumen de Solicitud</strong>
-              <span>En preparación</span>
+              <strong>{t('solicitar.summary.title')}</strong>
+              <span>{t('solicitar.summary.preparation')}</span>
             </div>
           </div>
 
@@ -294,19 +294,19 @@ export function SolicitarPrestamoView({
 
           <div className={styles.sol_summary_rows}>
             <div className={styles.sol_summary_row}>
-              <span>Monto solicitado</span>
+              <span>{t('solicitar.summary.amountLabel')}</span>
               <strong>S/ {formatSoles(amount)}</strong>
             </div>
             <div className={styles.sol_summary_row}>
-              <span>Plazo</span>
+              <span>{t('solicitar.summary.termLabel')}</span>
               <strong>{plazo} meses</strong>
             </div>
             <div className={styles.sol_summary_row}>
-              <span>Tasa Mensual (TEA)</span>
+              <span>{t('solicitar.summary.rateLabel')}</span>
               <strong>{(TASA_MENSUAL * 100).toFixed(2)}%</strong>
             </div>
             <div className={styles.sol_summary_row}>
-              <span>Seguro de desgravamen</span>
+              <span>{t('solicitar.summary.insurance')}</span>
               <strong>S/ {formatSoles(SEGURO)}</strong>
             </div>
           </div>
@@ -314,31 +314,31 @@ export function SolicitarPrestamoView({
           <div className={styles.sol_summary_sep} />
 
           <div className={styles.sol_cuota_block}>
-            <span>CUOTA MENSUAL</span>
+            <span>{t('solicitar.summary.monthlyQuota')}</span>
             <strong>S/{formatSoles(cuota)}</strong>
           </div>
-          <p className={styles.sol_cuota_note}>*Monto aproximado sujeto a evaluación crediticia</p>
+          <p className={styles.sol_cuota_note}>{t('solicitar.summary.note')}</p>
 
           <div className={styles.sol_summary_sep} />
 
           <div className={styles.sol_schedule}>
-            <span className={styles.sol_schedule_label}>CRONOGRAMA TENTATIVO</span>
+            <span className={styles.sol_schedule_label}>{t('solicitar.summary.schedule')}</span>
             {scheduleMonths.map((m, i) => (
               <div key={m} className={styles.sol_schedule_row}>
                 <span className={`${styles.sol_dot} ${i === 0 ? styles.sol_dot_dark : styles.sol_dot_mid}`} />
-                <span>Cuota 0{i + 1} - {m}</span>
+                <span>{t('solicitar.summary.scheduleQuota', { i: i + 1, month: m })}</span>
                 <strong>S/ {Math.round(cuota).toLocaleString('es-PE')}</strong>
               </div>
             ))}
             <div className={styles.sol_schedule_row}>
               <span className={styles.sol_dot_light} />
-              <span className={styles.sol_schedule_rest}>... {plazo - 2} cuotas restantes</span>
+              <span className={styles.sol_schedule_rest}>{t('solicitar.summary.remaining', { count: plazo - 2 })}</span>
             </div>
           </div>
 
           {!selectedGuaranteeId && !loadingGuarantees && (
             <p style={{ fontSize: '0.8rem', color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '0.5rem', padding: '0.55rem 0.75rem' }}>
-              Debes seleccionar una garantía para continuar.
+              {t('solicitar.summary.selectGuarantee')}
             </p>
           )}
 
@@ -354,21 +354,21 @@ export function SolicitarPrestamoView({
             onClick={handleSubmit}
             disabled={loading || !selectedGuaranteeId}
           >
-            {loading ? 'Procesando…' : 'Continuar con la Solicitud'}
+            {loading ? t('solicitar.submitting') : t('solicitar.submit')}
           </button>
 
           <p className={styles.sol_terms}>
-            Al hacer clic en continuar, aceptas nuestros{' '}
-            <button type="button" className={styles.sol_terms_link}>Términos y Condiciones</button>
-            {' '}y{' '}
-            <button type="button" className={styles.sol_terms_link}>Políticas de Privacidad.</button>
+            {t('solicitar.terms')}{' '}
+            <button type="button" className={styles.sol_terms_link}>{t('solicitar.termsLink')}</button>
+            {' '}{t('solicitar.andPrivacy')}{' '}
+            <button type="button" className={styles.sol_terms_link}>{t('solicitar.privacyLink')}</button>
           </p>
         </div>
 
         <div className={styles.sol_sbs_badge}>
           <span className={styles.sol_sbs_icon}><IconShield /></span>
           <div>
-            <span>CERTIFICADO POR</span>
+            <span>{t('solicitar.sbs')}</span>
             <strong>SBS Perú</strong>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
@@ -31,31 +32,31 @@ function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
 
 // ── Status config ─────────────────────────────────────────────────────────────
 
-const STATUS_CFG = {
-  draft:     { label: 'Borrador',       color: '#7c3aed', bg: '#ede9fe' },
-  submitted: { label: 'En Evaluación',  color: '#2563eb', bg: '#dbeafe' },
-  approved:  { label: 'Aprobado',       color: '#0f7d3f', bg: '#d9f0da' },
-  rejected:  { label: 'Rechazado',      color: '#dc2626', bg: '#fef2f2' },
-  signed:    { label: 'Firmado',        color: '#0f7d3f', bg: '#d9f0da' },
+const STATUS_CFG_KEYS = {
+  draft:     { labelKey: 'detalle.status.draft',     color: '#7c3aed', bg: '#ede9fe' },
+  submitted: { labelKey: 'detalle.status.submitted', color: '#2563eb', bg: '#dbeafe' },
+  approved:  { labelKey: 'detalle.status.approved',  color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:  { labelKey: 'detalle.status.rejected',  color: '#dc2626', bg: '#fef2f2' },
+  signed:    { labelKey: 'detalle.status.signed',    color: '#0f7d3f', bg: '#d9f0da' },
 } as const
 
 // ── Timeline builder ──────────────────────────────────────────────────────────
 
 interface TimelineStep {
-  label:  string
-  date:   string
-  state:  'done' | 'active' | 'pending' | 'rejected'
+  labelKey: string
+  date:     string
+  state:    'done' | 'active' | 'pending' | 'rejected'
 }
 
-function buildTimeline(app: LoanApplication): TimelineStep[] {
+function buildTimeline(app: LoanApplication, tPending: string, tInProgress: string): TimelineStep[] {
   const created = fmtDate(app.created_at)
   const updated = fmtDate(app.updated_at ?? app.created_at)
 
-  const STEPS: { label: string; doneOn: LoanApplication['status'][] }[] = [
-    { label: 'Registro',      doneOn: ['submitted','approved','rejected','signed'] },
-    { label: 'En Evaluación', doneOn: ['approved','rejected','signed']             },
-    { label: 'Oferta Final',  doneOn: ['signed']                                  },
-    { label: 'Firmado',       doneOn: ['signed']                                  },
+  const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
+    { labelKey: 'detalle.timeline.registro',      doneOn: ['submitted','approved','rejected','signed'] },
+    { labelKey: 'detalle.timeline.enEvaluacion',  doneOn: ['approved','rejected','signed']             },
+    { labelKey: 'detalle.timeline.ofertaFinal',   doneOn: ['signed']                                  },
+    { labelKey: 'detalle.timeline.firmado',        doneOn: ['signed']                                  },
   ]
 
   return STEPS.map((s, i) => {
@@ -67,16 +68,16 @@ function buildTimeline(app: LoanApplication): TimelineStep[] {
     )
     const isRejected = app.status === 'rejected' && i === 1
 
-    let date = 'Pendiente'
+    let date = tPending
     if (i === 0)                                   date = created
     if (i === 1 && app.status !== 'draft')         date = created
     if (i === 2 && (app.status === 'approved' || app.status === 'signed')) date = updated
     if (i === 3 && app.status === 'signed')        date = updated
-    if (isActive)                                  date = 'En curso'
+    if (isActive)                                  date = tInProgress
     if (isRejected)                                date = updated
 
     return {
-      label: s.label,
+      labelKey: s.labelKey,
       date,
       state: isRejected ? 'rejected' : done ? 'done' : isActive ? 'active' : 'pending',
     }
@@ -126,6 +127,7 @@ interface Props {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
+  const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [payments,   setPayments]   = useState<Payment[]>([])
   const [loading,    setLoading]    = useState(true)
@@ -143,9 +145,9 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
     return () => { cancelled = true }
   }, [app.id])
 
-  const statusCfg   = STATUS_CFG[app.status]
-  const timeline    = buildTimeline(app)
-  const guarantee   = app.guarantee ?? null
+  const statusCfgKey = STATUS_CFG_KEYS[app.status]
+  const timeline     = buildTimeline(app, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'))
+  const guarantee    = app.guarantee ?? null
 
   const loanAmount  = evaluation?.approved_amount != null
     ? Number(evaluation.approved_amount)
@@ -162,10 +164,10 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
       <div className={styles.page_header}>
         <button type="button" className={styles.back_btn} onClick={onBack}>
           <IconArrowLeft />
-          Mis Solicitudes
+          {t('detalle.backBtn')}
         </button>
-        <span className={styles.status_badge} style={{ color: statusCfg.color, background: statusCfg.bg }}>
-          {statusCfg.label}
+        <span className={styles.status_badge} style={{ color: statusCfgKey.color, background: statusCfgKey.bg }}>
+          {t(statusCfgKey.labelKey)}
         </span>
       </div>
 
@@ -181,29 +183,29 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 <IconDocument />
               </div>
               <div className={styles.summary_identity}>
-                <strong>Préstamo Personal</strong>
+                <strong>{t('detalle.loanPersonal')}</strong>
                 <span>{shortId(app.id)}</span>
               </div>
               <div className={styles.summary_amount_block}>
-                <span>MONTO SOLICITADO</span>
+                <span>{t('detalle.requestedAmount')}</span>
                 <strong>S/ {fmt(Number(app.amount))}</strong>
               </div>
             </div>
 
             <div className={styles.summary_meta}>
-              <div><span>Plazo</span><strong>{app.term_months} meses</strong></div>
-              <div><span>Creado</span><strong>{fmtShort(app.created_at)}</strong></div>
-              <div><span>ID completo</span><strong className={styles.mono}>{app.id.slice(0, 16).toUpperCase()}…</strong></div>
+              <div><span>{t('detalle.term')}</span><strong>{t('detalle.months', { n: app.term_months })}</strong></div>
+              <div><span>{t('detalle.created')}</span><strong>{fmtShort(app.created_at)}</strong></div>
+              <div><span>{t('detalle.fullId')}</span><strong className={styles.mono}>{app.id.slice(0, 16).toUpperCase()}…</strong></div>
             </div>
           </div>
 
           {/* ── Timeline ── */}
           <div className={styles.section}>
-            <h2 className={styles.section_title}>Progreso de la Solicitud</h2>
+            <h2 className={styles.section_title}>{t('detalle.progress')}</h2>
             <div className={styles.timeline_card}>
               <div className={styles.timeline}>
                 {timeline.map((step, i) => (
-                  <div key={step.label} className={styles.tl_step}>
+                  <div key={step.labelKey} className={styles.tl_step}>
                     <div className={styles.tl_connector}>
                       <div className={`${styles.tl_node} ${styles[`tl_node_${step.state}`]}`}>
                         {step.state === 'done'     && <IconCheck />}
@@ -215,7 +217,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                       )}
                     </div>
                     <div className={styles.tl_label}>
-                      <strong className={styles[`tl_text_${step.state}`]}>{step.label}</strong>
+                      <strong className={styles[`tl_text_${step.state}`]}>{t(step.labelKey)}</strong>
                       <span>{step.date}</span>
                     </div>
                   </div>
@@ -227,7 +229,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
           {/* ── Guarantee ── */}
           {guarantee && (
             <div className={styles.section}>
-              <h2 className={styles.section_title}>Garantía Vinculada</h2>
+              <h2 className={styles.section_title}>{t('detalle.guarantee.title')}</h2>
               <div className={styles.guarantee_card}>
                 <div className={styles.guarantee_icon_wrap}>
                   {guarantee.type === 'vehiculo' ? <IconCar /> : <IconLaptop />}
@@ -239,15 +241,15 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                   </div>
                   <div className={styles.guarantee_meta}>
                     {guarantee.type === 'vehiculo'
-                      ? guarantee.serial_number && <span>Placa: <strong>{guarantee.serial_number}</strong></span>
-                      : guarantee.serial_number && <span>S/N: <strong>{guarantee.serial_number}</strong></span>
+                      ? guarantee.serial_number && <span>{t('detalle.guarantee.plate')}: <strong>{guarantee.serial_number}</strong></span>
+                      : guarantee.serial_number && <span>{t('detalle.guarantee.sn')}: <strong>{guarantee.serial_number}</strong></span>
                     }
-                    {guarantee.condition && <span>Condición: <strong>{guarantee.condition}</strong></span>}
-                    {guarantee.manufacture_year && <span>Año: <strong>{guarantee.manufacture_year}</strong></span>}
+                    {guarantee.condition && <span>{t('detalle.guarantee.condition')}: <strong>{guarantee.condition}</strong></span>}
+                    {guarantee.manufacture_year && <span>{t('detalle.guarantee.year')}: <strong>{guarantee.manufacture_year}</strong></span>}
                   </div>
                 </div>
                 <div className={styles.guarantee_value}>
-                  <span>Valor estimado</span>
+                  <span>{t('detalle.guarantee.estimatedValue')}</span>
                   <strong>S/ {fmt(Number(guarantee.estimated_value))}</strong>
                 </div>
               </div>
@@ -257,7 +259,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
           {/* ── Payment history ── */}
           {payments.length > 0 && (
             <div className={styles.section}>
-              <h2 className={styles.section_title}>Pagos Realizados</h2>
+              <h2 className={styles.section_title}>{t('detalle.payments.title')}</h2>
               <div className={styles.payments_list}>
                 {payments.map(p => (
                   <div key={p.id} className={styles.payment_row}>
@@ -285,7 +287,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
           <div className={styles.finance_card}>
             <div className={styles.finance_header}>
               <span className={styles.finance_icon}><IconWallet /></span>
-              <h3>Detalles Financieros</h3>
+              <h3>{t('detalle.finance.title')}</h3>
             </div>
 
             {loading ? (
@@ -293,24 +295,24 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
             ) : (
               <div className={styles.finance_rows}>
                 <div className={styles.finance_row}>
-                  <span>Monto {hasFinance ? 'aprobado' : 'solicitado'}</span>
+                  <span>{hasFinance ? t('detalle.finance.amountApproved') : t('detalle.finance.amountRequested')}</span>
                   <strong>S/ {fmt(loanAmount)}</strong>
                 </div>
                 <div className={styles.finance_row}>
-                  <span>Plazo</span>
-                  <strong>{app.term_months} meses</strong>
+                  <span>{t('detalle.finance.term')}</span>
+                  <strong>{t('detalle.months', { n: app.term_months })}</strong>
                 </div>
                 <div className={styles.finance_row}>
-                  <span>Cuota mensual</span>
+                  <span>{t('detalle.finance.monthlyQuota')}</span>
                   <strong>S/ {fmt(cuota)}</strong>
                 </div>
                 <div className={styles.finance_divider} />
                 <div className={styles.finance_row}>
-                  <span>TEA</span>
+                  <span>{t('detalle.finance.tea')}</span>
                   <strong>{TEA.toFixed(2)}%</strong>
                 </div>
                 <div className={styles.finance_row}>
-                  <span>Costo total</span>
+                  <span>{t('detalle.finance.totalCost')}</span>
                   <strong>S/ {fmt(totalCost)}</strong>
                 </div>
               </div>
@@ -321,37 +323,37 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
           <div className={styles.action_card}>
             {app.status === 'approved' && onContinue && (
               <>
-                <p className={styles.action_hint}>Tu oferta está lista. Revisa los términos y firma el contrato.</p>
+                <p className={styles.action_hint}>{t('detalle.action.approvedHint')}</p>
                 <button
                   type="button"
                   className={styles.action_btn_primary}
                   onClick={() => onContinue(app.id)}
                 >
-                  Firmar Contrato →
+                  {t('detalle.action.signContract')}
                 </button>
               </>
             )}
             {app.status === 'signed' && (
               <>
-                <p className={styles.action_hint}>Préstamo activo. Revisa tus cuotas en Mis Préstamos.</p>
+                <p className={styles.action_hint}>{t('detalle.action.signedHint')}</p>
                 <button type="button" className={styles.action_btn_success} disabled>
-                  <IconCheck /> Contrato Firmado
+                  <IconCheck /> {t('detalle.action.signedBtn')}
                 </button>
               </>
             )}
             {app.status === 'submitted' && (
               <>
-                <p className={styles.action_hint}>Tu solicitud está siendo evaluada por nuestro equipo.</p>
+                <p className={styles.action_hint}>{t('detalle.action.submittedHint')}</p>
                 <button type="button" className={styles.action_btn_muted} disabled>
-                  En Evaluación…
+                  {t('detalle.action.submittedBtn')}
                 </button>
               </>
             )}
             {app.status === 'rejected' && (
               <>
-                <p className={styles.action_hint}>Esta solicitud fue rechazada. Puedes presentar una nueva.</p>
+                <p className={styles.action_hint}>{t('detalle.action.rejectedHint')}</p>
                 <button type="button" className={styles.action_btn_muted} disabled>
-                  <IconWarning /> Solicitud Rechazada
+                  <IconWarning /> {t('detalle.action.rejectedBtn')}
                 </button>
               </>
             )}
@@ -361,8 +363,8 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
           <div className={styles.security_seal}>
             <span className={styles.seal_icon}><IconShield /></span>
             <div>
-              <strong>Información protegida</strong>
-              <span>Datos encriptados bajo normativa SBS Perú</span>
+              <strong>{t('detalle.security.title')}</strong>
+              <span>{t('detalle.security.desc')}</span>
             </div>
           </div>
 

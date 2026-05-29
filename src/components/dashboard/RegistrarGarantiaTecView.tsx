@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createGuarantee } from '../../services/guarantee.service'
 import { IconShield, IconCheck } from './icons'
 import {
@@ -91,32 +92,30 @@ const DEVICE_CATEGORIES = [
 const CONDITION_OPTIONS = [
   {
     id: 'excelente',
-    label: 'Excelente',
+    labelKey: 'regGar.condition.excelente.label',
     stars: '★★★',
-    desc: 'Sin rayones ni daños visibles. Funciona como nuevo.',
+    descKey: 'regGar.condition.excelente.desc',
   },
   {
     id: 'bueno',
-    label: 'Bueno',
+    labelKey: 'regGar.condition.bueno.label',
     stars: '★★',
-    desc: 'Desgaste mínimo por uso normal. Funcionalidad al 100%.',
+    descKey: 'regGar.condition.bueno.desc',
   },
   {
     id: 'regular',
-    label: 'Regular',
+    labelKey: 'regGar.condition.regular.label',
     stars: '★',
-    desc: 'Rayones o golpes visibles. Funcional, sin daños graves.',
+    descKey: 'regGar.condition.regular.desc',
   },
 ] as const
 
 const PHOTO_SLOTS = [
-  { id: 'frontal', label: 'Parte frontal',  desc: 'Pantalla encendida mostrando ajustes del sistema' },
-  { id: 'trasero', label: 'Parte trasera',  desc: 'Marca y modelo visibles, sin obstrucciones'       },
-  { id: 'serial',  label: 'Número de serie', desc: 'Etiqueta o pantalla "Acerca de" con S/N visible' },
-  { id: 'general', label: 'Vista general',  desc: 'Dispositivo completo mostrando estado físico'     },
+  { id: 'frontal', labelKey: 'regGar.photo.frontal.label', descKey: 'regGar.photo.frontal.desc' },
+  { id: 'trasero', labelKey: 'regGar.photo.trasero.label', descKey: 'regGar.photo.trasero.desc' },
+  { id: 'serial',  labelKey: 'regGar.photo.serial.label',  descKey: 'regGar.photo.serial.desc'  },
+  { id: 'general', labelKey: 'regGar.photo.general.label', descKey: 'regGar.photo.general.desc' },
 ]
-
-const STEPS = ['Dispositivo', 'Especificaciones', 'Fotografías', 'Valoración']
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -142,7 +141,7 @@ type Step2 = {
   screen_size: string
 }
 
-type Step3 = { photos: Set<string> }
+type Step3 = { photos: Map<string, string> }
 
 type Step4 = {
   purchase_price: string
@@ -189,9 +188,17 @@ export function RegistrarGarantiaTecView({
   onBack: () => void
   onSuccess: () => void
 }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const STEPS = [
+    t('regGar.step.device'),
+    t('regGar.step.specs'),
+    t('regGar.step.photos'),
+    t('regGar.step.valuation'),
+  ]
 
   const [s1, setS1] = useState<Step1>({
     device_category: '',
@@ -215,7 +222,9 @@ export function RegistrarGarantiaTecView({
     screen_size: '',
   })
 
-  const [s3, setS3] = useState<Step3>({ photos: new Set() })
+  const [s3, setS3] = useState<Step3>({ photos: new Map() })
+  const [pendingSlot, setPendingSlot] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [s4, setS4] = useState<Step4>({
     purchase_price: '',
@@ -250,12 +259,29 @@ export function RegistrarGarantiaTecView({
     return false
   }
 
-  function togglePhoto(id: string) {
-    setS3((prev) => {
-      const next = new Set(prev.photos)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return { photos: next }
-    })
+  function handlePhotoCardClick(slotId: string) {
+    setPendingSlot(slotId)
+    fileInputRef.current?.click()
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !pendingSlot) return
+    if (file.size > 2 * 1024 * 1024) {
+      alert('La imagen debe ser menor a 2 MB.')
+      e.target.value = ''
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setS3((prev) => {
+        const next = new Map(prev.photos)
+        next.set(pendingSlot, reader.result as string)
+        return { photos: next }
+      })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   // ── Submit ──────────────────────────────────────────────────────────────────
@@ -291,7 +317,7 @@ export function RegistrarGarantiaTecView({
         serial_number:    s1.serial_number,
         condition:        s2.condition,
         specs,
-        photo_urls:       PHOTO_SLOTS.filter((p) => s3.photos.has(p.id)).map((p) => `mock://${p.id}`),
+        photo_urls:       PHOTO_SLOTS.filter((p) => s3.photos.has(p.id)).map((p) => s3.photos.get(p.id)!),
       })
       onSuccess()
     } catch (err) {
@@ -317,13 +343,10 @@ export function RegistrarGarantiaTecView({
 
     return (
       <div className={styles.reg_step_body}>
-        <p className={styles.reg_step_desc}>
-          Selecciona el tipo de dispositivo e ingresa sus datos de identificación.
-          El número de serie es esencial para verificar autenticidad.
-        </p>
+        <p className={styles.reg_step_desc}>{t('regGar.step0.desc')}</p>
 
         {/* Category selector */}
-        <FieldRow label="Tipo de dispositivo" required>
+        <FieldRow label={t('regGar.step0.deviceType')} required>
           <div className={styles.reg_category_grid}>
             {DEVICE_CATEGORIES.map(({ id, label, icon: CatIcon }) => (
               <button
@@ -350,7 +373,7 @@ export function RegistrarGarantiaTecView({
 
         <div className={styles.reg_two_col}>
           {/* ── Brand ── */}
-          <FieldRow label="Marca" required>
+          <FieldRow label={t('regGar.step0.brand')} required>
             {s1.device_category ? (
               <>
                 <select
@@ -367,17 +390,17 @@ export function RegistrarGarantiaTecView({
                     setS2((p) => ({ ...p, processor: '', processor_custom: '' }))
                   }}
                 >
-                  <option value="">Seleccionar marca…</option>
+                  <option value="">{t('regGar.step0.selectBrand')}</option>
                   {catalogBrands.map((b) => (
                     <option key={b.brand} value={b.brand}>{b.brand}</option>
                   ))}
-                  <option value={UNKNOWN_BRAND}>Otra marca (ingreso manual)</option>
+                  <option value={UNKNOWN_BRAND}>{t('regGar.step0.unknownBrand')}</option>
                 </select>
                 {s1.brand === UNKNOWN_BRAND && (
                   <input
                     type="text"
                     className={styles.reg_input}
-                    placeholder="Ej: Toshiba, TCL, ZTE…"
+                    placeholder={t('regGar.step0.brandPlaceholder')}
                     value={s1.custom_brand}
                     onChange={(e) => setS1((p) => ({ ...p, custom_brand: e.target.value }))}
                     style={{ marginTop: '0.4rem' }}
@@ -388,26 +411,26 @@ export function RegistrarGarantiaTecView({
               <input
                 disabled
                 className={styles.reg_input}
-                placeholder="Primero selecciona un tipo"
+                placeholder={t('regGar.step0.selectTypeFirst')}
                 style={{ color: '#94a3b8', cursor: 'not-allowed' }}
               />
             )}
           </FieldRow>
 
           {/* ── Model ── */}
-          <FieldRow label="Modelo" required>
+          <FieldRow label={t('regGar.step0.model')} required>
             {!s1.device_category || !s1.brand ? (
               <input
                 disabled
                 className={styles.reg_input}
-                placeholder="Primero selecciona una marca"
+                placeholder={t('regGar.step0.selectBrandFirst')}
                 style={{ color: '#94a3b8', cursor: 'not-allowed' }}
               />
             ) : s1.brand === UNKNOWN_BRAND ? (
               <input
                 type="text"
                 className={styles.reg_input}
-                placeholder="Ej: UltraBook X500, Note 9 Pro…"
+                placeholder={t('regGar.step0.modelPlaceholder')}
                 value={s1.custom_model}
                 onChange={(e) => setS1((p) => ({ ...p, custom_model: e.target.value }))}
               />
@@ -433,17 +456,17 @@ export function RegistrarGarantiaTecView({
                     setS2((p) => ({ ...p, processor: '', processor_custom: '' }))
                   }}
                 >
-                  <option value="">Seleccionar modelo…</option>
+                  <option value="">{t('regGar.step0.selectModel')}</option>
                   {catalogModels.map((m) => (
                     <option key={m.model} value={m.model}>{m.model}</option>
                   ))}
-                  <option value={UNKNOWN_MODEL}>Otro modelo (desconocido)</option>
+                  <option value={UNKNOWN_MODEL}>{t('regGar.step0.unknownModel')}</option>
                 </select>
                 {s1.model === UNKNOWN_MODEL && (
                   <input
                     type="text"
                     className={styles.reg_input}
-                    placeholder="Describir el modelo…"
+                    placeholder={t('regGar.step0.modelPlaceholder')}
                     value={s1.custom_model}
                     onChange={(e) => setS1((p) => ({ ...p, custom_model: e.target.value }))}
                     style={{ marginTop: '0.4rem' }}
@@ -458,38 +481,35 @@ export function RegistrarGarantiaTecView({
         {unknown && (
           <div className={styles.reg_warn_box}>
             <IconAlert />
-            <p>
-              Modelo no registrado en nuestro catálogo. Esta garantía requerirá{' '}
-              <strong>verificación adicional</strong> por parte de nuestro equipo técnico antes de quedar activa.
-            </p>
+            <p dangerouslySetInnerHTML={{ __html: t('regGar.step0.unknownWarning') }} />
           </div>
         )}
 
         <div className={styles.reg_two_col}>
           {/* ── Year ── */}
-          <FieldRow label="Año de fabricación" required>
+          <FieldRow label={t('regGar.step0.year')} required>
             <select
               className={styles.reg_select}
               value={s1.manufacture_year}
               disabled={!s1.brand || (s1.brand === UNKNOWN_BRAND ? false : !s1.model)}
               onChange={(e) => setS1((p) => ({ ...p, manufacture_year: e.target.value }))}
             >
-              <option value="">Seleccionar año…</option>
+              <option value="">{t('regGar.step0.selectYear')}</option>
               {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
             {showYearRange && yearOptions.length > 0 && (
               <span className={styles.reg_year_hint}>
-                Rango válido: {yearMin} – {yearMax}
+                {t('regGar.step0.yearRange', { min: yearMin, max: yearMax })}
               </span>
             )}
           </FieldRow>
 
           {/* ── Serial number ── */}
-          <FieldRow label="Número de serie (S/N)" required>
+          <FieldRow label={t('regGar.step0.serial')} required>
             <input
               type="text"
               className={styles.reg_input}
-              placeholder="Ej: C02YM2EQJG5H"
+              placeholder={t('regGar.step0.serialPlaceholder')}
               value={s1.serial_number}
               onChange={(e) => setS1((p) => ({ ...p, serial_number: e.target.value }))}
             />
@@ -498,11 +518,11 @@ export function RegistrarGarantiaTecView({
 
         {/* IMEI — smartphones only */}
         {s1.device_category === 'smartphone' && (
-          <FieldRow label="IMEI">
+          <FieldRow label={t('regGar.step0.imei')}>
             <input
               type="text"
               className={styles.reg_input}
-              placeholder="Marca *#06# para obtenerlo"
+              placeholder={t('regGar.step0.imeiPlaceholder')}
               value={s1.imei}
               onChange={(e) => setS1((p) => ({ ...p, imei: e.target.value }))}
             />
@@ -516,22 +536,19 @@ export function RegistrarGarantiaTecView({
             checked={s1.is_reconditioned}
             onChange={(e) => setS1((p) => ({ ...p, is_reconditioned: e.target.checked }))}
           />
-          <span>Dispositivo reacondicionado / refurbished</span>
+          <span>{t('regGar.step0.reconditioned')}</span>
         </label>
 
         {s1.is_reconditioned && (
           <div className={styles.reg_info_box}>
             <IconShield />
-            <p>
-              Los dispositivos reacondicionados han sido restaurados a condiciones de uso.
-              El año de fabricación debe corresponder al año original del modelo, no al de reacondicionamiento.
-            </p>
+            <p>{t('regGar.step0.reconditionedInfo')}</p>
           </div>
         )}
 
         <div className={styles.reg_info_box}>
           <IconShield />
-          <p>El número de serie identifica unívocamente tu dispositivo y permite verificar que no esté reportado como robado.</p>
+          <p>{t('regGar.step0.serialInfo')}</p>
         </div>
       </div>
     )
@@ -549,13 +566,10 @@ export function RegistrarGarantiaTecView({
 
     return (
       <div className={styles.reg_step_body}>
-        <p className={styles.reg_step_desc}>
-          Evalúa el estado físico y detalla las especificaciones técnicas.
-          Estos datos determinan el valor de respaldo del dispositivo.
-        </p>
+        <p className={styles.reg_step_desc}>{t('regGar.step1.desc')}</p>
 
         {/* ── Condition ── */}
-        <FieldRow label="Condición física" required>
+        <FieldRow label={t('regGar.step1.condition')} required>
           <div className={styles.reg_condition_grid}>
             {CONDITION_OPTIONS.map((c) => (
               <button
@@ -565,21 +579,21 @@ export function RegistrarGarantiaTecView({
                 onClick={() => setS2((p) => ({ ...p, condition: c.id }))}
               >
                 <span className={styles.reg_cond_stars}>{c.stars}</span>
-                <strong>{c.label}</strong>
-                <p>{c.desc}</p>
+                <strong>{t(c.labelKey)}</strong>
+                <p>{t(c.descKey)}</p>
               </button>
             ))}
           </div>
         </FieldRow>
 
         {/* ── Processor — grouped select ── */}
-        <FieldRow label="Procesador" required>
+        <FieldRow label={t('regGar.step1.processor')} required>
           <select
             className={styles.reg_select}
             value={s2.processor}
             onChange={(e) => setS2((p) => ({ ...p, processor: e.target.value, processor_custom: '' }))}
           >
-            <option value="">Seleccionar procesador…</option>
+            <option value="">{t('regGar.step1.selectProcessor')}</option>
             {procGroups.map((g) => (
               <optgroup key={g.group} label={g.group}>
                 {g.processors.map((proc) => (
@@ -587,13 +601,13 @@ export function RegistrarGarantiaTecView({
                 ))}
               </optgroup>
             ))}
-            <option value={UNKNOWN_PROCESSOR}>— Otro procesador (ingreso manual)</option>
+            <option value={UNKNOWN_PROCESSOR}>{t('regGar.step1.unknownProcessor')}</option>
           </select>
           {s2.processor === UNKNOWN_PROCESSOR && (
             <input
               type="text"
               className={styles.reg_input}
-              placeholder="Ej: Snapdragon 7 Gen 2, Intel Core i5-1345U…"
+              placeholder={t('regGar.step1.processorPlaceholder')}
               value={s2.processor_custom}
               onChange={(e) => setS2((p) => ({ ...p, processor_custom: e.target.value }))}
               style={{ marginTop: '0.4rem' }}
@@ -602,7 +616,7 @@ export function RegistrarGarantiaTecView({
         </FieldRow>
 
         {/* ── RAM ── */}
-        <FieldRow label="Memoria RAM" required>
+        <FieldRow label={t('regGar.step1.ram')} required>
           <div className={styles.reg_pills}>
             {ramOptions.map((r) => (
               <button
@@ -618,7 +632,7 @@ export function RegistrarGarantiaTecView({
         </FieldRow>
 
         {/* ── Storage ── */}
-        <FieldRow label="Almacenamiento" required>
+        <FieldRow label={t('regGar.step1.storage')} required>
           <div className={styles.reg_pills}>
             {storOpts.map((s) => (
               <button
@@ -635,7 +649,7 @@ export function RegistrarGarantiaTecView({
 
         {/* ── Battery (not for desktop) ── */}
         {hasBattery && (
-          <FieldRow label={`Salud de batería: ${s2.battery_health}%`}>
+          <FieldRow label={t('regGar.step1.battery', { pct: s2.battery_health })}>
             <input
               type="range"
               min={30}
@@ -654,11 +668,11 @@ export function RegistrarGarantiaTecView({
 
         {/* ── Screen size (not for desktop) ── */}
         {hasScreen && (
-          <FieldRow label="Tamaño de pantalla">
+          <FieldRow label={t('regGar.step1.screen')}>
             <input
               type="text"
               className={styles.reg_input}
-              placeholder='Ej: 14", 6.1"'
+              placeholder={t('regGar.step1.screenPlaceholder')}
               value={s2.screen_size}
               onChange={(e) => setS2((p) => ({ ...p, screen_size: e.target.value }))}
             />
@@ -671,28 +685,42 @@ export function RegistrarGarantiaTecView({
   function renderStep2() {
     return (
       <div className={styles.reg_step_body}>
-        <p className={styles.reg_step_desc}>
-          Adjunta fotos claras del dispositivo. Las imágenes son necesarias para
-          verificar el estado físico y la autenticidad antes de aprobar la garantía.
-        </p>
+        <p className={styles.reg_step_desc}>{t('regGar.step2.desc')}</p>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
 
         <div className={styles.reg_photos_grid}>
           {PHOTO_SLOTS.map((slot) => {
-            const done = s3.photos.has(slot.id)
+            const dataUrl = s3.photos.get(slot.id)
+            const done = !!dataUrl
             return (
               <button
                 key={slot.id}
                 type="button"
                 className={`${styles.reg_photo_card} ${done ? styles.reg_photo_done : ''}`}
-                onClick={() => togglePhoto(slot.id)}
+                onClick={() => handlePhotoCardClick(slot.id)}
               >
-                <span className={`${styles.reg_photo_icon} ${done ? styles.reg_photo_icon_done : ''}`}>
-                  {done ? <IconCheck /> : <IconCamera />}
-                </span>
-                <strong>{slot.label}</strong>
-                <p>{slot.desc}</p>
+                {done ? (
+                  <img
+                    src={dataUrl}
+                    alt={t(slot.labelKey)}
+                    className={styles.reg_photo_preview}
+                  />
+                ) : (
+                  <span className={styles.reg_photo_icon}>
+                    <IconCamera />
+                  </span>
+                )}
+                <strong>{t(slot.labelKey)}</strong>
+                <p>{t(slot.descKey)}</p>
                 <span className={done ? styles.reg_photo_cargada : styles.reg_photo_pendiente}>
-                  {done ? '✓ Foto cargada' : 'Toca para cargar'}
+                  {done ? t('regGar.step2.loaded') : t('regGar.step2.tap')}
                 </span>
               </button>
             )
@@ -701,13 +729,13 @@ export function RegistrarGarantiaTecView({
 
         <div className={styles.reg_photos_count}>
           <span className={s3.photos.size >= 4 ? styles.reg_photos_ok : styles.reg_photos_warn}>
-            {s3.photos.size} de 4 fotos requeridas
+            {t('regGar.step2.photoCount', { count: s3.photos.size })}
           </span>
         </div>
 
         <div className={styles.reg_info_box}>
           <IconCamera />
-          <p>Fotos nítidas y bien iluminadas aceleran el proceso de verificación. Evita reflejos y asegúrate de que el número de serie sea legible.</p>
+          <p>{t('regGar.step2.photoInfo')}</p>
         </div>
       </div>
     )
@@ -715,7 +743,8 @@ export function RegistrarGarantiaTecView({
 
   function renderStep3() {
     const catLabel   = DEVICE_CATEGORIES.find((c) => c.id === s1.device_category)?.label ?? s1.device_category
-    const condLabel  = CONDITION_OPTIONS.find((c) => c.id === s2.condition)?.label ?? s2.condition
+    const condLabel  = CONDITION_OPTIONS.find((c) => c.id === s2.condition)
+    const condLabelStr = condLabel ? t(condLabel.labelKey) : s2.condition
     const brand      = effectiveBrand(s1)
     const model      = effectiveModel(s1)
     const unknown    = isUnknownModel(s1)
@@ -726,13 +755,10 @@ export function RegistrarGarantiaTecView({
 
     return (
       <div className={styles.reg_step_body}>
-        <p className={styles.reg_step_desc}>
-          Indica el valor de mercado estimado de tu dispositivo en su estado actual.
-          Este valor sirve de base para calcular el monto máximo de crédito disponible.
-        </p>
+        <p className={styles.reg_step_desc}>{t('regGar.step3.desc')}</p>
 
         <div className={styles.reg_two_col}>
-          <FieldRow label="Precio de compra original (S/)">
+          <FieldRow label={t('regGar.step3.purchasePrice')}>
             <input
               type="number"
               className={styles.reg_input}
@@ -742,7 +768,7 @@ export function RegistrarGarantiaTecView({
               onChange={(e) => setS4((p) => ({ ...p, purchase_price: e.target.value }))}
             />
           </FieldRow>
-          <FieldRow label="Valor estimado actual (S/)" required>
+          <FieldRow label={t('regGar.step3.estimatedValue')} required>
             <input
               type="number"
               className={styles.reg_input}
@@ -755,42 +781,38 @@ export function RegistrarGarantiaTecView({
         </div>
 
         <div className={styles.reg_summary}>
-          <h3>Resumen de la garantía</h3>
+          <h3>{t('regGar.step3.summary.title')}</h3>
           <div className={styles.reg_summary_grid}>
-            <div><span>Dispositivo</span><strong>{catLabel}</strong></div>
+            <div><span>{t('regGar.step3.summary.device')}</span><strong>{catLabel}</strong></div>
             <div>
-              <span>Marca / Modelo</span>
+              <span>{t('regGar.step3.summary.brand')}</span>
               <strong>{brand} {model}{unknown ? ' *' : ''}</strong>
             </div>
-            <div><span>Año</span><strong>{s1.manufacture_year}</strong></div>
-            <div><span>Número de serie</span><strong>{s1.serial_number}</strong></div>
-            <div><span>Condición</span><strong>{condLabel}</strong></div>
-            <div><span>Procesador</span><strong>{procLabel}</strong></div>
-            <div><span>RAM</span><strong>{s2.ram}</strong></div>
-            <div><span>Almacenamiento</span><strong>{s2.storage}</strong></div>
-            {hasBattery && <div><span>Salud batería</span><strong>{s2.battery_health}%</strong></div>}
-            <div><span>Fotos adjuntas</span><strong>{s3.photos.size} / 4</strong></div>
+            <div><span>{t('regGar.step3.summary.year')}</span><strong>{s1.manufacture_year}</strong></div>
+            <div><span>{t('regGar.step3.summary.serial')}</span><strong>{s1.serial_number}</strong></div>
+            <div><span>{t('regGar.step3.summary.condition')}</span><strong>{condLabelStr}</strong></div>
+            <div><span>{t('regGar.step3.summary.processor')}</span><strong>{procLabel}</strong></div>
+            <div><span>{t('regGar.step3.summary.ram')}</span><strong>{s2.ram}</strong></div>
+            <div><span>{t('regGar.step3.summary.storage')}</span><strong>{s2.storage}</strong></div>
+            {hasBattery && <div><span>{t('regGar.step3.summary.battery')}</span><strong>{s2.battery_health}%</strong></div>}
+            <div><span>{t('regGar.step3.summary.photos')}</span><strong>{s3.photos.size} / 4</strong></div>
             {hasScreen && s2.screen_size && (
-              <div><span>Pantalla</span><strong>{s2.screen_size}</strong></div>
+              <div><span>{t('regGar.step3.summary.screen')}</span><strong>{s2.screen_size}</strong></div>
             )}
             {s1.is_reconditioned && (
-              <div><span>Estado extra</span><strong>Reacondicionado</strong></div>
+              <div><span>{t('regGar.step3.summary.reconditioned')}</span><strong>{t('regGar.step3.summary.reconditionedValue')}</strong></div>
             )}
           </div>
           {unknown && (
             <p className={styles.reg_summary_unknown}>
-              * Modelo no registrado — requiere verificación adicional por nuestro equipo
+              {t('regGar.step3.summary.unknownNote')}
             </p>
           )}
         </div>
 
         <div className={styles.reg_legal}>
           <IconShield />
-          <p>
-            Al registrar esta garantía confirmas que eres el propietario legítimo del dispositivo,
-            que la información proporcionada es verídica y que autorizas a Jemacash a retenerlo
-            como respaldo crediticio en caso de incumplimiento, conforme a la normativa SBS Perú.
-          </p>
+          <p>{t('regGar.step3.legal')}</p>
         </div>
 
         {submitError && (
@@ -802,13 +824,20 @@ export function RegistrarGarantiaTecView({
 
   const stepRenderers = [renderStep0, renderStep1, renderStep2, renderStep3]
 
+  const stepTitles = [
+    t('regGar.step0.title'),
+    t('regGar.step1.title'),
+    t('regGar.step2.title'),
+    t('regGar.step3.title'),
+  ]
+
   return (
     <div className={styles.reg_page}>
 
       <header className={styles.reg_header}>
         <span className={styles.reg_brand}>Jemacash</span>
         <button type="button" className={styles.reg_back_btn} onClick={onBack}>
-          ← Volver
+          {t('regGar.back')}
         </button>
       </header>
 
@@ -835,13 +864,8 @@ export function RegistrarGarantiaTecView({
               <IconLaptop />
             </div>
             <div>
-              <h2 className={styles.reg_card_title}>
-                {step === 0 && 'Identificación del Dispositivo'}
-                {step === 1 && 'Estado y Especificaciones Técnicas'}
-                {step === 2 && 'Fotografías del Dispositivo'}
-                {step === 3 && 'Valoración y Confirmación'}
-              </h2>
-              <p className={styles.reg_card_subtitle}>Paso {step + 1} de {STEPS.length}</p>
+              <h2 className={styles.reg_card_title}>{stepTitles[step]}</h2>
+              <p className={styles.reg_card_subtitle}>{t('regGar.stepOf', { step: step + 1, total: STEPS.length })}</p>
             </div>
           </div>
 
@@ -855,7 +879,7 @@ export function RegistrarGarantiaTecView({
           className={styles.reg_nav_back}
           onClick={() => step === 0 ? onBack() : setStep((s) => s - 1)}
         >
-          ← {step === 0 ? 'Cancelar' : 'Anterior'}
+          {step === 0 ? t('regGar.cancel') : t('regGar.prev')}
         </button>
 
         <div className={styles.reg_nav_dots}>
@@ -871,7 +895,7 @@ export function RegistrarGarantiaTecView({
             onClick={() => setStep((s) => s + 1)}
             disabled={!canAdvance()}
           >
-            Siguiente <IconChevron />
+            {t('regGar.next')} <IconChevron />
           </button>
         ) : (
           <button
@@ -880,7 +904,7 @@ export function RegistrarGarantiaTecView({
             onClick={handleSubmit}
             disabled={!canAdvance() || submitting}
           >
-            {submitting ? 'Registrando…' : 'Registrar Garantía ✓'}
+            {submitting ? t('regGar.registering') : t('regGar.register')}
           </button>
         )}
       </div>

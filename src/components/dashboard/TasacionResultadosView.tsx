@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import officeImg from '../../assets/representative_images/main_page.png'
 import { IconShield } from './icons'
 import styles from './TasacionResultadosView.module.css'
@@ -55,10 +56,10 @@ function IconCheckCircle() {
 }
 
 const DEVICE_SPECS = [
-  { icon: IconCpu,     label: 'PROCESADOR',        value: 'Apple M2 Chip' },
-  { icon: IconMemory,  label: 'MEMORIA RAM',        value: '16GB Unified' },
-  { icon: IconStorage, label: 'ALMACENAMIENTO',     value: '512GB SSD' },
-  { icon: IconBattery, label: 'ESTADO DE BATERÍA',  value: 'Salud 94%' },
+  { icon: IconCpu,     labelKey: 'processor', value: 'Apple M2 Chip' },
+  { icon: IconMemory,  labelKey: 'ram',        value: '16GB Unified' },
+  { icon: IconStorage, labelKey: 'storage',    value: '512GB SSD' },
+  { icon: IconBattery, labelKey: 'battery',    value: 'Salud 94%' },
 ] as const
 
 export function TasacionResultadosView({
@@ -70,6 +71,7 @@ export function TasacionResultadosView({
   onAccept: (amount: number | null) => void
   applicationId?: string | null
 }) {
+  const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
 
   useEffect(() => {
@@ -86,20 +88,17 @@ export function TasacionResultadosView({
       {/* ── Minimal header ─────────────────────────────── */}
       <header className={styles.tas_header}>
         <span className={styles.tas_brand}>Jemacash</span>
-        <button type="button" className={styles.tas_back_btn} onClick={onBack}>← Volver</button>
+        <button type="button" className={styles.tas_back_btn} onClick={onBack}>{t('tasacion.back')}</button>
       </header>
 
       {/* ── Main ───────────────────────────────────────── */}
       <main className={styles.tas_main}>
-        <span className={styles.tas_scan_badge}>Escaneo Completado</span>
+        <span className={styles.tas_scan_badge}>{t('tasacion.scanBadge')}</span>
 
         <h1 className={styles.tas_title}>
-          Resultados de tu <span className={styles.tas_title_green}>Tasación Editorial</span>.
+          {t('tasacion.title')} <span className={styles.tas_title_green}>{t('tasacion.titleGreen')}</span>.
         </h1>
-        <p className={styles.tas_subtitle}>
-          Nuestro sistema ha verificado los componentes de tu dispositivo con precisión quirúrgica.
-          Aquí están los detalles técnicos para tu respaldo financiero.
-        </p>
+        <p className={styles.tas_subtitle}>{t('tasacion.subtitle')}</p>
 
         <div className={styles.tas_content_grid}>
 
@@ -109,12 +108,12 @@ export function TasacionResultadosView({
               {DEVICE_SPECS.map((spec) => {
                 const SpecIcon = spec.icon
                 return (
-                  <div key={spec.label} className={styles.tas_spec_card}>
+                  <div key={spec.labelKey} className={styles.tas_spec_card}>
                     <div className={styles.tas_spec_top}>
                       <span className={styles.tas_spec_icon}><SpecIcon /></span>
                       <span className={styles.tas_spec_check}><IconCheckCircle /></span>
                     </div>
-                    <span className={styles.tas_spec_label}>{spec.label}</span>
+                    <span className={styles.tas_spec_label}>{t(`tasacion.spec.${spec.labelKey}`)}</span>
                     <strong className={styles.tas_spec_value}>{spec.value}</strong>
                   </div>
                 )
@@ -124,7 +123,7 @@ export function TasacionResultadosView({
             <div className={styles.tas_device_card}>
               <img src={officeImg} alt="MacBook Air M2" className={styles.tas_device_img} />
               <div className={styles.tas_device_overlay}>
-                <span>DISPOSITIVO IDENTIFICADO</span>
+                <span>{t('tasacion.device.label')}</span>
                 <strong>MacBook Air M2 (2022)</strong>
               </div>
             </div>
@@ -136,11 +135,11 @@ export function TasacionResultadosView({
             {/* Value card */}
             <div className={styles.tas_value_card}>
               <div className={styles.tas_value_bg_icon} aria-hidden="true">⬡</div>
-              <span className={styles.tas_value_label}>VALOR DE RESPALDO FINAL</span>
+              <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
               <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
-              <p>Oferta garantizada por 24 horas basada en el estado actual y valor de mercado editorial.</p>
+              <p>{t('tasacion.offer.desc')}</p>
               <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(evaluation?.approved_amount ?? null)}>
-                Aceptar Oferta y Firmar Contrato
+                {t('tasacion.accept')}
               </button>
               <div className={styles.tas_value_perks}>
                 <span>⚡ Desembolso en 15 min</span>
@@ -150,24 +149,24 @@ export function TasacionResultadosView({
 
             {/* Security seals */}
             <div className={styles.tas_seals_card}>
-              <h3>Sellos de Seguridad &amp; Confianza</h3>
+              <h3>{t('tasacion.seals.title')}</h3>
               <div className={styles.tas_seals_grid}>
                 <div className={styles.tas_seal}>
                   <span className={styles.tas_seal_icon}><IconShield /></span>
                   <div>
-                    <strong>REGULADO</strong>
-                    <span>SBS Perú</span>
+                    <strong>{t('tasacion.seal.regulated')}</strong>
+                    <span>{t('tasacion.seal.regulatedSub')}</span>
                   </div>
                 </div>
                 <div className={styles.tas_seal}>
                   <span className={styles.tas_seal_icon}><IconShield /></span>
                   <div>
-                    <strong>PROTECCIÓN</strong>
-                    <span>SSL 256-bit</span>
+                    <strong>{t('tasacion.seal.protection')}</strong>
+                    <span>{t('tasacion.seal.protectionSub')}</span>
                   </div>
                 </div>
               </div>
-              <p>Jemacash es una marca de servicios financieros registrados ante la SBS. Operamos bajo las más estrictas normas de transparencia y seguridad editorial.</p>
+              <p>{t('tasacion.seal.desc')}</p>
             </div>
 
           </div>
@@ -181,9 +180,9 @@ export function TasacionResultadosView({
           <span>© 2024 Jemacash. Tasación editorial Instantánea.</span>
         </div>
         <nav className={styles.tas_footer_links}>
-          <button type="button" className={styles.tas_footer_link}>PRIVACIDAD</button>
-          <button type="button" className={styles.tas_footer_link}>TÉRMINOS</button>
-          <button type="button" className={styles.tas_footer_link}>REGULACIONES SBS</button>
+          <button type="button" className={styles.tas_footer_link}>{t('tasacion.footer.privacy')}</button>
+          <button type="button" className={styles.tas_footer_link}>{t('tasacion.footer.terms')}</button>
+          <button type="button" className={styles.tas_footer_link}>{t('tasacion.footer.regulation')}</button>
         </nav>
         <div className={styles.tas_footer_icons}>
           <span className={styles.tas_footer_icon}>⊙</span>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pagination } from './Pagination'
 import {
   IconCalendar,
@@ -78,7 +79,8 @@ interface LoanData {
 }
 
 interface Movement {
-  concept: string
+  conceptKey: string
+  conceptVars: Record<string, string | number>
   id: string
   date: string
   amount: number
@@ -118,7 +120,8 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, paym
   // Disbursement event (oldest entry)
   const signedAt = app.updated_at ? new Date(app.updated_at) : createdAt
   movements.push({
-    concept: `Desembolso — ${shortId(app.id)}`,
+    conceptKey: 'prestamos.movement.disbursement',
+    conceptVars: { id: shortId(app.id) },
     id: `#DESEMBOLSO-${app.id.slice(0, 6).toUpperCase()}`,
     date: fmtShortDate(signedAt),
     amount: loanAmount,
@@ -128,7 +131,8 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, paym
   // One entry per actual payment, most recent first
   for (const p of [...sortedPayments].reverse()) {
     movements.push({
-      concept: `Cuota ${String(p.cuota_number).padStart(2, '0')} — ${shortId(app.id)}`,
+      conceptKey: 'prestamos.movement.cuota',
+      conceptVars: { num: String(p.cuota_number).padStart(2, '0'), id: shortId(app.id) },
       id: `#TRX-${p.reference_number}`,
       date: fmtShortDate(new Date(p.created_at)),
       amount: Number(p.amount),
@@ -141,10 +145,10 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, paym
 
 // ── Status display ─────────────────────────────────────────────────────────────
 
-const STATUS_INFO: Record<string, { label: string; color: string; bg: string; icon: typeof IconClock }> = {
-  submitted: { label: 'En Evaluación',   color: '#2563eb', bg: '#dbeafe', icon: IconClock    },
-  approved:  { label: 'Aprobado',         color: '#0f7d3f', bg: '#d9f0da', icon: IconCheck    },
-  rejected:  { label: 'Rechazado',        color: '#dc2626', bg: '#fef2f2', icon: IconWarning  },
+const STATUS_KEYS: Record<string, { labelKey: string; color: string; bg: string; icon: typeof IconClock }> = {
+  submitted: { labelKey: 'prestamos.status.inReview', color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
+  approved:  { labelKey: 'prestamos.status.approved', color: '#0f7d3f', bg: '#d9f0da', icon: IconCheck   },
+  rejected:  { labelKey: 'prestamos.status.rejected', color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -154,6 +158,7 @@ interface Props {
 }
 
 export function MisPrestamosView({ onPay }: Props) {
+  const { t } = useTranslation()
   const [apps, setApps] = useState<LoanApplication[]>([])
   const [loans, setLoans] = useState<LoanData[]>([])
   const [loading, setLoading] = useState(true)
@@ -233,8 +238,8 @@ export function MisPrestamosView({ onPay }: Props) {
       <div className={styles.view_grid}>
         <div className={styles.view_header}>
           <div>
-            <h1 className={styles.view_title}>Estado de mis Créditos</h1>
-            <p className={styles.view_sub}>Cargando información de tus préstamos…</p>
+            <h1 className={styles.view_title}>{t('prestamos.title')}</h1>
+            <p className={styles.view_sub}>{t('prestamos.loading')}</p>
           </div>
         </div>
         <div className={styles.prest_loading}>
@@ -256,12 +261,14 @@ export function MisPrestamosView({ onPay }: Props) {
       {/* ── Header ── */}
       <div className={styles.view_header}>
         <div>
-          <h1 className={styles.view_title}>Estado de mis Créditos</h1>
-          <p className={styles.view_sub}>Monitorea el progreso de tus préstamos activos en tiempo real.</p>
+          <h1 className={styles.view_title}>{t('prestamos.title')}</h1>
+          <p className={styles.view_sub}>{t('prestamos.subtitle')}</p>
         </div>
         {activeLoans.length > 0 && (
           <span className={styles.badge_active}>
-            {activeLoans.length} {activeLoans.length === 1 ? 'Préstamo Activo' : 'Préstamos Activos'}
+            {activeLoans.length === 1
+              ? t('prestamos.active.badge.one', { count: activeLoans.length })
+              : t('prestamos.active.badge.many', { count: activeLoans.length })}
           </span>
         )}
       </div>
@@ -270,8 +277,8 @@ export function MisPrestamosView({ onPay }: Props) {
       {activeLoans.length === 0 && inProcess.length === 0 && (
         <div className={styles.prest_empty}>
           <span className={styles.prest_empty_icon}><IconCreditCard /></span>
-          <strong>No tienes préstamos activos</strong>
-          <p>Solicita tu primer crédito y úsalo para lo que necesites.</p>
+          <strong>{t('prestamos.empty.title')}</strong>
+          <p>{t('prestamos.empty.desc')}</p>
         </div>
       )}
 
@@ -285,18 +292,18 @@ export function MisPrestamosView({ onPay }: Props) {
                   <IconCreditCard />
                 </span>
                 <div className={styles.loan_identity}>
-                  <strong>Préstamo Personal</strong>
+                  <strong>{t('prestamos.loan.personal')}</strong>
                   <span>{shortId(l.app.id)}</span>
                 </div>
                 <div className={styles.loan_total_block}>
-                  <span className={styles.loan_total_label}>MONTO TOTAL</span>
+                  <span className={styles.loan_total_label}>{t('prestamos.loan.totalLabel')}</span>
                   <strong className={styles.loan_total}>S/ {fmt(l.loanAmount)}</strong>
                 </div>
               </div>
 
               <div className={styles.loan_amounts}>
-                <span className={styles.amount_paid}>Pagado: S/ {fmt(l.paidAmount)}</span>
-                <span className={styles.amount_remaining}>Restante: S/ {fmt(l.remainingAmount)}</span>
+                <span className={styles.amount_paid}>{t('prestamos.loan.paid', { amount: fmt(l.paidAmount) })}</span>
+                <span className={styles.amount_remaining}>{t('prestamos.loan.remaining', { amount: fmt(l.remainingAmount) })}</span>
               </div>
 
               <div className={styles.progress_bar}>
@@ -307,7 +314,7 @@ export function MisPrestamosView({ onPay }: Props) {
                 <div className={styles.next_payment}>
                   <IconCalendar />
                   <div>
-                    <span>Próximo Pago</span>
+                    <span>{t('prestamos.loan.nextPayment')}</span>
                     <strong>{fmtDate(l.nextPaymentDate)}</strong>
                   </div>
                 </div>
@@ -325,7 +332,7 @@ export function MisPrestamosView({ onPay }: Props) {
                       loanAmount: l.loanAmount,
                     })}
                   >
-                    Pagar Ahora
+                    {t('prestamos.loan.payNow')}
                   </button>
                 )}
               </div>
@@ -343,7 +350,7 @@ export function MisPrestamosView({ onPay }: Props) {
             onClick={() => setLoanPage((p) => p - 1)}
             disabled={loanPage === 0}
           >
-            ← Anterior
+            {t('prestamos.prev')}
           </button>
           <div className={styles.prest_page_dots}>
             {Array.from({ length: totalLoanPages }).map((_, i) => (
@@ -352,7 +359,7 @@ export function MisPrestamosView({ onPay }: Props) {
                 type="button"
                 className={`${styles.prest_page_dot} ${i === loanPage ? styles.prest_page_dot_active : ''}`}
                 onClick={() => setLoanPage(i)}
-                aria-label={`Página ${i + 1}`}
+                aria-label={`${i + 1}`}
               />
             ))}
           </div>
@@ -362,7 +369,7 @@ export function MisPrestamosView({ onPay }: Props) {
             onClick={() => setLoanPage((p) => p + 1)}
             disabled={loanPage === totalLoanPages - 1}
           >
-            Siguiente →
+            {t('prestamos.next')}
           </button>
         </div>
       )}
@@ -370,10 +377,10 @@ export function MisPrestamosView({ onPay }: Props) {
       {/* ── In-process applications ── */}
       {inProcess.length > 0 && (
         <section className={styles.prest_process_section}>
-          <h2 className={styles.section_title}>Solicitudes en Proceso</h2>
+          <h2 className={styles.section_title}>{t('prestamos.inProcess.title')}</h2>
           <div className={styles.prest_process_list}>
             {visibleInProcess.map((app) => {
-              const info = STATUS_INFO[app.status]
+              const info = STATUS_KEYS[app.status]
               const StatusIcon = info?.icon ?? IconClock
               return (
                 <div key={app.id} className={styles.prest_process_card}>
@@ -381,11 +388,11 @@ export function MisPrestamosView({ onPay }: Props) {
                     <StatusIcon />
                   </span>
                   <div className={styles.prest_process_body}>
-                    <strong>Solicitud {shortId(app.id)}</strong>
+                    <strong>{shortId(app.id)}</strong>
                     <span>S/ {fmt(Number(app.amount))} · {app.term_months} meses</span>
                   </div>
                   <span className={styles.prest_process_badge} style={{ background: info?.bg, color: info?.color }}>
-                    {info?.label ?? app.status}
+                    {info ? t(info.labelKey) : app.status}
                   </span>
                 </div>
               )
@@ -399,23 +406,23 @@ export function MisPrestamosView({ onPay }: Props) {
       {allMovements.length > 0 && (
         <section className={styles.movements_section}>
           <div className={styles.movements_head}>
-            <h2 className={styles.section_title}>Historial de Movimientos</h2>
+            <h2 className={styles.section_title}>{t('prestamos.movement.title')}</h2>
             <div className={styles.movements_actions}>
               <button type="button" className={styles.outline_btn}>
-                <IconFilter /> Filtrar
+                <IconFilter /> {t('prestamos.movement.filter')}
               </button>
               <button type="button" className={styles.outline_btn}>
-                <IconDownload /> Exportar
+                <IconDownload /> {t('prestamos.movement.export')}
               </button>
             </div>
           </div>
 
           <div className={styles.movements_table}>
             <div className={styles.table_header}>
-              <span>CONCEPTO / ID</span>
-              <span>FECHA</span>
-              <span>IMPORTE</span>
-              <span>TIPO</span>
+              <span>{t('prestamos.movement.concept')}</span>
+              <span>{t('prestamos.movement.date')}</span>
+              <span>{t('prestamos.movement.amount')}</span>
+              <span>{t('prestamos.movement.type')}</span>
             </div>
 
             {visibleMovements.map((m) => (
@@ -425,7 +432,7 @@ export function MisPrestamosView({ onPay }: Props) {
                     {m.type === 'pago' ? <IconCheck /> : <span />}
                   </span>
                   <div>
-                    <strong>{m.concept}</strong>
+                    <strong>{t(m.conceptKey, m.conceptVars)}</strong>
                     <span>{m.id}</span>
                   </div>
                 </div>
@@ -434,7 +441,7 @@ export function MisPrestamosView({ onPay }: Props) {
                   {m.type === 'pago' ? `- S/ ${fmt(m.amount)}` : `+ S/ ${fmt(m.amount)}`}
                 </span>
                 <span className={`${styles.status_badge} ${m.type === 'pago' ? styles.status_paid : styles.status_disbursed}`}>
-                  {m.type === 'pago' ? 'PAGO' : 'DESEMBOLSO'}
+                  {m.type === 'pago' ? t('prestamos.movement.typePago') : t('prestamos.movement.typeDesembolso')}
                 </span>
               </div>
             ))}

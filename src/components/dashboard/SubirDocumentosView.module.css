@@ -274,6 +274,29 @@
   color: #8a958d;
 }
 
+.slot_disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  filter: grayscale(0.3);
+}
+
+.slot_badge_soon {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.slot_soon_body {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.6rem;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
 /* ── Uploaded files ── */
 
 .uploaded_list {

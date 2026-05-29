@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type'
 import styles from './PagarCuotaView.module.css'
@@ -96,19 +97,20 @@ function IconArrowLeft() {
 
 interface MethodOption {
   id: PaymentMethod
-  name: string
-  description: string
+  nameKey: string
+  descKey: string
   color: string
-  icon: () => JSX.Element
+  icon: () => React.ReactElement
+  soon?: boolean
 }
 
 const METHODS: MethodOption[] = [
-  { id: 'mercadopago', name: 'Mercado Pago',  description: 'Visa, Mastercard, Amex y más',    color: '#009ee3', icon: IconCard },
-  { id: 'bcp',         name: 'BCP',           description: 'Transferencia desde cuenta BCP',  color: '#003082', icon: IconBank },
-  { id: 'bbva',        name: 'BBVA',          description: 'Transferencia desde cuenta BBVA', color: '#004B91', icon: IconBank },
-  { id: 'yape',        name: 'Yape',          description: 'Pago instantáneo con Yape',       color: '#6B21A8', icon: IconPhone },
-  { id: 'plin',        name: 'Plin',          description: 'Pago instantáneo con Plin',       color: '#059669', icon: IconPhone },
-  { id: 'efectivo',    name: 'Efectivo',      description: 'Pago en agencia o agente',        color: '#92400e', icon: IconCash },
+  { id: 'mercadopago', nameKey: 'pagar.method.mercadopago.name', descKey: 'pagar.method.mercadopago.desc', color: '#009ee3', icon: IconCard },
+  { id: 'bcp',         nameKey: 'pagar.method.bcp.name',         descKey: 'pagar.method.bcp.desc',         color: '#003082', icon: IconBank,  soon: true },
+  { id: 'bbva',        nameKey: 'pagar.method.bbva.name',        descKey: 'pagar.method.bbva.desc',        color: '#004B91', icon: IconBank,  soon: true },
+  { id: 'yape',        nameKey: 'pagar.method.yape.name',        descKey: 'pagar.method.yape.desc',        color: '#6B21A8', icon: IconPhone, soon: true },
+  { id: 'plin',        nameKey: 'pagar.method.plin.name',        descKey: 'pagar.method.plin.desc',        color: '#059669', icon: IconPhone, soon: true },
+  { id: 'efectivo',    nameKey: 'pagar.method.efectivo.name',    descKey: 'pagar.method.efectivo.desc',    color: '#92400e', icon: IconCash,  soon: true },
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -131,6 +133,7 @@ interface MockFormProps {
 }
 
 function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
+  const { t } = useTranslation()
   const [cardNumber, setCardNumber] = useState('')
   const [expiry, setExpiry] = useState('')
   const [cvv, setCvv] = useState('')
@@ -172,7 +175,7 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
   return (
     <form onSubmit={handleSubmit} className={styles.mock_form}>
       <div className={styles.mock_field}>
-        <label className={styles.mock_label}>Número de tarjeta</label>
+        <label className={styles.mock_label}>{t('pagar.mock.cardNumber')}</label>
         <input
           className={styles.mock_input}
           type="text"
@@ -187,7 +190,7 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
 
       <div className={styles.mock_row}>
         <div className={styles.mock_field}>
-          <label className={styles.mock_label}>Vencimiento</label>
+          <label className={styles.mock_label}>{t('pagar.mock.expiry')}</label>
           <input
             className={styles.mock_input}
             type="text"
@@ -200,7 +203,7 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
           />
         </div>
         <div className={styles.mock_field}>
-          <label className={styles.mock_label}>CVV</label>
+          <label className={styles.mock_label}>{t('pagar.mock.cvv')}</label>
           <input
             className={styles.mock_input}
             type="text"
@@ -215,11 +218,11 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
       </div>
 
       <div className={styles.mock_field}>
-        <label className={styles.mock_label}>Nombre en la tarjeta</label>
+        <label className={styles.mock_label}>{t('pagar.mock.name')}</label>
         <input
           className={styles.mock_input}
           type="text"
-          placeholder="Como aparece en la tarjeta"
+          placeholder={t('pagar.mock.namePlaceholder')}
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="cc-name"
@@ -231,7 +234,7 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
         className={styles.primary_btn}
         disabled={!isValid || loading}
       >
-        {loading ? 'Procesando…' : `Pagar S/ ${fmt(info.cuota)}`}
+        {loading ? t('pagar.mock.processing') : t('pagar.mock.submit', { amount: fmt(info.cuota) })}
       </button>
     </form>
   )
@@ -242,6 +245,7 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
 type Step = 'metodo' | 'confirmar' | 'mp-form' | 'exito'
 
 export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
+  const { t } = useTranslation()
   const [step, setStep] = useState<Step>('metodo')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
   const [loading, setLoading] = useState(false)
@@ -317,31 +321,31 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
         <div className={styles.container}>
           <button type="button" className={styles.back_btn} onClick={onBack}>
             <IconArrowLeft />
-            Volver
+            {t('pagar.back')}
           </button>
 
           <div className={styles.header}>
-            <h1 className={styles.title}>Pagar Cuota</h1>
-            <p className={styles.sub}>Elige cómo quieres realizar tu pago de este mes.</p>
+            <h1 className={styles.title}>{t('pagar.title')}</h1>
+            <p className={styles.sub}>{t('pagar.subtitle')}</p>
           </div>
 
           <div className={styles.loan_summary}>
             <div className={styles.summary_row}>
-              <span>Préstamo</span>
+              <span>{t('pagar.summary.loan')}</span>
               <strong>{info.loanLabel}</strong>
             </div>
             <div className={styles.summary_divider} />
             <div className={styles.summary_row}>
-              <span>Cuota {info.cuotaNumber} de {info.totalCuotas}</span>
+              <span>{t('pagar.summary.quotaOf', { num: info.cuotaNumber, total: info.totalCuotas })}</span>
               <strong className={styles.summary_amount}>S/ {fmt(info.cuota)}</strong>
             </div>
             <div className={styles.summary_row}>
-              <span>Vencimiento</span>
+              <span>{t('pagar.summary.dueDate')}</span>
               <strong>{fmtDate(info.nextPaymentDate)}</strong>
             </div>
           </div>
 
-          <h2 className={styles.methods_title}>Método de pago</h2>
+          <h2 className={styles.methods_title}>{t('pagar.methods.title')}</h2>
           <div className={styles.methods_grid}>
             {METHODS.map((m) => {
               const Icon = m.icon
@@ -350,22 +354,26 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
                 <button
                   key={m.id}
                   type="button"
-                  className={`${styles.method_card} ${selected ? styles.method_card_selected : ''}`}
-                  onClick={() => setSelectedMethod(m.id)}
+                  className={`${styles.method_card} ${selected ? styles.method_card_selected : ''} ${m.soon ? styles.method_card_soon : ''}`}
+                  onClick={() => !m.soon && setSelectedMethod(m.id)}
+                  disabled={m.soon}
                   style={selected ? { '--method-color': m.color } as React.CSSProperties : undefined}
                 >
                   <span className={styles.method_icon} style={{ background: `${m.color}18`, color: m.color }}>
                     <Icon />
                   </span>
                   <div className={styles.method_info}>
-                    <strong>{m.name}</strong>
-                    <span>{m.description}</span>
+                    <strong>{t(m.nameKey)}</strong>
+                    <span>{t(m.descKey)}</span>
                   </div>
-                  {selected && (
-                    <span className={styles.method_check} style={{ background: m.color }}>
-                      <IconCheck />
-                    </span>
-                  )}
+                  {m.soon
+                    ? <span className={styles.method_soon_badge}>{t('pagar.method.comingSoon')}</span>
+                    : selected && (
+                        <span className={styles.method_check} style={{ background: m.color }}>
+                          <IconCheck />
+                        </span>
+                      )
+                  }
                 </button>
               )
             })}
@@ -377,7 +385,7 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             disabled={!selectedMethod}
             onClick={handleContinue}
           >
-            Continuar
+            {t('pagar.continue')}
           </button>
         </div>
       </div>
@@ -392,12 +400,12 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
         <div className={styles.container}>
           <button type="button" className={styles.back_btn} onClick={() => { setStep('metodo'); setError(null) }}>
             <IconArrowLeft />
-            Cambiar método
+            {t('pagar.changeMethod')}
           </button>
 
           <div className={styles.header}>
-            <h1 className={styles.title}>Pago con tarjeta</h1>
-            <p className={styles.sub}>Cuota {info.cuotaNumber} de {info.totalCuotas} — {info.loanLabel}</p>
+            <h1 className={styles.title}>{t('pagar.cardTitle')}</h1>
+            <p className={styles.sub}>{t('pagar.cardSub', { num: info.cuotaNumber, total: info.totalCuotas, label: info.loanLabel })}</p>
           </div>
 
           {error && <p className={styles.error_msg}>{error}</p>}
@@ -433,40 +441,38 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
         <div className={styles.container}>
           <button type="button" className={styles.back_btn} onClick={() => setStep('metodo')}>
             <IconArrowLeft />
-            Cambiar método
+            {t('pagar.changeMethod')}
           </button>
 
           <div className={styles.header}>
-            <h1 className={styles.title}>Confirmar Pago</h1>
-            <p className={styles.sub}>Revisa los detalles antes de procesar.</p>
+            <h1 className={styles.title}>{t('pagar.confirm.title')}</h1>
+            <p className={styles.sub}>{t('pagar.confirm.subtitle')}</p>
           </div>
 
           <div className={styles.confirm_card}>
             <div className={styles.confirm_amount_block}>
-              <span>Monto a pagar</span>
+              <span>{t('pagar.confirm.amount')}</span>
               <strong className={styles.confirm_amount}>S/ {fmt(info.cuota)}</strong>
             </div>
             <div className={styles.confirm_divider} />
             <div className={styles.confirm_row}>
-              <span>Préstamo</span>
+              <span>{t('pagar.confirm.loan')}</span>
               <strong>{info.loanLabel}</strong>
             </div>
             <div className={styles.confirm_row}>
-              <span>Cuota</span>
+              <span>{t('pagar.confirm.quota')}</span>
               <strong>{info.cuotaNumber} de {info.totalCuotas}</strong>
             </div>
             <div className={styles.confirm_row}>
-              <span>Vencimiento</span>
+              <span>{t('pagar.confirm.dueDate')}</span>
               <strong>{fmtDate(info.nextPaymentDate)}</strong>
             </div>
             <div className={styles.confirm_row}>
-              <span>Método</span>
-              <strong style={{ color: method?.color }}>{method?.name}</strong>
+              <span>{t('pagar.confirm.method')}</span>
+              <strong style={{ color: method?.color }}>{method ? t(method.nameKey) : ''}</strong>
             </div>
             <div className={styles.confirm_divider} />
-            <p className={styles.confirm_disclaimer}>
-              Al confirmar autorizas el cargo a tu cuenta vinculada. La operación es irreversible.
-            </p>
+            <p className={styles.confirm_disclaimer}>{t('pagar.confirm.disclaimer')}</p>
           </div>
 
           {error && <p className={styles.error_msg}>{error}</p>}
@@ -477,7 +483,7 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             disabled={loading}
             onClick={handleConfirm}
           >
-            {loading ? 'Procesando…' : 'Confirmar y Pagar'}
+            {loading ? t('pagar.confirm.processing') : t('pagar.confirm.submit')}
           </button>
         </div>
       </div>
@@ -494,33 +500,31 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             <IconCheck />
           </span>
 
-          <h1 className={styles.success_title}>¡Pago Realizado!</h1>
-          <p className={styles.success_sub}>
-            Tu cuota {info.cuotaNumber} fue pagada exitosamente.
-          </p>
+          <h1 className={styles.success_title}>{t('pagar.success.title')}</h1>
+          <p className={styles.success_sub}>{t('pagar.success.sub', { num: info.cuotaNumber })}</p>
 
           <div className={styles.receipt_card}>
             <div className={styles.receipt_row}>
-              <span>Monto</span>
+              <span>{t('pagar.success.amount')}</span>
               <strong>S/ {fmt(info.cuota)}</strong>
             </div>
             <div className={styles.receipt_row}>
-              <span>Método</span>
-              <strong>{method?.name}</strong>
+              <span>{t('pagar.success.method')}</span>
+              <strong>{method ? t(method.nameKey) : ''}</strong>
             </div>
             <div className={styles.receipt_row}>
-              <span>Préstamo</span>
+              <span>{t('pagar.success.loan')}</span>
               <strong>{info.loanLabel}</strong>
             </div>
             <div className={styles.receipt_divider} />
             <div className={styles.receipt_row}>
-              <span>Referencia</span>
+              <span>{t('pagar.success.ref')}</span>
               <strong className={styles.receipt_ref}>{referenceNumber}</strong>
             </div>
           </div>
 
           <button type="button" className={styles.primary_btn} onClick={onSuccess}>
-            Volver a Mis Préstamos
+            {t('pagar.success.back')}
           </button>
         </div>
       </div>

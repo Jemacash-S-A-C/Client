@@ -5,8 +5,13 @@ export type UserProfile = {
   full_name: string
   email: string
   phone: string | null
+  has_google: boolean
   initials: string
   created_at: string
+  notification_email: boolean
+  pref_currency: string
+  pref_language: string
+  pref_timezone: string
 }
 
 export type AuthResponse = {

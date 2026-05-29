@@ -352,6 +352,13 @@
 .reg_photo_cargada { font-size: 0.75rem; font-weight: 700; color: #0f7d3f; }
 .reg_photo_pendiente { font-size: 0.75rem; color: #94a3b8; }
 
+.reg_photo_preview {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .reg_photos_count {
   text-align: center;
   font-size: 0.85rem;

@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconEye, IconEyeOff, IconGoogle } from './LoginIcons'
 import { LegalModal, type LegalType } from '../layout/LegalModal'
 import { forgotPassword } from '../../services/auth.service'
@@ -26,6 +27,7 @@ export function LoginModal({
   onGoogleLogin,
   defaultIdentifier,
 }: LoginModalProps) {
+  const { t } = useTranslation()
   const [view, setView] = useState<'login' | 'forgot' | 'forgot_sent'>('login')
   const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
@@ -68,7 +70,7 @@ export function LoginModal({
       await forgotPassword(forgotEmail)
       setView('forgot_sent')
     } catch {
-      setError('No fue posible procesar la solicitud. Intenta de nuevo.')
+      setError(t('login.forgot.error'))
     } finally {
       setLoading(false)
     }
@@ -97,11 +99,8 @@ export function LoginModal({
       <div className={styles.login_aside_content}>
         <p className={styles.login_aside_brand}>Jemacash</p>
         <div className={styles.login_aside_copy}>
-          <h2 className={styles.login_aside_title}>Tu futuro financiero comienza hoy.</h2>
-          <p className={styles.login_aside_sub}>
-            Gestione su capital con la elegancia y seguridad que solo Jemacash puede ofrecer.
-            Rápida y eficiente.
-          </p>
+          <h2 className={styles.login_aside_title}>{t('login.aside.title')}</h2>
+          <p className={styles.login_aside_sub}>{t('login.aside.sub')}</p>
         </div>
         <div className={styles.login_social_pill}>
           <div className={styles.login_avatar_stack} aria-hidden="true">
@@ -110,8 +109,8 @@ export function LoginModal({
             <span className={styles.login_avatar} />
           </div>
           <div className={styles.login_social_text}>
-            <strong>+10k Usuarios</strong>
-            <span>Confían en nuestra plataforma</span>
+            <strong>{t('login.aside.users')}</strong>
+            <span>{t('login.aside.trust')}</span>
           </div>
         </div>
       </div>
@@ -124,17 +123,16 @@ export function LoginModal({
         <div className={styles.login_split}>
           {aside}
           <div className={styles.login_panel}>
-            <button type="button" className={styles.login_close} onClick={onClose} aria-label="Cerrar">
+            <button type="button" className={styles.login_close} onClick={onClose} aria-label={t('login.close')}>
               <span aria-hidden="true">×</span>
             </button>
 
             {view === 'forgot_sent' ? (
               <div className={styles.login_form}>
                 <header className={styles.login_form_header}>
-                  <h2 id={titleId}>Revisa tu correo</h2>
+                  <h2 id={titleId}>{t('login.forgot.sentTitle')}</h2>
                   <p>
-                    Si el email <strong>{forgotEmail}</strong> está registrado, recibirás un enlace
-                    para restablecer tu contraseña en los próximos minutos.
+                    {t('login.forgot.sentDesc', { email: forgotEmail })}
                   </p>
                 </header>
                 <button
@@ -142,23 +140,23 @@ export function LoginModal({
                   className={styles.login_submit}
                   onClick={() => setView('login')}
                 >
-                  Volver al inicio de sesión
+                  {t('login.forgot.returnToLogin')}
                 </button>
               </div>
             ) : (
               <form className={styles.login_form} onSubmit={handleForgot}>
                 <header className={styles.login_form_header}>
-                  <h2 id={titleId}>Restablecer contraseña</h2>
-                  <p>Ingresa tu correo y te enviaremos un enlace para crear una nueva contraseña.</p>
+                  <h2 id={titleId}>{t('login.forgot.title')}</h2>
+                  <p>{t('login.forgot.desc')}</p>
                 </header>
 
                 <div className={styles.login_field}>
-                  <label htmlFor="forgot-email">Correo electrónico</label>
+                  <label htmlFor="forgot-email">{t('login.forgot.emailLabel')}</label>
                   <input
                     id="forgot-email"
                     type="email"
                     autoComplete="email"
-                    placeholder="nombre@ejemplo.com"
+                    placeholder={t('login.identifierPlaceholder')}
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     disabled={loading}
@@ -167,7 +165,7 @@ export function LoginModal({
                 </div>
 
                 <button type="submit" className={styles.login_submit} disabled={loading}>
-                  {loading ? 'Enviando…' : 'Enviar enlace'}
+                  {loading ? t('login.forgot.sending') : t('login.forgot.send')}
                 </button>
 
                 {error && <p className={styles.login_error} role="alert">{error}</p>}
@@ -178,7 +176,7 @@ export function LoginModal({
                     className={styles.login_register_link}
                     onClick={() => { setError(''); setView('login') }}
                   >
-                    ← Volver al inicio de sesión
+                    {t('login.forgot.back')}
                   </button>
                 </p>
               </form>
@@ -195,24 +193,24 @@ export function LoginModal({
         {aside}
 
         <div className={styles.login_panel}>
-          <button type="button" className={styles.login_close} onClick={onClose} aria-label="Cerrar">
+          <button type="button" className={styles.login_close} onClick={onClose} aria-label={t('login.close')}>
             <span aria-hidden="true">×</span>
           </button>
 
           <form className={styles.login_form} onSubmit={handleSubmit}>
             <header className={styles.login_form_header}>
-              <h2 id={titleId}>Iniciar Sesión</h2>
-              <p>Bienvenido de nuevo. Acceda a su panel de control.</p>
+              <h2 id={titleId}>{t('login.title')}</h2>
+              <p>{t('login.subtitle')}</p>
             </header>
 
             <div className={styles.login_field}>
-              <label htmlFor="login-identifier">Correo electrónico o Teléfono</label>
+              <label htmlFor="login-identifier">{t('login.identifier')}</label>
               <input
                 id="login-identifier"
                 name="identifier"
                 type="text"
                 autoComplete="username"
-                placeholder="nombre@ejemplo.com"
+                placeholder={t('login.identifierPlaceholder')}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
@@ -221,13 +219,13 @@ export function LoginModal({
 
             <div className={styles.login_field}>
               <div className={styles.login_label_row}>
-                <label htmlFor={passwordId}>Contraseña</label>
+                <label htmlFor={passwordId}>{t('login.password')}</label>
                 <button
                   type="button"
                   className={styles.login_link_inline}
                   onClick={() => { setError(''); setForgotEmail(identifier.includes('@') ? identifier : ''); setView('forgot') }}
                 >
-                  ¿Olvidó su contraseña?
+                  {t('login.forgotPassword')}
                 </button>
               </div>
               <div className={styles.login_password_wrap}>
@@ -253,7 +251,7 @@ export function LoginModal({
             </div>
 
             <button type="submit" className={styles.login_submit} disabled={loading}>
-              {loading ? 'Iniciando…' : <>Iniciar sesión <span aria-hidden="true">→</span></>}
+              {loading ? t('login.submitting') : <>{t('login.submit')} <span aria-hidden="true">→</span></>}
             </button>
 
             {error ? (
@@ -263,7 +261,7 @@ export function LoginModal({
             ) : null}
 
             <div className={styles.login_divider}>
-              <span>O continuar con</span>
+              <span>{t('login.orContinueWith')}</span>
             </div>
 
             <div className={styles.login_oauth_row}>
@@ -279,21 +277,21 @@ export function LoginModal({
             </div>
 
             <p className={styles.login_register_prompt}>
-              ¿No tiene una cuenta?{' '}
+              {t('login.noAccount')}{' '}
               <button
                 type="button"
                 className={styles.login_register_link}
                 onClick={onNavigateToRegister}
                 disabled={loading}
               >
-                Regístrese gratis
+                {t('login.register')}
               </button>
             </p>
 
             <nav className={styles.login_legal} aria-label="Enlaces legales">
-              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('soporte')}>Ayuda</button>
-              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('privacidad')}>Privacidad</button>
-              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('terminos')}>Términos</button>
+              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('soporte')}>{t('login.help')}</button>
+              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('privacidad')}>{t('login.privacy')}</button>
+              <button type="button" className={styles.login_legal_btn} onClick={() => setLegalOpen('terminos')}>{t('login.terms')}</button>
             </nav>
 
             {legalOpen && <LegalModal type={legalOpen} onClose={() => setLegalOpen(null)} />}

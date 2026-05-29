@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import BlogPage from './pages/BlogPage'
 import AppFooter from './components/layout/AppFooter'
 import { LoginModal } from './components/login/LoginModal'
@@ -22,6 +23,7 @@ type AuthModal = null | 'register' | 'login'
 type Page = 'home' | 'blog' | 'nosotros' | 'valuar'
 
 function App() {
+  const { i18n } = useTranslation()
   const [page, setPage] = useState<Page>('home')
   const [authModal, setAuthModal] = useState<AuthModal>(null)
   const [session, setSession] = useState<UserSession | null>(null)
@@ -49,7 +51,12 @@ function App() {
     const token = getAccessToken()
     if (!token) { setAuthLoading(false); return }
     getMe()
-      .then((profile) => setSession(profileToSession(profile)))
+      .then((profile) => {
+        setSession(profileToSession(profile))
+        if (profile.pref_language) {
+          i18n.changeLanguage(profile.pref_language)
+        }
+      })
       .catch(() => clearTokens())
       .finally(() => setAuthLoading(false))
   }, [])
@@ -86,6 +93,9 @@ function App() {
       try {
         const { user } = await loginUser(payload.identifier, payload.password)
         setSession(profileToSession(user))
+        if (user.pref_language) {
+          i18n.changeLanguage(user.pref_language)
+        }
         setAuthModal(null)
         return { success: true }
       } catch (err) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pagination } from './Pagination'
 import officeImg    from '../../assets/representative_images/main_page.png'
 import marketImg    from '../../assets/hero.png'
@@ -56,29 +57,35 @@ interface ActivityItem {
 
 // ── Derived helpers ───────────────────────────────────────────────────────────
 
-const APP_STATUS_MAP: Record<string, { title: string; tone: ActivityTone }> = {
-  signed:    { title: 'Préstamo firmado',        tone: 'green'  },
-  approved:  { title: 'Solicitud aprobada',      tone: 'green'  },
-  submitted: { title: 'Solicitud enviada',       tone: 'indigo' },
-  rejected:  { title: 'Solicitud rechazada',     tone: 'rose'   },
-  draft:     { title: 'Solicitud en borrador',   tone: 'amber'  },
+const APP_STATUS_MAP: Record<string, { titleKey: string; tone: ActivityTone }> = {
+  signed:    { titleKey: 'activity.loanSigned',    tone: 'green'  },
+  approved:  { titleKey: 'activity.loanApproved',  tone: 'green'  },
+  submitted: { titleKey: 'activity.loanSubmitted', tone: 'indigo' },
+  rejected:  { titleKey: 'activity.loanRejected',  tone: 'rose'   },
+  draft:     { titleKey: 'activity.loanDraft',     tone: 'amber'  },
 }
 
 function buildActivityFeed(
   apps:     LoanApplication[],
   payments: Payment[],
+  t: (key: string) => string,
 ): ActivityItem[] {
   const items: ActivityItem[] = []
 
   for (const app of apps) {
     const info = APP_STATUS_MAP[app.status]
     if (!info) continue
+    const statusText = app.status === 'submitted' ? t('activity.status.submitted')
+      : app.status === 'approved'  ? t('activity.status.approved')
+      : app.status === 'signed'    ? t('activity.status.signed')
+      : app.status === 'rejected'  ? t('activity.status.rejected')
+      : ''
     items.push({
       key:    `app-${app.id}`,
-      title:  info.title,
+      title:  t(info.titleKey),
       meta:   `${fmtShort(new Date(app.created_at))} • ${shortId(app.id)}`,
       amount: `S/ ${fmt(Number(app.amount))}`,
-      status: app.status === 'submitted' ? 'En evaluación' : app.status === 'approved' ? 'Aprobado' : app.status === 'signed' ? 'Activo' : app.status === 'rejected' ? 'Rechazado' : '',
+      status: statusText,
       tone:   info.tone,
       icon:   IconLoan,
       date:   new Date(app.created_at),
@@ -88,10 +95,10 @@ function buildActivityFeed(
   for (const p of payments) {
     items.push({
       key:    `pay-${p.id}`,
-      title:  'Pago de cuota',
+      title:  t('activity.payment'),
       meta:   `${fmtShort(new Date(p.created_at))} • Cuota ${p.cuota_number} · ${p.payment_method.toUpperCase()}`,
       amount: `- S/ ${fmt(Number(p.amount))}`,
-      status: 'Completado',
+      status: t('activity.status.completed'),
       tone:   'indigo',
       icon:   IconWallet,
       date:   new Date(p.created_at),
@@ -194,6 +201,7 @@ interface Props {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Props) {
+  const { t } = useTranslation()
   const [apps,       setApps]       = useState<LoanApplication[]>([])
   const [evalMap,    setEvalMap]    = useState<Map<string, Evaluation | null>>(new Map())
   const [guarantees, setGuarantees] = useState<Guarantee[]>([])
@@ -246,7 +254,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   const nextPayment = useMemo(() => getNextPayment(apps, evalMap), [apps, evalMap])
 
-  const activityFeed    = useMemo(() => buildActivityFeed(apps, payments), [apps, payments])
+  const activityFeed    = useMemo(() => buildActivityFeed(apps, payments, t), [apps, payments, t])
   const ACT_PER_PAGE    = 5
   const actTotalPages   = Math.ceil(activityFeed.length / ACT_PER_PAGE)
   const visibleActivity = activityFeed.slice(actPage * ACT_PER_PAGE, (actPage + 1) * ACT_PER_PAGE)
@@ -255,21 +263,19 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   const heroSubtitle = useMemo(() => {
     if (activeLoans.length === 0 && pendingApps.length === 0) {
-      return <p className={styles.subtitle}>Empieza solicitando tu primer crédito con garantía.</p>
+      return <p className={styles.subtitle}>{t('resumen.subtitleNoLoans')}</p>
     }
     if (activeLoans.length > 0) {
+      const key = activeLoans.length === 1 ? 'resumen.subtitleActiveOne' : 'resumen.subtitleActiveMany'
       return (
-        <p className={styles.subtitle}>
-          Tienes <strong>{activeLoans.length} préstamo{activeLoans.length !== 1 ? 's' : ''} activo{activeLoans.length !== 1 ? 's' : ''}</strong> con salud financiera en buen estado.
-        </p>
+        <p className={styles.subtitle} dangerouslySetInnerHTML={{ __html: t(key, { count: activeLoans.length }) }} />
       )
     }
+    const key = pendingApps.length === 1 ? 'resumen.subtitlePendingOne' : 'resumen.subtitlePendingMany'
     return (
-      <p className={styles.subtitle}>
-        Tienes <strong>{pendingApps.length} solicitud{pendingApps.length !== 1 ? 'es' : ''} en evaluación</strong>. Te notificaremos pronto.
-      </p>
+      <p className={styles.subtitle} dangerouslySetInnerHTML={{ __html: t(key, { count: pendingApps.length }) }} />
     )
-  }, [activeLoans, pendingApps])
+  }, [activeLoans, pendingApps, t])
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -280,12 +286,12 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
       {/* ── Hero ── */}
       <section className={styles.hero}>
         <div>
-          <p className={styles.greeting}>Hola, {firstName} 👋</p>
+          <p className={styles.greeting}>{t('resumen.greeting', { name: firstName })}</p>
           {heroSubtitle}
         </div>
         <div className={styles.verified_badge}>
           <span aria-hidden="true">◌</span>
-          Perfil Verificado
+          {t('resumen.verified')}
         </div>
       </section>
 
@@ -294,7 +300,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         <div className={styles.stat_card}>
           <span className={`${styles.stat_icon} ${styles.stat_icon_green}`}><IconLoan /></span>
           <div className={styles.stat_body}>
-            <span>Crédito activo</span>
+            <span>{t('resumen.stat.credit')}</span>
             <strong>{totalCredit > 0 ? `S/ ${fmt(totalCredit)}` : '—'}</strong>
           </div>
         </div>
@@ -302,7 +308,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         <div className={styles.stat_card}>
           <span className={`${styles.stat_icon} ${styles.stat_icon_blue}`}><IconWallet /></span>
           <div className={styles.stat_body}>
-            <span>Próxima cuota</span>
+            <span>{t('resumen.stat.nextPayment')}</span>
             <strong>{nextPayment ? `S/ ${fmt(nextPayment.amount)}` : '—'}</strong>
           </div>
         </div>
@@ -310,7 +316,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         <div className={styles.stat_card}>
           <span className={`${styles.stat_icon} ${styles.stat_icon_violet}`}><IconShield /></span>
           <div className={styles.stat_body}>
-            <span>Garantías activas</span>
+            <span>{t('resumen.stat.guarantees')}</span>
             <strong>{activeGs.length > 0 ? activeGs.length : '—'}</strong>
           </div>
         </div>
@@ -318,7 +324,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         <div className={styles.stat_card}>
           <span className={`${styles.stat_icon} ${styles.stat_icon_amber}`}><IconDocument /></span>
           <div className={styles.stat_body}>
-            <span>Solicitudes</span>
+            <span>{t('resumen.stat.applications')}</span>
             <strong>{apps.length > 0 ? apps.length : '—'}</strong>
           </div>
         </div>
@@ -328,11 +334,11 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
       <section className={styles.activity_grid}>
         <article className={styles.activity_card} aria-labelledby="activity-title">
           <div className={styles.section_head}>
-            <h2 id="activity-title">Actividad Reciente</h2>
+            <h2 id="activity-title">{t('resumen.activity.title')}</h2>
           </div>
           <div className={styles.activity_list}>
             {activityFeed.length === 0 ? (
-              <p className={styles.activity_empty}>Aún no tienes actividad registrada.</p>
+              <p className={styles.activity_empty}>{t('resumen.activity.empty')}</p>
             ) : (
               visibleActivity.map(item => {
                 const Icon = item.icon
@@ -360,30 +366,30 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
         <aside className={styles.payment_card} aria-labelledby="next-payment-title">
           <div className={styles.payment_head}>
             <span className={styles.payment_icon}><IconWallet /></span>
-            <span className={styles.payment_label}>Próximo pago</span>
+            <span className={styles.payment_label}>{t('resumen.payment.label')}</span>
           </div>
 
           {nextPayment ? (
             <>
               <div className={styles.payment_body}>
                 <strong id="next-payment-title">S/ {fmt(nextPayment.amount)}</strong>
-                <p>Vence el {fmtDate(nextPayment.dueDate)}</p>
+                <p>{t('resumen.payment.dueOn', { date: fmtDate(nextPayment.dueDate) })}</p>
                 <span className={styles.payment_loan_label}>{nextPayment.loanLabel}</span>
               </div>
               <div className={styles.payment_separator} />
               <button type="button" className={styles.primary_link} onClick={onPay}>
-                Pagar Ahora
+                {t('resumen.payment.payNow')}
               </button>
             </>
           ) : (
             <>
               <div className={styles.payment_body}>
-                <strong id="next-payment-title" className={styles.payment_none}>Sin pagos</strong>
-                <p>No tienes cuotas pendientes por el momento.</p>
+                <strong id="next-payment-title" className={styles.payment_none}>{t('resumen.payment.none')}</strong>
+                <p>{t('resumen.payment.noPending')}</p>
               </div>
               <div className={styles.payment_separator} />
               <button type="button" className={styles.primary_link} onClick={onSolicitar}>
-                Solicitar crédito
+                {t('resumen.payment.requestCredit')}
               </button>
             </>
           )}
@@ -393,8 +399,8 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
       {/* ── Articles (static) ── */}
       <section className={styles.inspire_section} aria-labelledby="inspire-title">
         <div className={styles.section_head}>
-          <h2 id="inspire-title">Infórmate ahora</h2>
-          <span className={styles.section_hint}>Tips para tu crecimiento patrimonial</span>
+          <h2 id="inspire-title">{t('resumen.inspire.title')}</h2>
+          <span className={styles.section_hint}>{t('resumen.inspire.hint')}</span>
         </div>
         <div className={styles.article_grid}>
           {ARTICLES.map(card => (
@@ -414,7 +420,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
                 <h3>{card.title}</h3>
                 <div className={styles.article_footer}>
                   <span className={styles.article_source}>{card.source}</span>
-                  <span className={styles.article_read}>Leer →</span>
+                  <span className={styles.article_read}>{t('resumen.inspire.read')}</span>
                 </div>
               </div>
             </a>
@@ -425,13 +431,13 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
       {/* ── Footer banner ── */}
       <section className={styles.footer_banner} aria-label="Ventajas de la plataforma">
         <div className={styles.footer_copy}>
-          <h2>Tu confianza es nuestra prioridad</h2>
-          <p>Regulados por la SBS para dar mayor tranquilidad y seguridad a cada operación.</p>
+          <h2>{t('resumen.footer.title')}</h2>
+          <p>{t('resumen.footer.desc')}</p>
         </div>
         <div className={styles.footer_stats}>
-          <div><strong>99.8%</strong><span>Disponibilidad</span></div>
-          <div><strong>24/7</strong><span>Soporte VIP</span></div>
-          <div><strong>S/ 2M+</strong><span>Desembolsados</span></div>
+          <div><strong>99.8%</strong><span>{t('resumen.footer.uptime')}</span></div>
+          <div><strong>24/7</strong><span>{t('resumen.footer.support')}</span></div>
+          <div><strong>S/ 2M+</strong><span>{t('resumen.footer.disbursed')}</span></div>
         </div>
       </section>
     </>

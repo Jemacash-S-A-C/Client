@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { IconShield, IconArrowRight } from './icons'
 import styles from './CalendarioView.module.css'
 import { getApplications } from '../../services/application.service'
@@ -10,12 +11,27 @@ import type { LoanPaymentInfo } from './PagarCuotaView'
 // ── Constants & helpers ────────────────────────────────────────────────────────
 
 const TASA_MENSUAL = 0.0125
-const DAY_HEADERS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']
-const MONTH_NAMES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-]
-const MONTH_SHORT = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC']
+
+// Jan 3 2000 was a Monday — offsets 0-6 give Mon-Sun
+function buildDayHeaders(locale: string): string[] {
+  return Array.from({ length: 7 }, (_, i) =>
+    new Date(2000, 0, 3 + i)
+      .toLocaleDateString(locale, { weekday: 'short' })
+      .toUpperCase()
+      .slice(0, 3)
+  )
+}
+function buildMonthNames(locale: string): string[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const s = new Date(2000, i, 1).toLocaleDateString(locale, { month: 'long' })
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  })
+}
+function buildMonthShort(locale: string): string[] {
+  return Array.from({ length: 12 }, (_, i) =>
+    new Date(2000, i, 1).toLocaleDateString(locale, { month: 'short' }).toUpperCase()
+  )
+}
 
 function calcCuota(amount: number, months: number): number {
   const r = TASA_MENSUAL
@@ -65,6 +81,9 @@ function buildEvents(
   apps: LoanApplication[],
   evalMap: Map<string, Evaluation | null>,
   paymentsMap: Map<string, Payment[]>,
+  tPaid: string,
+  tNextPayment: string,
+  tQuota: string,
 ): Map<string, CalEvent[]> {
   const map = new Map<string, CalEvent[]>()
 
@@ -93,13 +112,13 @@ function buildEvents(
       let label: string
       if (paidNumbers.has(i)) {
         tone = 'green'
-        label = 'Pagado'
+        label = tPaid
       } else if (i === nextUnpaid) {
         tone = 'blue'
-        label = 'Próximo pago'
+        label = tNextPayment
       } else {
         tone = 'rose'
-        label = 'Cuota'
+        label = tQuota
       }
 
       const key = dateKey(due)
@@ -230,6 +249,13 @@ function CalSkeleton() {
 type CalView = 'mes' | 'semana' | 'dia'
 
 export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => void }) {
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language === 'en' ? 'en-US' : 'es-PE'
+
+  const monthNames  = useMemo(() => buildMonthNames(locale),  [locale])
+  const monthShort  = useMemo(() => buildMonthShort(locale),  [locale])
+  const dayHeaders  = useMemo(() => buildDayHeaders(locale),  [locale])
+
   const [calView, setCalView]   = useState<CalView>('mes')
   const [viewDate, setViewDate] = useState(() => {
     const d = new Date(); d.setDate(1); return d
@@ -267,7 +293,16 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
     return () => { cancelled = true }
   }, [])
 
-  const eventMap = useMemo(() => buildEvents(apps, evalMap, paymentsMap), [apps, evalMap, paymentsMap])
+  const eventMap = useMemo(
+    () => buildEvents(
+      apps, evalMap, paymentsMap,
+      t('calendar.event.paid'),
+      t('calendar.event.nextPayment'),
+      t('calendar.event.quota'),
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [apps, evalMap, paymentsMap, t],
+  )
 
   const monthGrid = useMemo(
     () => buildMonthGrid(viewDate.getFullYear(), viewDate.getMonth(), eventMap),
@@ -359,15 +394,23 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
 
   function periodLabel(): string {
     if (calView === 'mes') {
-      return `${MONTH_NAMES[viewDate.getMonth()]} ${viewDate.getFullYear()}`
+      return `${monthNames[viewDate.getMonth()]} ${viewDate.getFullYear()}`
     }
     if (calView === 'semana') {
       const monday = new Date(selectedDay)
       monday.setDate(selectedDay.getDate() - isoWeekday(selectedDay))
       const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
-      return `${monday.getDate()} – ${sunday.getDate()} ${MONTH_NAMES[sunday.getMonth()]} ${sunday.getFullYear()}`
+      return `${monday.getDate()} – ${sunday.getDate()} ${monthNames[sunday.getMonth()]} ${sunday.getFullYear()}`
     }
-    return selectedDay.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return selectedDay.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  // ── View label map ──────────────────────────────────────────────────────────
+
+  const viewLabels: Record<CalView, string> = {
+    mes:    t('calendar.view.month'),
+    semana: t('calendar.view.week'),
+    dia:    t('calendar.view.day'),
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -383,7 +426,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         {/* Header row */}
         <div className={styles.cal_panel_head}>
           <div className={styles.cal_nav}>
-            <button type="button" className={styles.cal_nav_btn} onClick={prevPeriod} aria-label="Período anterior">
+            <button type="button" className={styles.cal_nav_btn} onClick={prevPeriod} aria-label={t('calendar.view.prev')}>
               <IconChevronLeft />
             </button>
             <div>
@@ -391,18 +434,18 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
               {calView === 'mes' && (
                 <p className={styles.cal_subtitle}>
                   {monthEventCount > 0
-                    ? `${monthEventCount} evento${monthEventCount !== 1 ? 's' : ''} financiero${monthEventCount !== 1 ? 's' : ''} este mes`
-                    : 'Sin eventos este mes'}
+                    ? t(monthEventCount !== 1 ? 'calendar.events.many' : 'calendar.events.one', { count: monthEventCount })
+                    : t('calendar.noEventsMonth')}
                 </p>
               )}
             </div>
-            <button type="button" className={styles.cal_nav_btn} onClick={nextPeriod} aria-label="Período siguiente">
+            <button type="button" className={styles.cal_nav_btn} onClick={nextPeriod} aria-label={t('calendar.view.next')}>
               <IconChevronRight />
             </button>
           </div>
 
           <div className={styles.cal_head_right}>
-            <button type="button" className={styles.cal_today_btn} onClick={goToday}>Hoy</button>
+            <button type="button" className={styles.cal_today_btn} onClick={goToday}>{t('calendar.today')}</button>
             <div className={styles.cal_view_tabs}>
               {(['mes', 'semana', 'dia'] as CalView[]).map(v => (
                 <button
@@ -411,7 +454,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
                   className={`${styles.cal_view_tab} ${calView === v ? styles.cal_view_tab_active : ''}`}
                   onClick={() => setCalView(v)}
                 >
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                  {viewLabels[v]}
                 </button>
               ))}
             </div>
@@ -421,7 +464,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         {/* ── Month view ──────────────────────────────────────────────── */}
         {calView === 'mes' && (
           <div className={styles.cal_grid}>
-            {DAY_HEADERS.map(h => (
+            {dayHeaders.map(h => (
               <div key={h} className={styles.cal_day_header}>{h}</div>
             ))}
             {monthGrid.flat().map((cell, i) => (
@@ -430,7 +473,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
                 className={`${styles.cal_cell} ${cell.outOfMonth ? styles.cal_cell_out : ''} ${cell.isToday ? styles.cal_cell_today : ''} ${!cell.outOfMonth ? styles.cal_cell_clickable : ''}`}
                 onClick={() => !cell.outOfMonth && selectDay(cell)}
               >
-                {cell.isToday && <span className={styles.cal_today_label}>HOY</span>}
+                {cell.isToday && <span className={styles.cal_today_label}>{t('calendar.today').toUpperCase()}</span>}
                 <span className={styles.cal_day_num}>{cell.date.getDate()}</span>
                 {cell.events.map((ev, j) => (
                   <div key={j} className={`${styles.cal_event} ${styles[`cal_event_${ev.tone}`]}`}>
@@ -446,7 +489,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         {/* ── Week view ───────────────────────────────────────────────── */}
         {calView === 'semana' && (
           <div className={styles.cal_week_grid}>
-            {DAY_HEADERS.map(h => (
+            {dayHeaders.map(h => (
               <div key={h} className={styles.cal_day_header}>{h}</div>
             ))}
             {weekCells.map((cell, i) => (
@@ -455,10 +498,10 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
                 className={`${styles.cal_week_cell} ${cell.isToday ? styles.cal_cell_today : ''} ${styles.cal_cell_clickable}`}
                 onClick={() => selectDay(cell)}
               >
-                {cell.isToday && <span className={styles.cal_today_label}>HOY</span>}
+                {cell.isToday && <span className={styles.cal_today_label}>{t('calendar.today').toUpperCase()}</span>}
                 <span className={styles.cal_day_num}>{cell.date.getDate()}</span>
                 {cell.events.length === 0 && (
-                  <span className={styles.cal_no_events}>Sin eventos</span>
+                  <span className={styles.cal_no_events}>{t('calendar.noEvents')}</span>
                 )}
                 {cell.events.map((ev, j) => (
                   <div
@@ -481,8 +524,8 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
             {dayCells.length === 0 ? (
               <div className={styles.cal_day_empty}>
                 <span className={styles.cal_day_empty_icon}>📅</span>
-                <strong>Sin eventos este día</strong>
-                <span>No hay cuotas ni vencimientos para esta fecha.</span>
+                <strong>{t('calendar.noEventsDay')}</strong>
+                <span>{t('calendar.noEventsDesc')}</span>
               </div>
             ) : (
               dayCells.map((ev, i) => (
@@ -501,7 +544,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
                   </div>
                   <span className={styles.cal_day_event_amount}>
                     S/ {fmt(ev.amount)}
-                    {ev.tone === 'blue' && <span className={styles.cal_pay_cta}> · Pagar →</span>}
+                    {ev.tone === 'blue' && <span className={styles.cal_pay_cta}>{t('calendar.payLink')}</span>}
                   </span>
                 </div>
               ))
@@ -517,23 +560,23 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         <div className={styles.cal_total_card}>
           <span className={styles.cal_total_label}>
             {calView === 'mes'
-              ? `PENDIENTE — ${MONTH_NAMES[viewDate.getMonth()].toUpperCase()}`
-              : 'PRÓXIMOS PAGOS'}
+              ? t('calendar.pending', { month: monthNames[viewDate.getMonth()].toUpperCase() })
+              : t('calendar.upcoming')}
           </span>
           <strong className={styles.cal_total_amount}>
             {totalThisMonth > 0 ? `S/ ${fmt(totalThisMonth)}` : 'S/ 0.00'}
           </strong>
           <span className={styles.cal_total_trend}>
-            {totalThisMonth > 0 ? 'Cuotas pendientes por pagar' : 'Sin cuotas pendientes este mes ✓'}
+            {totalThisMonth > 0 ? t('calendar.hasPending') : t('calendar.noPending')}
           </span>
         </div>
 
         <div className={styles.cal_events_card}>
           <div className={styles.cal_events_head}>
-            <h3>Próximos Eventos</h3>
+            <h3>{t('calendar.upcomingEvents')}</h3>
           </div>
           {upcomingEvents.length === 0 ? (
-            <p className={styles.cal_events_empty}>No hay cuotas próximas.</p>
+            <p className={styles.cal_events_empty}>{t('calendar.noUpcoming')}</p>
           ) : (
             <div className={styles.cal_events_list}>
               {upcomingEvents.map(({ date, event }, i) => (
@@ -544,7 +587,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
                   onClick={() => handlePayEvent(event)}
                 >
                   <div className={styles.cal_event_date}>
-                    <span>{MONTH_SHORT[date.getMonth()]}</span>
+                    <span>{monthShort[date.getMonth()]}</span>
                     <strong>{String(date.getDate()).padStart(2, '0')}</strong>
                   </div>
                   <div className={styles.cal_event_info}>
@@ -560,8 +603,8 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
 
         <div className={styles.cal_promo_card}>
           <span className={styles.cal_promo_arrow}>↑</span>
-          <strong>Optimiza tu flujo de caja con Jemacash</strong>
-          <span>Activa alertas antes del vencimiento de cada cuota.</span>
+          <strong>{t('calendar.promo')}</strong>
+          <span>{t('calendar.promoSub')}</span>
         </div>
 
       </aside>
@@ -571,15 +614,15 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         <div className={styles.cal_sec_left}>
           <span className={styles.cal_sec_shield}><IconShield /></span>
           <div>
-            <strong>Tu cuenta está protegida</strong>
-            <span>Encriptación de grado bancario y monitoreo 24/7.</span>
+            <strong>{t('calendar.security.title')}</strong>
+            <span>{t('calendar.security.desc')}</span>
           </div>
         </div>
         <div className={styles.cal_sec_stats}>
-          <div><strong>99.9%</strong><span>UPTIME DEL SISTEMA</span></div>
-          <div><strong>2m</strong><span>TIEMPO DE RESPUESTA</span></div>
+          <div><strong>99.9%</strong><span>{t('calendar.security.uptime')}</span></div>
+          <div><strong>2m</strong><span>{t('calendar.security.response')}</span></div>
         </div>
-        <button type="button" className={styles.cal_sec_btn}>Ver Seguridad</button>
+        <button type="button" className={styles.cal_sec_btn}>{t('calendar.security.btn')}</button>
       </div>
 
     </div>

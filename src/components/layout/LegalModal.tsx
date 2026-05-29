@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './LegalModal.module.css'
 
 export type LegalType = 'terminos' | 'privacidad' | 'regulacion' | 'soporte'
@@ -277,6 +278,8 @@ const CONTENT: Record<LegalType, () => JSX.Element> = {
 // ── Modal ─────────────────────────────────────────────────────────────────────
 
 export function LegalModal({ type, onClose }: Props) {
+  const { t } = useTranslation()
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
@@ -290,11 +293,11 @@ export function LegalModal({ type, onClose }: Props) {
   const Content = CONTENT[type]
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label={TITLES[type]}>
+    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal="true" aria-label={t(`legal.type.${type}`)}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.modal_header}>
-          <h2>{TITLES[type]}</h2>
-          <button type="button" className={styles.close_btn} onClick={onClose} aria-label="Cerrar">
+          <h2>{t(`legal.type.${type}`)}</h2>
+          <button type="button" className={styles.close_btn} onClick={onClose} aria-label={t('legal.close')}>
             ✕
           </button>
         </div>
