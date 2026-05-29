@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type'
 import styles from './PagarCuotaView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 import { createPayment, mpCharge } from '../../services/payment.service'
 import type { PaymentMethod } from '../../types/api.types'
 
@@ -117,10 +118,6 @@ const METHODS: MethodOption[] = [
 
 function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function fmtDate(d: Date) {
-  return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 // ── Mock card form (used when no real MP key is configured) ────────────────────
@@ -246,6 +243,7 @@ type Step = 'metodo' | 'confirmar' | 'mp-form' | 'exito'
 
 export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
   const { t } = useTranslation()
+  const { fmtLong } = useLocaleFormat()
   const [step, setStep] = useState<Step>('metodo')
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
   const [loading, setLoading] = useState(false)
@@ -341,7 +339,7 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             </div>
             <div className={styles.summary_row}>
               <span>{t('pagar.summary.dueDate')}</span>
-              <strong>{fmtDate(info.nextPaymentDate)}</strong>
+              <strong>{fmtLong(info.nextPaymentDate)}</strong>
             </div>
           </div>
 
@@ -465,7 +463,7 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             </div>
             <div className={styles.confirm_row}>
               <span>{t('pagar.confirm.dueDate')}</span>
-              <strong>{fmtDate(info.nextPaymentDate)}</strong>
+              <strong>{fmtLong(info.nextPaymentDate)}</strong>
             </div>
             <div className={styles.confirm_row}>
               <span>{t('pagar.confirm.method')}</span>

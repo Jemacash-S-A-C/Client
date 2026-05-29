@@ -5,6 +5,7 @@ import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -18,14 +19,6 @@ function calcCuota(amount: number, months: number) {
 
 function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function fmtDate(d: Date | string) {
-  return new Date(d).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-function fmtShort(d: Date | string) {
-  return new Date(d).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
@@ -48,9 +41,14 @@ interface TimelineStep {
   state:    'done' | 'active' | 'pending' | 'rejected'
 }
 
-function buildTimeline(app: LoanApplication, tPending: string, tInProgress: string): TimelineStep[] {
-  const created = fmtDate(app.created_at)
-  const updated = fmtDate(app.updated_at ?? app.created_at)
+function buildTimeline(
+  app: LoanApplication,
+  tPending: string,
+  tInProgress: string,
+  fmtLong: (d: Date | string) => string,
+): TimelineStep[] {
+  const created = fmtLong(app.created_at)
+  const updated = fmtLong(app.updated_at ?? app.created_at)
 
   const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
     { labelKey: 'detalle.timeline.registro',      doneOn: ['submitted','approved','rejected','signed'] },
@@ -128,6 +126,7 @@ interface Props {
 
 export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const { t } = useTranslation()
+  const { fmtLong, fmtShort } = useLocaleFormat()
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [payments,   setPayments]   = useState<Payment[]>([])
   const [loading,    setLoading]    = useState(true)
@@ -146,7 +145,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   }, [app.id])
 
   const statusCfgKey = STATUS_CFG_KEYS[app.status]
-  const timeline     = buildTimeline(app, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'))
+  const timeline     = buildTimeline(app, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
   const guarantee    = app.guarantee ?? null
 
   const loanAmount  = evaluation?.approved_amount != null

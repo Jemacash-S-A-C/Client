@@ -34,6 +34,7 @@ import {
   IconWarning,
 } from './icons'
 import styles from './ConfiguracionView.module.css'
+import { TZ_MAP, getAppTimezone, setAppTimezone, useLocaleFormat } from '../../utils/tz'
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ function PerfilView({
   onUpdate: (updated: UserSession) => void
 }) {
   const { t } = useTranslation()
+  const { fmtMonthYear } = useLocaleFormat()
   const [profile, setProfile]       = useState<UserProfile | null>(null)
   const [fullName, setFullName]      = useState(user.displayName)
   const [phone, setPhone]            = useState(() => {
@@ -95,11 +97,6 @@ function PerfilView({
   const originalPhone = rawPhone.startsWith('+51') ? rawPhone.slice(3) : rawPhone.replace(/\D/g, '').slice(0, 9)
   const savedPhoto    = localStorage.getItem(AVATAR_STORAGE_KEY(user.id))
   const isDirty       = fullName !== originalName || phone !== originalPhone || photoUrl !== savedPhoto
-
-  function fmtMemberSince(dateStr?: string) {
-    if (!dateStr) return '—'
-    return new Date(dateStr).toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })
-  }
 
   function showToast(kind: ToastKind, msg: string) {
     setToast({ kind, msg })
@@ -179,7 +176,7 @@ function PerfilView({
           <h2>{fullName || user.displayName}</h2>
           <span className={styles.perfil_since}>
             <IconCalendar />
-            {t('config.profile.memberSince', { date: fmtMemberSince(profile?.created_at) })}
+            {t('config.profile.memberSince', { date: profile?.created_at ? fmtMonthYear(profile.created_at) : '—' })}
           </span>
         </div>
         <span className={styles.perfil_verified_badge}>
@@ -729,15 +726,18 @@ function PreferenciasView() {
   const [currency,   setCurrency]   = useState('pen')
   // Initialize from i18n so the selector stays in sync after remounts
   const [language,   setLanguage]   = useState(() => i18n.language.split('-')[0] || 'es')
-  const [timezone,   setTimezone]   = useState('lima')
+  // Init from global module so the selector shows the correct zone instantly on remount
+  const [timezone,   setTimezone]   = useState(
+    () => Object.entries(TZ_MAP).find(([, v]) => v === getAppTimezone())?.[0] ?? 'lima'
+  )
   const [toast,      setToast]      = useState<{ kind: ToastKind; msg: string } | null>(null)
 
   useEffect(() => {
     getMe().then((p) => {
       setNotifEmail(p.notification_email)
       setCurrency(p.pref_currency)
-      // Don't override language — i18n already tracks it correctly
-      setTimezone(p.pref_timezone)
+      // Don't override language or timezone — the global module (i18n / getAppTimezone)
+      // already tracks the correct values and is used to initialize state above.
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
@@ -784,7 +784,11 @@ function PreferenciasView() {
   function handleTimezone(val: string) {
     const prev = timezone
     setTimezone(val)
-    save({ pref_timezone: val }, () => setTimezone(prev))
+    setAppTimezone(val)
+    save({ pref_timezone: val }, () => {
+      setTimezone(prev)
+      setAppTimezone(prev)
+    })
   }
 
   return (

@@ -9,6 +9,7 @@ import {
   IconWarning,
 } from './icons'
 import styles from './MisPrestamosView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
@@ -26,14 +27,6 @@ function calcCuota(amount: number, months: number): number {
 
 function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function fmtDate(d: Date): string {
-  return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
-function fmtShortDate(d: Date): string {
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function shortId(id: string): string {
@@ -87,7 +80,12 @@ interface Movement {
   type: 'desembolso' | 'pago'
 }
 
-function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, payments: Payment[]): LoanData {
+function buildLoanData(
+  app: LoanApplication,
+  evaluation: Evaluation | null,
+  payments: Payment[],
+  fmtShort: (d: Date | string) => string,
+): LoanData {
   const loanAmount = evaluation?.approved_amount != null
     ? Number(evaluation.approved_amount)
     : Number(app.amount)
@@ -123,7 +121,7 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, paym
     conceptKey: 'prestamos.movement.disbursement',
     conceptVars: { id: shortId(app.id) },
     id: `#DESEMBOLSO-${app.id.slice(0, 6).toUpperCase()}`,
-    date: fmtShortDate(signedAt),
+    date: fmtShort(signedAt),
     amount: loanAmount,
     type: 'desembolso',
   })
@@ -134,7 +132,7 @@ function buildLoanData(app: LoanApplication, evaluation: Evaluation | null, paym
       conceptKey: 'prestamos.movement.cuota',
       conceptVars: { num: String(p.cuota_number).padStart(2, '0'), id: shortId(app.id) },
       id: `#TRX-${p.reference_number}`,
-      date: fmtShortDate(new Date(p.created_at)),
+      date: fmtShort(new Date(p.created_at)),
       amount: Number(p.amount),
       type: 'pago',
     })
@@ -159,6 +157,7 @@ interface Props {
 
 export function MisPrestamosView({ onPay }: Props) {
   const { t } = useTranslation()
+  const { fmtLong, fmtShort } = useLocaleFormat()
   const [apps, setApps] = useState<LoanApplication[]>([])
   const [loans, setLoans] = useState<LoanData[]>([])
   const [loading, setLoading] = useState(true)
@@ -192,7 +191,7 @@ export function MisPrestamosView({ onPay }: Props) {
         )
 
         const loanData = signedApps
-          .map((a) => buildLoanData(a, evalMap.get(a.id) ?? null, paymentsMap.get(a.id) ?? []))
+          .map((a) => buildLoanData(a, evalMap.get(a.id) ?? null, paymentsMap.get(a.id) ?? [], fmtShort))
 
         setLoans(loanData)
 
@@ -315,7 +314,7 @@ export function MisPrestamosView({ onPay }: Props) {
                   <IconCalendar />
                   <div>
                     <span>{t('prestamos.loan.nextPayment')}</span>
-                    <strong>{fmtDate(l.nextPaymentDate)}</strong>
+                    <strong>{fmtLong(l.nextPaymentDate)}</strong>
                   </div>
                 </div>
                 {l.paidCount < l.app.term_months && (

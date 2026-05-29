@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocaleFormat } from '../../utils/tz'
 import type { LoanDocument, DocumentType } from '../../types/api.types'
 import { getDocuments, uploadDocument, deleteDocument, fileToBase64 } from '../../services/document.service'
 import { IconCheck, IconWarning, IconPlus } from './icons'
@@ -127,10 +128,6 @@ function fmtSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
 // ── Upload slot ───────────────────────────────────────────────────────────────
 
 interface SlotProps {
@@ -142,6 +139,7 @@ interface SlotProps {
 
 function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
   const { t } = useTranslation()
+  const { fmtShort } = useLocaleFormat()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -203,7 +201,7 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
                   </span>
                   <div className={styles.uploaded_info}>
                     <strong>{doc.original_name}</strong>
-                    <span>{fmtSize(doc.file_size)} · {fmtDate(doc.created_at)}</span>
+                    <span>{fmtSize(doc.file_size)} · {fmtShort(doc.created_at)}</span>
                   </div>
                   <span
                     className={styles.uploaded_status}
@@ -267,6 +265,7 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
+  const { t } = useTranslation()
   const [docs, setDocs] = useState<LoanDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -317,14 +316,12 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
       {/* ── Header ── */}
       <div className={styles.page_header}>
         <div>
-          <h1 className={styles.page_title}>Subir Documentos</h1>
-          <p className={styles.page_sub}>
-            Sube los documentos requeridos para agilizar la evaluación de tu solicitud.
-          </p>
+          <h1 className={styles.page_title}>{t('docs.title')}</h1>
+          <p className={styles.page_sub}>{t('docs.subtitle')}</p>
         </div>
         {onBack && (
           <button type="button" className={styles.back_btn} onClick={onBack}>
-            ← Volver a Firma
+            {t('docs.backToSign')}
           </button>
         )}
       </div>
@@ -333,8 +330,8 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
       <div className={styles.progress_card}>
         <div className={styles.progress_top}>
           <div className={styles.progress_label}>
-            <strong>Documentos requeridos</strong>
-            <span>{reqDone} de {required.length} completados</span>
+            <strong>{t('docs.progress.title')}</strong>
+            <span>{t('docs.progress.completed', { done: reqDone, total: required.length })}</span>
           </div>
           <span className={styles.progress_pct}>{Math.round((reqDone / required.length) * 100)}%</span>
         </div>
@@ -347,15 +344,15 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
         <div className={styles.progress_stats}>
           <div>
             <strong>{total}</strong>
-            <span>Subidos</span>
+            <span>{t('docs.progress.uploaded')}</span>
           </div>
           <div>
             <strong>{verified}</strong>
-            <span>Verificados</span>
+            <span>{t('docs.progress.verified')}</span>
           </div>
           <div>
             <strong>{total - verified}</strong>
-            <span>En revisión</span>
+            <span>{t('docs.progress.inReview')}</span>
           </div>
         </div>
       </div>
@@ -373,8 +370,8 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
       <div className={styles.notice_banner}>
         <span className={styles.notice_icon}><IconCheck /></span>
         <div>
-          <strong>Documentos marcados con <span className={styles.required_dot_inline}>*</span> son obligatorios</strong>
-          <p>Los documentos opcionales pueden acelerar la aprobación si tu solicitud incluye garantía vehicular.</p>
+          <strong>{t('docs.notice.title')}</strong>
+          <p>{t('docs.notice.desc')}</p>
         </div>
       </div>
 

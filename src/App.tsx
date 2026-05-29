@@ -16,6 +16,7 @@ import UserDashboard from './pages/UserDashboard'
 import { getAccessToken, clearTokens, setTokens } from './utils/api'
 import { loginUser, registerUser, logoutUser, getMe } from './services/auth.service'
 import { profileToSession, type UserSession } from './types/api.types'
+import { setAppTimezone } from './utils/tz'
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
 
@@ -53,9 +54,8 @@ function App() {
     getMe()
       .then((profile) => {
         setSession(profileToSession(profile))
-        if (profile.pref_language) {
-          i18n.changeLanguage(profile.pref_language)
-        }
+        if (profile.pref_language) i18n.changeLanguage(profile.pref_language)
+        if (profile.pref_timezone) setAppTimezone(profile.pref_timezone)
       })
       .catch(() => clearTokens())
       .finally(() => setAuthLoading(false))
@@ -93,9 +93,8 @@ function App() {
       try {
         const { user } = await loginUser(payload.identifier, payload.password)
         setSession(profileToSession(user))
-        if (user.pref_language) {
-          i18n.changeLanguage(user.pref_language)
-        }
+        if (user.pref_language) i18n.changeLanguage(user.pref_language)
+        if (user.pref_timezone) setAppTimezone(user.pref_timezone)
         setAuthModal(null)
         return { success: true }
       } catch (err) {

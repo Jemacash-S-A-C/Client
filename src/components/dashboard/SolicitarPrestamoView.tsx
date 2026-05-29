@@ -7,6 +7,7 @@ import {
   IconPlus,
 } from './icons'
 import styles from './SolicitarPrestamoView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 import { createApplication, submitApplication } from '../../services/application.service'
 import { getGuarantees } from '../../services/guarantee.service'
 import type { Guarantee } from '../../types/api.types'
@@ -49,6 +50,7 @@ export function SolicitarPrestamoView({
   onAddGuarantee: () => void
 }) {
   const { t } = useTranslation()
+  const { fmtMonthShort } = useLocaleFormat()
   const [amount, setAmount] = useState(15000)
   const [plazo, setPlazo] = useState<Plazo>(12)
   const [selectedGuaranteeId, setSelectedGuaranteeId] = useState<string | null>(null)
@@ -110,7 +112,7 @@ export function SolicitarPrestamoView({
   const scheduleMonths = Array.from({ length: Math.min(2, plazo) }, (_, i) => {
     const d = new Date()
     d.setMonth(d.getMonth() + i + 1)
-    return d.toLocaleDateString('es-PE', { month: 'short', year: 'numeric' })
+    return fmtMonthShort(d)
   })
 
   return (

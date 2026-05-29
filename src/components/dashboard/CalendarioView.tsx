@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocaleFormat } from '../../utils/tz'
 import { IconShield, IconArrowRight } from './icons'
 import styles from './CalendarioView.module.css'
 import { getApplications } from '../../services/application.service'
@@ -251,6 +252,7 @@ type CalView = 'mes' | 'semana' | 'dia'
 export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => void }) {
   const { t, i18n } = useTranslation()
   const locale = i18n.language === 'en' ? 'en-US' : 'es-PE'
+  const { timezone } = useLocaleFormat()
 
   const monthNames  = useMemo(() => buildMonthNames(locale),  [locale])
   const monthShort  = useMemo(() => buildMonthShort(locale),  [locale])
@@ -402,7 +404,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
       const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
       return `${monday.getDate()} – ${sunday.getDate()} ${monthNames[sunday.getMonth()]} ${sunday.getFullYear()}`
     }
-    return selectedDay.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    return selectedDay.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: timezone })
   }
 
   // ── View label map ──────────────────────────────────────────────────────────

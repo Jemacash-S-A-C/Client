@@ -11,6 +11,7 @@ import {
   IconShield,
 } from './icons'
 import styles from './ResumenView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation }   from '../../services/evaluation.service'
 import { getGuarantees }   from '../../services/guarantee.service'
@@ -28,14 +29,6 @@ function calcCuota(amount: number, months: number): number {
 
 function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function fmtDate(d: Date): string {
-  return d.toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })
-}
-
-function fmtShort(d: Date): string {
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
@@ -69,6 +62,7 @@ function buildActivityFeed(
   apps:     LoanApplication[],
   payments: Payment[],
   t: (key: string) => string,
+  fmtShort: (d: Date | string) => string,
 ): ActivityItem[] {
   const items: ActivityItem[] = []
 
@@ -83,7 +77,7 @@ function buildActivityFeed(
     items.push({
       key:    `app-${app.id}`,
       title:  t(info.titleKey),
-      meta:   `${fmtShort(new Date(app.created_at))} • ${shortId(app.id)}`,
+      meta:   `${fmtShort(app.created_at)} • ${shortId(app.id)}`,
       amount: `S/ ${fmt(Number(app.amount))}`,
       status: statusText,
       tone:   info.tone,
@@ -96,7 +90,7 @@ function buildActivityFeed(
     items.push({
       key:    `pay-${p.id}`,
       title:  t('activity.payment'),
-      meta:   `${fmtShort(new Date(p.created_at))} • Cuota ${p.cuota_number} · ${p.payment_method.toUpperCase()}`,
+      meta:   `${fmtShort(p.created_at)} • Cuota ${p.cuota_number} · ${p.payment_method.toUpperCase()}`,
       amount: `- S/ ${fmt(Number(p.amount))}`,
       status: t('activity.status.completed'),
       tone:   'indigo',
@@ -202,6 +196,7 @@ interface Props {
 
 export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Props) {
   const { t } = useTranslation()
+  const { fmtDayMonth, fmtShort } = useLocaleFormat()
   const [apps,       setApps]       = useState<LoanApplication[]>([])
   const [evalMap,    setEvalMap]    = useState<Map<string, Evaluation | null>>(new Map())
   const [guarantees, setGuarantees] = useState<Guarantee[]>([])
@@ -254,7 +249,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   const nextPayment = useMemo(() => getNextPayment(apps, evalMap), [apps, evalMap])
 
-  const activityFeed    = useMemo(() => buildActivityFeed(apps, payments, t), [apps, payments, t])
+  const activityFeed    = useMemo(() => buildActivityFeed(apps, payments, t, fmtShort), [apps, payments, t, fmtShort])
   const ACT_PER_PAGE    = 5
   const actTotalPages   = Math.ceil(activityFeed.length / ACT_PER_PAGE)
   const visibleActivity = activityFeed.slice(actPage * ACT_PER_PAGE, (actPage + 1) * ACT_PER_PAGE)
@@ -373,7 +368,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
             <>
               <div className={styles.payment_body}>
                 <strong id="next-payment-title">S/ {fmt(nextPayment.amount)}</strong>
-                <p>{t('resumen.payment.dueOn', { date: fmtDate(nextPayment.dueDate) })}</p>
+                <p>{t('resumen.payment.dueOn', { date: fmtDayMonth(nextPayment.dueDate) })}</p>
                 <span className={styles.payment_loan_label}>{nextPayment.loanLabel}</span>
               </div>
               <div className={styles.payment_separator} />

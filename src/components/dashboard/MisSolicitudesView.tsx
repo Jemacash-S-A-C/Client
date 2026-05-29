@@ -10,6 +10,7 @@ import {
   IconArrowRight,
 } from './icons'
 import styles from './MisSolicitudesView.module.css'
+import { useLocaleFormat } from '../../utils/tz'
 
 // Status label keys — resolved via t() inside the component
 const STATUS_LABEL_KEYS: Record<LoanApplication['status'], string> = {
@@ -48,6 +49,7 @@ interface Props {
 
 export function MisSolicitudesView({ onDetalle }: Props) {
   const { t } = useTranslation()
+  const { fmtMonthShort } = useLocaleFormat()
   const [applications, setApplications] = useState<LoanApplication[]>([])
   const [loading, setLoading] = useState(true)
   const [activePage, setActivePage] = useState(0)
@@ -160,9 +162,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
               {visibleHist.map(app => {
                 const tone = STATUS_TONES[app.status]
                 const cfg  = STATUS_CFG[app.status]
-                const dateLabel = new Date(app.created_at).toLocaleDateString('es-PE', {
-                  month: 'short', year: 'numeric',
-                }).toUpperCase()
+                const dateLabel = fmtMonthShort(app.created_at).toUpperCase()
                 return (
                   <article
                     key={app.id}
