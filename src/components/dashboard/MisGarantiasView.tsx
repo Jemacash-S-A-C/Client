@@ -191,10 +191,10 @@ export function MisGarantiasView({
             <span>Tecnología</span>
           </div>
         </div>
-        <div className={styles.gar_stat_card}>
+        <div className={`${styles.gar_stat_card} ${styles.gar_stat_card_disabled}`}>
           <span className={styles.gar_stat_icon}><IconCar /></span>
           <div>
-            <strong>{vehGuarantees.length}</strong>
+            <strong>—</strong>
             <span>Vehículos</span>
           </div>
         </div>
@@ -246,43 +246,20 @@ export function MisGarantiasView({
         )}
       </section>
 
-      {/* ── Vehículos section ── */}
-      <section className={styles.gar_section}>
+      {/* ── Vehículos section — deshabilitada ── */}
+      <section className={`${styles.gar_section} ${styles.gar_section_disabled}`}>
         <div className={styles.gar_section_head}>
           <div className={styles.gar_section_label}>
             <span className={styles.gar_section_icon}><IconCar /></span>
             <h2>Vehículos</h2>
-            <span className={styles.gar_count_badge}>{vehGuarantees.length}</span>
+            <span className={styles.gar_soon_badge}>Próximamente</span>
           </div>
-          <button type="button" className={styles.gar_section_add} onClick={onRegisterVeh}>
-            <IconPlus /> Agregar
-          </button>
         </div>
-
-        {loading ? (
-          <div className={styles.gar_empty}>
-            <span className={styles.gar_empty_icon}><IconClock /></span>
-            <p>Cargando garantías…</p>
-          </div>
-        ) : vehGuarantees.length === 0 ? (
-          <div className={styles.gar_empty}>
-            <span className={styles.gar_empty_icon}><IconCar /></span>
-            <strong>No tienes garantías vehiculares registradas</strong>
-            <p>Registra tu auto, camioneta o moto para usarlo como respaldo en tu solicitud de crédito.</p>
-            <button type="button" className={styles.gar_empty_cta} onClick={onRegisterVeh}>
-              <IconPlus /> Registrar ahora
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className={styles.gar_list}>
-              {visibleVeh.map(g => (
-                <GuaranteeCard key={g.id} g={g} />
-              ))}
-            </div>
-            <Pagination page={vehPage} total={vehTotal} onChange={setVehPage} />
-          </>
-        )}
+        <div className={styles.gar_soon_body}>
+          <span className={styles.gar_soon_icon}><IconCar /></span>
+          <strong>Garantías vehiculares — próximamente</strong>
+          <p>Pronto podrás registrar tu auto, camioneta o moto como respaldo para tu solicitud de crédito.</p>
+        </div>
       </section>
 
       {/* ── Info banner ── */}

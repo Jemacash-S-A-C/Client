@@ -93,6 +93,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     return (
       <PagarCuotaView
         info={activeLoanPayment}
+        userEmail={user.email}
         onBack={() => setActiveView('prestamos')}
         onSuccess={() => { setActiveLoanPayment(null); setActiveView('prestamos') }}
       />
@@ -254,7 +255,14 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
             />
           )}
           {activeView === 'configuracion' && <ConfiguracionView user={user} onUpdate={onUserUpdate} />}
-          {activeView === 'calendario' && <CalendarioView />}
+          {activeView === 'calendario' && (
+            <CalendarioView
+              onPay={(info) => {
+                setActiveLoanPayment(info)
+                setActiveView('pagar-cuota')
+              }}
+            />
+          )}
           {activeView === 'garantias' && (
             <MisGarantiasView
               onRegisterTec={() => {

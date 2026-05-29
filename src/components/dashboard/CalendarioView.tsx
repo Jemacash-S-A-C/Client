@@ -3,7 +3,9 @@ import { IconShield, IconArrowRight } from './icons'
 import styles from './CalendarioView.module.css'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
-import type { LoanApplication, Evaluation } from '../../types/api.types'
+import { getPaymentsByApplication } from '../../services/payment.service'
+import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
+import type { LoanPaymentInfo } from './PagarCuotaView'
 
 // ── Constants & helpers ────────────────────────────────────────────────────────
 
@@ -49,6 +51,12 @@ interface CalEvent {
   tone: EventTone
   amount: number
   isoDate: string   // YYYY-MM-DD, used for sorting / lookup
+  // Payment context (populated for unpaid cuotas)
+  applicationId: string
+  loanLabel: string
+  cuotaNumber: number
+  totalCuotas: number
+  loanAmount: number
 }
 
 // ── Build events from loans ────────────────────────────────────────────────────
@@ -56,10 +64,9 @@ interface CalEvent {
 function buildEvents(
   apps: LoanApplication[],
   evalMap: Map<string, Evaluation | null>,
+  paymentsMap: Map<string, Payment[]>,
 ): Map<string, CalEvent[]> {
   const map = new Map<string, CalEvent[]>()
-  const now = new Date()
-  const msPerMonth = 30.44 * 24 * 3600 * 1000
 
   for (const app of apps) {
     if (app.status !== 'signed') continue
@@ -71,10 +78,12 @@ function buildEvents(
 
     const cuota = calcCuota(loanAmount, app.term_months)
     const createdAt = new Date(app.created_at)
-    const monthsElapsed = Math.min(
-      Math.floor((now.getTime() - createdAt.getTime()) / msPerMonth),
-      app.term_months,
+
+    const paidNumbers = new Set(
+      (paymentsMap.get(app.id) ?? []).map(p => p.cuota_number)
     )
+    const nextUnpaid = Array.from({ length: app.term_months }, (_, i) => i + 1)
+      .find(n => !paidNumbers.has(n)) ?? null
 
     for (let i = 1; i <= app.term_months; i++) {
       const due = new Date(createdAt)
@@ -82,10 +91,10 @@ function buildEvents(
 
       let tone: EventTone
       let label: string
-      if (i <= monthsElapsed) {
+      if (paidNumbers.has(i)) {
         tone = 'green'
         label = 'Pagado'
-      } else if (i === monthsElapsed + 1) {
+      } else if (i === nextUnpaid) {
         tone = 'blue'
         label = 'Próximo pago'
       } else {
@@ -100,6 +109,11 @@ function buildEvents(
         tone,
         amount: cuota,
         isoDate: key,
+        applicationId: app.id,
+        loanLabel: shortId(app.id),
+        cuotaNumber: i,
+        totalCuotas: app.term_months,
+        loanAmount: loanAmount,
       }
 
       if (!map.has(key)) map.set(key, [])
@@ -215,16 +229,17 @@ function CalSkeleton() {
 
 type CalView = 'mes' | 'semana' | 'dia'
 
-export function CalendarioView() {
+export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => void }) {
   const [calView, setCalView]   = useState<CalView>('mes')
   const [viewDate, setViewDate] = useState(() => {
     const d = new Date(); d.setDate(1); return d
   })
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date())
 
-  const [apps,    setApps]    = useState<LoanApplication[]>([])
-  const [evalMap, setEvalMap] = useState<Map<string, Evaluation | null>>(new Map())
-  const [loading, setLoading] = useState(true)
+  const [apps,        setApps]        = useState<LoanApplication[]>([])
+  const [evalMap,     setEvalMap]     = useState<Map<string, Evaluation | null>>(new Map())
+  const [paymentsMap, setPaymentsMap] = useState<Map<string, Payment[]>>(new Map())
+  const [loading,     setLoading]     = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -234,12 +249,17 @@ export function CalendarioView() {
         if (cancelled) return
 
         const signed = all.filter(a => a.status === 'signed')
-        const evals  = await Promise.all(signed.map(a => getEvaluation(a.id).catch(() => null)))
+        const [evals, payments] = await Promise.all([
+          Promise.all(signed.map(a => getEvaluation(a.id).catch(() => null))),
+          Promise.all(signed.map(a => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
+        ])
         if (cancelled) return
 
-        const m = new Map<string, Evaluation | null>(signed.map((a, i) => [a.id, evals[i]]))
+        const em = new Map<string, Evaluation | null>(signed.map((a, i) => [a.id, evals[i]]))
+        const pm = new Map<string, Payment[]>(signed.map((a, i) => [a.id, payments[i]]))
         setApps(all)
-        setEvalMap(m)
+        setEvalMap(em)
+        setPaymentsMap(pm)
       } catch { /* show empty state */ }
       finally { if (!cancelled) setLoading(false) }
     }
@@ -247,7 +267,7 @@ export function CalendarioView() {
     return () => { cancelled = true }
   }, [])
 
-  const eventMap = useMemo(() => buildEvents(apps, evalMap), [apps, evalMap])
+  const eventMap = useMemo(() => buildEvents(apps, evalMap, paymentsMap), [apps, evalMap, paymentsMap])
 
   const monthGrid = useMemo(
     () => buildMonthGrid(viewDate.getFullYear(), viewDate.getMonth(), eventMap),
@@ -290,6 +310,21 @@ export function CalendarioView() {
     () => monthGrid.flat().reduce((n, c) => n + (c.outOfMonth ? 0 : c.events.length), 0),
     [monthGrid],
   )
+
+  // ── Payment handler ─────────────────────────────────────────────────────────
+
+  function handlePayEvent(ev: CalEvent) {
+    if (ev.tone === 'green') return
+    onPay({
+      applicationId: ev.applicationId,
+      loanLabel: ev.loanLabel,
+      cuota: ev.amount,
+      cuotaNumber: ev.cuotaNumber,
+      totalCuotas: ev.totalCuotas,
+      nextPaymentDate: keyToDate(ev.isoDate),
+      loanAmount: ev.loanAmount,
+    })
+  }
 
   // ── Navigation helpers ──────────────────────────────────────────────────────
 
@@ -426,7 +461,11 @@ export function CalendarioView() {
                   <span className={styles.cal_no_events}>Sin eventos</span>
                 )}
                 {cell.events.map((ev, j) => (
-                  <div key={j} className={`${styles.cal_event} ${styles[`cal_event_${ev.tone}`]}`}>
+                  <div
+                    key={j}
+                    className={`${styles.cal_event} ${styles[`cal_event_${ev.tone}`]} ${ev.tone === 'blue' ? styles.cal_event_payable : ''}`}
+                    onClick={ev.tone === 'blue' ? (e) => { e.stopPropagation(); handlePayEvent(ev) } : undefined}
+                  >
                     <strong>{ev.label}</strong>
                     <span>{ev.detail}</span>
                   </div>
@@ -447,13 +486,23 @@ export function CalendarioView() {
               </div>
             ) : (
               dayCells.map((ev, i) => (
-                <div key={i} className={`${styles.cal_day_event_card} ${styles[`cal_day_event_${ev.tone}`]}`}>
+                <div
+                  key={i}
+                  className={`${styles.cal_day_event_card} ${styles[`cal_day_event_${ev.tone}`]} ${ev.tone === 'blue' ? styles.cal_event_payable : ''}`}
+                  onClick={ev.tone === 'blue' ? () => handlePayEvent(ev) : undefined}
+                  role={ev.tone === 'blue' ? 'button' : undefined}
+                  tabIndex={ev.tone === 'blue' ? 0 : undefined}
+                  onKeyDown={ev.tone === 'blue' ? (e) => e.key === 'Enter' && handlePayEvent(ev) : undefined}
+                >
                   <div className={styles.cal_day_event_dot} />
                   <div className={styles.cal_day_event_body}>
                     <strong>{ev.label}</strong>
                     <span>{ev.detail}</span>
                   </div>
-                  <span className={styles.cal_day_event_amount}>S/ {fmt(ev.amount)}</span>
+                  <span className={styles.cal_day_event_amount}>
+                    S/ {fmt(ev.amount)}
+                    {ev.tone === 'blue' && <span className={styles.cal_pay_cta}> · Pagar →</span>}
+                  </span>
                 </div>
               ))
             )}
@@ -492,7 +541,7 @@ export function CalendarioView() {
                   key={i}
                   type="button"
                   className={styles.cal_event_row}
-                  onClick={() => { setSelectedDay(date); setCalView('dia') }}
+                  onClick={() => handlePayEvent(event)}
                 >
                   <div className={styles.cal_event_date}>
                     <span>{MONTH_SHORT[date.getMonth()]}</span>

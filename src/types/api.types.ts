@@ -66,7 +66,7 @@ export type Guarantee = {
   photo_urls?: string[] | null
 }
 
-export type PaymentMethod = 'bcp' | 'bbva' | 'yape' | 'plin' | 'efectivo'
+export type PaymentMethod = 'bcp' | 'bbva' | 'yape' | 'plin' | 'efectivo' | 'mercadopago'
 
 export type Payment = {
   id: string

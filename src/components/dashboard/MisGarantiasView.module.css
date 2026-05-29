@@ -89,12 +89,74 @@
   color: #64748b;
 }
 
+.gar_stat_card_disabled {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+
+.gar_stat_card_disabled strong {
+  color: #94a3b8;
+}
+
 /* ── Section ──────────────────────────────────────────────── */
 .gar_section {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.gar_section_disabled {
+  opacity: 0.6;
+  background: #f8fafc;
+  border-style: dashed;
+  pointer-events: none;
+}
+
+.gar_soon_badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+}
+
+.gar_soon_body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.gar_soon_icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background: #f1f5f9;
+  border-radius: 50%;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.gar_soon_icon svg { width: 1.3rem; height: 1.3rem; }
+
+.gar_soon_body strong {
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.gar_soon_body p {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  max-width: 360px;
 }
 
 .gar_section_head {

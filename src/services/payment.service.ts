@@ -8,6 +8,21 @@ export interface CreatePaymentPayload {
   cuota_number: number
 }
 
+export interface MpChargePayload {
+  application_id: string
+  amount: number
+  cuota_number: number
+  token: string
+  installments: number
+  payment_method_id: string
+  email: string
+  issuer_id?: string
+}
+
+export function mpCharge(payload: MpChargePayload): Promise<Payment> {
+  return api.post<Payment>('/payments/mp-charge', payload)
+}
+
 export function createPayment(payload: CreatePaymentPayload): Promise<Payment> {
   return api.post<Payment>('/payments', payload)
 }

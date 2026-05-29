@@ -345,6 +345,55 @@
   letter-spacing: 0.04em;
 }
 
+/* Mock card form */
+
+.mock_form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.mock_row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.mock_field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.mock_label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #5c675e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mock_input {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid rgba(68, 84, 72, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 0.95rem;
+  color: #1a221c;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.mock_input::placeholder {
+  color: #aab3ad;
+}
+
+.mock_input:focus {
+  border-color: #009ee3;
+  box-shadow: 0 0 0 3px rgba(0, 158, 227, 0.12);
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 580px) {

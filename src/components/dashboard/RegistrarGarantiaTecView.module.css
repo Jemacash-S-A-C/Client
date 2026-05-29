@@ -360,6 +360,56 @@
 .reg_photos_ok   { color: #0f7d3f; }
 .reg_photos_warn { color: #d97706; }
 
+/* ── Warning box (amber) ──────────────────────────────────── */
+.reg_warn_box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #92400e;
+}
+.reg_warn_box svg { width: 16px; height: 16px; color: #d97706; flex-shrink: 0; margin-top: 1px; }
+.reg_warn_box p  { margin: 0; line-height: 1.5; }
+
+/* ── Year hint ────────────────────────────────────────────── */
+.reg_year_hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+/* ── Checkbox row ─────────────────────────────────────────── */
+.reg_checkbox_row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  user-select: none;
+}
+.reg_checkbox_row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #0f7d3f;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Summary unknown model note ───────────────────────────── */
+.reg_summary_unknown {
+  font-size: 0.75rem;
+  color: #d97706;
+  margin: 0.6rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid #e2e8f0;
+}
+
 /* ── Info box ─────────────────────────────────────────────── */
 .reg_info_box {
   display: flex;
