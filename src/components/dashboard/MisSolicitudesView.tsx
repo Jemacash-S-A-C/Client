@@ -14,27 +14,30 @@ import { useLocaleFormat } from '../../utils/tz'
 
 // Status label keys — resolved via t() inside the component
 const STATUS_LABEL_KEYS: Record<LoanApplication['status'], string> = {
-  draft:     'solicitudes.status.draft',
-  submitted: 'solicitudes.status.submitted',
-  approved:  'solicitudes.status.approved',
-  rejected:  'solicitudes.status.rejected',
-  signed:    'solicitudes.status.signed',
+  draft:      'solicitudes.status.draft',
+  submitted:  'solicitudes.status.submitted',
+  signed:     'solicitudes.status.signed',
+  approved:   'solicitudes.status.approved',
+  disbursed:  'solicitudes.status.disbursed',
+  rejected:   'solicitudes.status.rejected',
 }
 
 const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple' | 'blue' | 'amber'> = {
-  draft:     'purple',
-  submitted: 'blue',
-  approved:  'green',
-  rejected:  'red',
-  signed:    'amber',
+  draft:      'purple',
+  submitted:  'blue',
+  signed:     'amber',
+  approved:   'green',
+  disbursed:  'green',
+  rejected:   'red',
 }
 
 const STATUS_CFG = {
-  draft:     { color: '#7c3aed', bg: '#ede9fe' },
-  submitted: { color: '#2563eb', bg: '#dbeafe' },
-  approved:  { color: '#0f7d3f', bg: '#d9f0da' },
-  rejected:  { color: '#dc2626', bg: '#fef2f2' },
-  signed:    { color: '#b45309', bg: '#fef3c7' },
+  draft:      { color: '#7c3aed', bg: '#ede9fe' },
+  submitted:  { color: '#2563eb', bg: '#dbeafe' },
+  signed:     { color: '#b45309', bg: '#fef3c7' },
+  approved:   { color: '#0a6b34', bg: '#d9f0da' },
+  disbursed:  { color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:   { color: '#dc2626', bg: '#fef2f2' },
 } as const
 
 function fmtAmount(n: number) {
@@ -62,7 +65,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
       .finally(() => setLoading(false))
   }, [])
 
-  const active   = applications.filter(a => ['submitted','signed','approved'].includes(a.status))
+  const active   = applications.filter(a => ['submitted','signed','approved','disbursed'].includes(a.status))
   const others   = applications.filter(a => ['draft','rejected'].includes(a.status))
 
   const ACTIVE_PER_PAGE  = 4
@@ -95,7 +98,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
           <span>{t('solicitudes.stat.active')}</span>
         </div>
         <div className={styles.sol_stat}>
-          <strong>{applications.filter(a => a.status === 'approved').length}</strong>
+          <strong>{applications.filter(a => a.status === 'disbursed').length}</strong>
           <span>{t('solicitudes.stat.approved')}</span>
         </div>
         <div className={styles.sol_stat}>

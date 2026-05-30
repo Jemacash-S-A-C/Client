@@ -144,9 +144,10 @@ function buildLoanData(
 // ── Status display ─────────────────────────────────────────────────────────────
 
 const STATUS_KEYS: Record<string, { labelKey: string; color: string; bg: string; icon: typeof IconClock }> = {
-  submitted: { labelKey: 'prestamos.status.inReview',  color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
-  signed:    { labelKey: 'prestamos.status.inReview2', color: '#b45309', bg: '#fef3c7', icon: IconClock   },
-  rejected:  { labelKey: 'prestamos.status.rejected',  color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
+  submitted: { labelKey: 'prestamos.status.inReview',   color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
+  signed:    { labelKey: 'prestamos.status.inReview2',  color: '#b45309', bg: '#fef3c7', icon: IconClock   },
+  approved:  { labelKey: 'prestamos.status.pickup',     color: '#0a6b34', bg: '#d9f0da', icon: IconClock   },
+  rejected:  { labelKey: 'prestamos.status.rejected',   color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export function MisPrestamosView({ onPay }: Props) {
         if (cancelled) return
         setApps(all)
 
-        const approvedApps = all.filter((a) => a.status === 'approved')
+        const approvedApps = all.filter((a) => a.status === 'disbursed')
 
         // Fetch evaluations and payments in parallel — only for approved loans
         const [evals, paymentLists] = await Promise.all([
@@ -206,7 +207,7 @@ export function MisPrestamosView({ onPay }: Props) {
   }, [])
 
   const activeLoans = loans
-  const inProcess   = apps.filter((a) => a.status === 'submitted' || a.status === 'signed')
+  const inProcess   = apps.filter((a) => ['submitted', 'signed', 'approved'].includes(a.status))
 
   // Pagination
   const LOANS_PER_PAGE = 4

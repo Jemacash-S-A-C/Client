@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
+import { getApplication } from '../../services/application.service'
 import {
   IconDocument,
   IconShield,
@@ -145,6 +146,7 @@ export function FirmaVerificacionView({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitDone, setSubmitDone] = useState(false)
+  const [autoApproved, setAutoApproved] = useState(false)
   const [alreadySigned, setAlreadySigned] = useState(false)
   const [docsStatus, setDocsStatus] = useState<'loading' | 'ok' | 'missing'>('loading')
   const [missingDocs, setMissingDocs] = useState<string[]>([])
@@ -152,7 +154,13 @@ export function FirmaVerificacionView({
   useEffect(() => {
     if (!applicationId) return
     getSignature(applicationId)
-      .then(() => { setAlreadySigned(true); setSubmitDone(true) })
+      .then(async () => {
+        setAlreadySigned(true)
+        // Check if it was previously auto-approved
+        const app = await getApplication(applicationId).catch(() => null)
+        if (app?.status === 'approved') setAutoApproved(true)
+        setSubmitDone(true)
+      })
       .catch(() => { /* no signature yet */ })
   }, [applicationId])
 
@@ -187,6 +195,9 @@ export function FirmaVerificacionView({
         signature_base64: base64,
         document_urls: [],
       })
+      // Check resulting status to know if we auto-approved
+      const app = await getApplication(applicationId).catch(() => null)
+      if (app?.status === 'approved') setAutoApproved(true)
       setSubmitDone(true)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al guardar la firma.')
@@ -250,29 +261,54 @@ export function FirmaVerificacionView({
           <div className={styles.frm_right}>
 
             {submitDone ? (
-              /* ── Success panel ── */
-              <div className={styles.frm_success_panel}>
-                <div className={styles.frm_success_icon_wrap}>
-                  <IconCheck />
-                </div>
-                <h2 className={styles.frm_success_title}>{t('firma.success.title')}</h2>
-                <p className={styles.frm_success_desc}>{t('firma.success.desc')}</p>
+              autoApproved ? (
+                /* ── Auto-approved panel ── */
+                <div className={styles.frm_success_panel}>
+                  <div className={styles.frm_success_icon_wrap} style={{ background: '#0f7d3f' }}>
+                    <IconCheck />
+                  </div>
+                  <h2 className={styles.frm_success_title}>{t('firma.success.approved.title')}</h2>
+                  <p className={styles.frm_success_desc}>{t('firma.success.approved.desc')}</p>
 
-                <div className={styles.frm_success_review_box}>
-                  <span className={styles.frm_success_review_label}>{t('firma.success.reviewing')}</span>
-                  <ul className={styles.frm_success_review_list}>
-                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item1')}</li>
-                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item2')}</li>
-                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item3')}</li>
-                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item4')}</li>
-                  </ul>
-                </div>
+                  <div className={styles.frm_success_review_box}>
+                    <span className={styles.frm_success_review_label}>{t('firma.success.approved.whatNow')}</span>
+                    <ul className={styles.frm_success_review_list}>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.approved.item1')}</li>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.approved.item2')}</li>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.approved.item3')}</li>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.approved.item4')}</li>
+                    </ul>
+                  </div>
 
-                <p className={styles.frm_success_time}>
-                  <span className={styles.frm_success_clock}>⏱</span>
-                  {t('firma.success.time')}
-                </p>
-              </div>
+                  <p className={styles.frm_success_time} style={{ background: '#f0f9f2', borderColor: '#d9f0da', color: '#0f7d3f' }}>
+                    <span className={styles.frm_success_clock}>📦</span>
+                    {t('firma.success.approved.time')}
+                  </p>
+                </div>
+              ) : (
+                /* ── Manual review panel ── */
+                <div className={styles.frm_success_panel}>
+                  <div className={styles.frm_success_icon_wrap} style={{ background: '#b45309' }}>
+                    <IconCheck />
+                  </div>
+                  <h2 className={styles.frm_success_title}>{t('firma.success.review.title')}</h2>
+                  <p className={styles.frm_success_desc}>{t('firma.success.review.desc')}</p>
+
+                  <div className={styles.frm_success_review_box}>
+                    <span className={styles.frm_success_review_label}>{t('firma.success.review.whatNow')}</span>
+                    <ul className={styles.frm_success_review_list}>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.review.item1')}</li>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.review.item2')}</li>
+                      <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.review.item3')}</li>
+                    </ul>
+                  </div>
+
+                  <p className={styles.frm_success_time}>
+                    <span className={styles.frm_success_clock}>⏱</span>
+                    {t('firma.success.review.time')}
+                  </p>
+                </div>
+              )
             ) : (
               <>
                 {/* Firma digital */}
@@ -377,7 +413,11 @@ export function FirmaVerificacionView({
             onClick={submitDone ? onFinalize : onBack}
             disabled={submitting || (!submitDone && docsBlocking)}
           >
-            {submitDone ? t('firma.finalizeComplete') : t('firma.finalize')}
+            {submitDone
+              ? autoApproved
+                ? t('firma.finalizeApproved')
+                : t('firma.finalizeComplete')
+              : t('firma.finalize')}
           </button>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
-import { approveBypass } from '../../services/application.service'
+import { approveBypass, disburseApplication } from '../../services/application.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
@@ -27,11 +27,12 @@ function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CFG_KEYS = {
-  draft:     { labelKey: 'detalle.status.draft',     color: '#7c3aed', bg: '#ede9fe' },
-  submitted: { labelKey: 'detalle.status.submitted', color: '#2563eb', bg: '#dbeafe' },
-  signed:    { labelKey: 'detalle.status.signed',    color: '#b45309', bg: '#fef3c7' },
-  approved:  { labelKey: 'detalle.status.approved',  color: '#0f7d3f', bg: '#d9f0da' },
-  rejected:  { labelKey: 'detalle.status.rejected',  color: '#dc2626', bg: '#fef2f2' },
+  draft:      { labelKey: 'detalle.status.draft',      color: '#7c3aed', bg: '#ede9fe' },
+  submitted:  { labelKey: 'detalle.status.submitted',  color: '#2563eb', bg: '#dbeafe' },
+  signed:     { labelKey: 'detalle.status.signed',     color: '#b45309', bg: '#fef3c7' },
+  approved:   { labelKey: 'detalle.status.approved',   color: '#0a6b34', bg: '#d9f0da' },
+  disbursed:  { labelKey: 'detalle.status.disbursed',  color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:   { labelKey: 'detalle.status.rejected',   color: '#dc2626', bg: '#fef2f2' },
 } as const
 
 // ── Timeline builder ──────────────────────────────────────────────────────────
@@ -51,34 +52,38 @@ function buildTimeline(
   const created = fmtLong(app.created_at)
   const updated = fmtLong(app.updated_at ?? app.created_at)
 
-  // Step index → active when status is:
-  // 0 Solicitud enviada  → active: draft
-  // 1 Valuación y firma  → active: submitted
-  // 2 Verificación       → active: signed
-  // 3 Resultado          → active/done: approved | rejected
+  // 5-step timeline
+  // 0 Enviada       → active: draft
+  // 1 Valuación     → active: submitted
+  // 2 Revisión      → active: signed
+  // 3 Aprobada      → active: approved (waiting for pickup)
+  // 4 Desembolso    → done: disbursed
   const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
-    { labelKey: 'detalle.timeline.enviada',   doneOn: ['submitted','signed','approved','rejected'] },
-    { labelKey: 'detalle.timeline.valuacion', doneOn: ['signed','approved','rejected']              },
-    { labelKey: 'detalle.timeline.revision',  doneOn: ['approved','rejected']                       },
-    { labelKey: 'detalle.timeline.resultado', doneOn: ['approved','rejected']                       },
+    { labelKey: 'detalle.timeline.enviada',    doneOn: ['submitted','signed','approved','disbursed','rejected'] },
+    { labelKey: 'detalle.timeline.valuacion',  doneOn: ['signed','approved','disbursed','rejected']             },
+    { labelKey: 'detalle.timeline.revision',   doneOn: ['approved','disbursed','rejected']                      },
+    { labelKey: 'detalle.timeline.aprobada',   doneOn: ['approved','disbursed']                                 },
+    { labelKey: 'detalle.timeline.desembolso', doneOn: ['disbursed']                                            },
   ]
 
   return STEPS.map((s, i) => {
     const done = s.doneOn.includes(app.status)
     const isActive = !done && (
-      (i === 0 && app.status === 'draft')      ||
-      (i === 1 && app.status === 'submitted')  ||
-      (i === 2 && app.status === 'signed')
+      (i === 0 && app.status === 'draft')     ||
+      (i === 1 && app.status === 'submitted') ||
+      (i === 2 && app.status === 'signed')    ||
+      (i === 4 && app.status === 'approved')
     )
     const isRejected = app.status === 'rejected' && i === 2
 
     let date = tPending
-    if (i === 0)                                          date = created
-    if (i === 1 && app.status !== 'draft')                date = created
-    if (i === 2 && ['signed','approved','rejected'].includes(app.status)) date = updated
-    if (i === 3 && ['approved','rejected'].includes(app.status))          date = updated
-    if (isActive)                                         date = tInProgress
-    if (isRejected)                                       date = updated
+    if (i === 0)                                                               date = created
+    if (i === 1 && app.status !== 'draft')                                     date = created
+    if (i === 2 && ['signed','approved','disbursed','rejected'].includes(app.status)) date = updated
+    if (i === 3 && ['approved','disbursed'].includes(app.status))              date = updated
+    if (i === 4 && app.status === 'disbursed')                                 date = updated
+    if (isActive)                                                              date = tInProgress
+    if (isRejected)                                                            date = updated
 
     return {
       labelKey: s.labelKey,
@@ -136,7 +141,8 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [payments,   setPayments]   = useState<Payment[]>([])
   const [loading,    setLoading]    = useState(true)
-  const [bypassing,  setBypassing]  = useState(false)
+  const [bypassing,   setBypassing]   = useState(false)
+  const [disbursing,  setDisbursing]  = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -151,7 +157,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
     return () => { cancelled = true }
   }, [app.id])
 
-  const statusCfgKey = STATUS_CFG_KEYS[app.status]
+  const statusCfgKey = STATUS_CFG_KEYS[app.status] ?? STATUS_CFG_KEYS.submitted
   const timeline     = buildTimeline(app, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
   const guarantee    = app.guarantee ?? null
 
@@ -161,7 +167,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
 
   const cuota      = calcCuota(loanAmount, app.term_months)
   const totalCost  = cuota * app.term_months
-  const hasFinance = app.status === 'signed' || app.status === 'approved'
+  const hasFinance = app.status === 'signed' || app.status === 'approved' || app.status === 'disbursed'
 
   return (
     <div className={styles.page}>
@@ -376,6 +382,35 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 <p className={styles.action_hint}>{t('detalle.action.approvedHint')}</p>
                 <button type="button" className={styles.action_btn_success} disabled>
                   <IconCheck /> {t('detalle.action.approvedBtn')}
+                </button>
+                <div className={styles.bypass_divider} />
+                <p className={styles.bypass_notice}>
+                  ⚠️ Solo disponible mientras el panel de agente no está implementado
+                </p>
+                <button
+                  type="button"
+                  className={styles.action_btn_bypass}
+                  disabled={disbursing}
+                  onClick={async () => {
+                    if (!window.confirm('¿Confirmar recogida física y desembolsar? (acción provisional de desarrollo)')) return
+                    setDisbursing(true)
+                    try {
+                      await disburseApplication(app.id)
+                      onBack()
+                    } catch {
+                      setDisbursing(false)
+                    }
+                  }}
+                >
+                  {disbursing ? 'Desembolsando…' : '📦 Confirmar recogida y desembolsar (provisional)'}
+                </button>
+              </>
+            )}
+            {app.status === 'disbursed' && (
+              <>
+                <p className={styles.action_hint}>{t('detalle.action.disbursedHint')}</p>
+                <button type="button" className={styles.action_btn_success} disabled>
+                  <IconCheck /> {t('detalle.action.disbursedBtn')}
                 </button>
               </>
             )}

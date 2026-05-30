@@ -52,6 +52,7 @@ interface ActivityItem {
 // ── Derived helpers ───────────────────────────────────────────────────────────
 
 const APP_STATUS_MAP: Record<string, { titleKey: string; tone: ActivityTone }> = {
+  disbursed: { titleKey: 'activity.loanDisbursed', tone: 'green'  },
   approved:  { titleKey: 'activity.loanApproved',  tone: 'green'  },
   signed:    { titleKey: 'activity.loanSigned',    tone: 'amber'  },
   submitted: { titleKey: 'activity.loanSubmitted', tone: 'indigo' },
@@ -70,8 +71,9 @@ function buildActivityFeed(
   for (const app of apps) {
     const info = APP_STATUS_MAP[app.status]
     if (!info) continue
-    const statusText = app.status === 'submitted' ? t('activity.status.submitted')
+    const statusText = app.status === 'disbursed' ? t('activity.status.disbursed')
       : app.status === 'approved'  ? t('activity.status.approved')
+      : app.status === 'submitted' ? t('activity.status.submitted')
       : app.status === 'signed'    ? t('activity.status.signed')
       : app.status === 'rejected'  ? t('activity.status.rejected')
       : ''
@@ -118,7 +120,7 @@ function getNextPayment(
   let nearest: NextPayment | null = null
 
   for (const app of apps) {
-    if (app.status !== 'approved') continue
+    if (app.status !== 'disbursed') continue
     const evaluation = evalMap.get(app.id) ?? null
     const loanAmount = evaluation?.approved_amount != null
       ? Number(evaluation.approved_amount)
@@ -220,7 +222,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
         if (twoFa) setIsVerified(twoFa.email_2fa_enabled && twoFa.totp_enabled)
 
-        const approved = allApps.filter(a => a.status === 'approved')
+        const approved = allApps.filter(a => a.status === 'disbursed')
         const evals    = await Promise.all(approved.map(a => getEvaluation(a.id).catch(() => null)))
         if (cancelled) return
 
@@ -238,8 +240,8 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   // ── Derived data ────────────────────────────────────────────────────────────
 
-  const activeLoans = useMemo(() => apps.filter(a => a.status === 'approved'), [apps])
-  const pendingApps = useMemo(() => apps.filter(a => a.status === 'submitted' || a.status === 'signed'),  [apps])
+  const activeLoans = useMemo(() => apps.filter(a => a.status === 'disbursed'), [apps])
+  const pendingApps = useMemo(() => apps.filter(a => ['submitted', 'signed', 'approved'].includes(a.status)), [apps])
   const activeGs    = useMemo(() => guarantees.filter(g => g.status !== 'released'), [guarantees])
 
   const totalCredit = useMemo(() => {

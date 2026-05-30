@@ -25,3 +25,11 @@ export async function submitApplication(id: string): Promise<LoanApplication> {
 export async function approveBypass(id: string): Promise<LoanApplication> {
   return api.patch<LoanApplication>(`/applications/${id}/approve-bypass`)
 }
+
+/**
+ * Triggered after physical device pickup + on-site verification.
+ * Provisional: will be restricted to agent/admin role.
+ */
+export async function disburseApplication(id: string): Promise<LoanApplication> {
+  return api.patch<LoanApplication>(`/applications/${id}/disburse`)
+}

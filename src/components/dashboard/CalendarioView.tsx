@@ -89,7 +89,7 @@ function buildEvents(
   const map = new Map<string, CalEvent[]>()
 
   for (const app of apps) {
-    if (app.status !== 'approved') continue
+    if (app.status !== 'disbursed') continue
 
     const evaluation = evalMap.get(app.id) ?? null
     const loanAmount = evaluation?.approved_amount != null
@@ -276,7 +276,7 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         const all = await getApplications()
         if (cancelled) return
 
-        const approved = all.filter(a => a.status === 'approved')
+        const approved = all.filter(a => a.status === 'disbursed')
         const [evals, payments] = await Promise.all([
           Promise.all(approved.map(a => getEvaluation(a.id).catch(() => null))),
           Promise.all(approved.map(a => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
