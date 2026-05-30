@@ -132,7 +132,10 @@ function GuaranteeCard({ g }: { g: Guarantee }) {
 
       <div className={styles.gar_card_value}>
         <span>{t('garantias.card.estimatedValue')}</span>
-        <strong>S/ {Number(g.estimated_value).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>
+        {Number(g.estimated_value) > 0
+          ? <strong>S/ {Number(g.estimated_value).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</strong>
+          : <span className={styles.gar_pending_badge}>{t('garantias.card.pendingValuation')}</span>
+        }
       </div>
     </div>
   )

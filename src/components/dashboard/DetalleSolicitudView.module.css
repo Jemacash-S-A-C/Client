@@ -352,6 +352,19 @@
   letter-spacing: -0.02em;
 }
 
+.guarantee_pending {
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  color: #b45309 !important;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+}
+
 /* ── Payments list ── */
 
 .payments_list {

@@ -183,7 +183,7 @@ export function AuditorTecnicoView({
       add({ time: nowTime(), text: `Procesando ${photoCount} fotografía${photoCount !== 1 ? 's' : ''} del dispositivo...`, type: 'normal' })
 
       await sleep(400)
-      add({ time: nowTime(), text: 'Consultando precios de referencia en MercadoLibre Perú...', type: 'active' })
+      add({ time: nowTime(), text: 'Buscando el precio más barato en internet (búsqueda web)...', type: 'active' })
 
       try {
         const rawPhotos = g.photo_urls ?? []

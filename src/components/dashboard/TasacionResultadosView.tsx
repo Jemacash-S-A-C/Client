@@ -121,6 +121,18 @@ export function TasacionResultadosView({
   const aiConfidence = guarantee?.ai_confidence ? Math.round(Number(guarantee.ai_confidence) * 100) : null
   const aiMarket = guarantee?.ai_market_value ? Number(guarantee.ai_market_value) : null
   const aiResale = guarantee?.ai_resale_value ? Number(guarantee.ai_resale_value) : null
+  const aiMaxLoan = guarantee?.ai_max_loan ? Number(guarantee.ai_max_loan) : null
+  const aiVisualCondition = guarantee?.ai_visual_condition ?? null
+
+  const visualConditionLabel: Record<string, string> = {
+    excelente: 'Excelente', bueno: 'Bueno', regular: 'Regular', malo: 'Malo',
+  }
+  const visualConditionColor: Record<string, string> = {
+    excelente: '#15803d', bueno: '#0f7d3f', regular: '#ca8a04', malo: '#dc2626',
+  }
+  const visualConditionBg: Record<string, string> = {
+    excelente: '#dcfce7', bueno: '#f0fdf4', regular: '#fef9c3', malo: '#fee2e2',
+  }
 
   return (
     <div className={styles.tas_page}>
@@ -174,55 +186,87 @@ export function TasacionResultadosView({
             </div>
 
             {/* AI Analysis card */}
-            {(aiScore !== null || aiFactors.length > 0 || aiReasoning) && (
+            {(aiScore !== null || aiFactors.length > 0 || aiReasoning || aiResale !== null) && (
               <div className={styles.tas_ai_card}>
+
+                {/* Header */}
                 <div className={styles.tas_ai_header}>
-                  <span className={styles.tas_ai_badge}>ANÁLISIS IA · GROQ</span>
+                  <span className={styles.tas_ai_badge}>VALUACIÓN TÉCNICA</span>
                   {aiConfidence !== null && (
-                    <span className={styles.tas_ai_confidence}>{aiConfidence}% confianza</span>
+                    <span className={styles.tas_ai_confidence}>{aiConfidence}% precisión</span>
                   )}
                 </div>
 
-                {(aiMarket !== null || aiResale !== null) && (
+                {/* Estado físico + score */}
+                {(aiVisualCondition || aiScore !== null) && (
+                  <div className={styles.tas_ai_condition_row}>
+                    {aiVisualCondition && (
+                      <span
+                        className={styles.tas_ai_condition_badge}
+                        style={{
+                          color: visualConditionColor[aiVisualCondition] ?? '#0f7d3f',
+                          background: visualConditionBg[aiVisualCondition] ?? '#f0fdf4',
+                        }}
+                      >
+                        Estado físico: {visualConditionLabel[aiVisualCondition] ?? aiVisualCondition}
+                      </span>
+                    )}
+                    {aiScore !== null && (
+                      <div className={styles.tas_ai_score_bar_wrap}>
+                        <div className={styles.tas_ai_score_bar_bg}>
+                          <div
+                            className={styles.tas_ai_score_bar_fill}
+                            style={{
+                              width: `${(aiScore / 10) * 100}%`,
+                              background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
+                            }}
+                          />
+                        </div>
+                        <strong style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b', fontSize: '0.8rem' }}>
+                          {aiScore.toFixed(1)}/10
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Valores */}
+                {(aiMarket !== null || aiResale !== null || aiMaxLoan !== null) && (
                   <div className={styles.tas_ai_values}>
                     {aiMarket !== null && (
                       <div className={styles.tas_ai_value_item}>
-                        <span>Precio mercado</span>
+                        <span>Valor de mercado</span>
                         <strong>S/ {aiMarket.toLocaleString('es-PE')}</strong>
                       </div>
                     )}
                     {aiResale !== null && (
                       <div className={styles.tas_ai_value_item}>
-                        <span>Valor reventa</span>
+                        <span>Valor de tasación</span>
                         <strong>S/ {aiResale.toLocaleString('es-PE')}</strong>
+                      </div>
+                    )}
+                    {aiMaxLoan !== null && (
+                      <div className={styles.tas_ai_value_item} style={{ borderColor: '#86efac' }}>
+                        <span>Préstamo máximo</span>
+                        <strong style={{ color: '#0f7d3f' }}>S/ {aiMaxLoan.toLocaleString('es-PE')}</strong>
                       </div>
                     )}
                   </div>
                 )}
 
-                {aiScore !== null && (
-                  <div className={styles.tas_ai_score_row}>
-                    <span>Puntuación física</span>
-                    <div className={styles.tas_ai_score_bar_wrap}>
-                      <div className={styles.tas_ai_score_bar_bg}>
-                        <div
-                          className={styles.tas_ai_score_bar_fill}
-                          style={{
-                            width: `${(aiScore / 10) * 100}%`,
-                            background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
-                          }}
-                        />
-                      </div>
-                      <strong style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b' }}>
-                        {aiScore.toFixed(1)}/10
-                      </strong>
-                    </div>
-                  </div>
-                )}
+                {/* Fuente de análisis */}
+                <div className={styles.tas_ai_source}>
+                  <span className={styles.tas_ai_source_label}>Base del análisis</span>
+                  <span className={styles.tas_ai_source_desc}>
+                    Inteligencia de mercado · Segunda mano peruana<br />
+                    <span className={styles.tas_ai_source_markets}>OLX Perú · Mercado Libre · Facebook Marketplace</span>
+                  </span>
+                </div>
 
+                {/* Observaciones */}
                 {aiFactors.length > 0 && (
                   <div className={styles.tas_ai_factors}>
-                    <span className={styles.tas_ai_factors_label}>Factores de depreciación</span>
+                    <span className={styles.tas_ai_factors_label}>Observaciones del dispositivo</span>
                     <div className={styles.tas_ai_factors_list}>
                       {aiFactors.map((f, i) => (
                         <span key={i} className={styles.tas_ai_factor_tag}>{f}</span>
@@ -231,8 +275,12 @@ export function TasacionResultadosView({
                   </div>
                 )}
 
+                {/* Conclusión */}
                 {aiReasoning && (
-                  <p className={styles.tas_ai_reasoning}><em>{aiReasoning}</em></p>
+                  <div className={styles.tas_ai_reasoning_wrap}>
+                    <span className={styles.tas_ai_reasoning_label}>Conclusión del análisis</span>
+                    <p className={styles.tas_ai_reasoning}><em>{aiReasoning}</em></p>
+                  </div>
                 )}
               </div>
             )}

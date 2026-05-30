@@ -249,7 +249,10 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 </div>
                 <div className={styles.guarantee_value}>
                   <span>{t('detalle.guarantee.estimatedValue')}</span>
-                  <strong>S/ {fmt(Number(guarantee.estimated_value))}</strong>
+                  {Number(guarantee.estimated_value) > 0
+                    ? <strong>S/ {fmt(Number(guarantee.estimated_value))}</strong>
+                    : <span className={styles.guarantee_pending}>{t('garantias.card.pendingValuation')}</span>
+                  }
                 </div>
               </div>
             </div>

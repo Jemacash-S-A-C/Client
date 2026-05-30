@@ -249,78 +249,101 @@ export function FirmaVerificacionView({
           {/* ── Right ── */}
           <div className={styles.frm_right}>
 
-            {/* Firma digital */}
-            <div className={styles.frm_section}>
-              <h2 className={styles.frm_section_title}>{t('firma.pad.title')}</h2>
-              <p className={styles.frm_section_sub}>{t('firma.pad.sub')}</p>
-              <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} t={t} />
-              {docsBlocking && docsStatus !== 'loading' && (
-                <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
-                  {t('firma.pad.docsBlocking')}
-                </p>
-              )}
-              {isSignedOrDone && (
-                <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                  {t('firma.pad.alreadySigned')}
-                </p>
-              )}
-              {submitting && (
-                <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                  {t('firma.pad.saving')}
-                </p>
-              )}
-              {submitError && (
-                <p role="alert" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem' }}>
-                  {submitError}
-                </p>
-              )}
-            </div>
-
-            {/* Documentos */}
-            <div className={styles.frm_section}>
-              <h2 className={styles.frm_section_title}>{t('firma.docs.title')}</h2>
-
-              {docsStatus === 'loading' && (
-                <div className={styles.frm_docs_loading}>
-                  <span className={styles.frm_docs_spinner} />
-                  <span>{t('firma.docs.loading')}</span>
+            {submitDone ? (
+              /* ── Success panel ── */
+              <div className={styles.frm_success_panel}>
+                <div className={styles.frm_success_icon_wrap}>
+                  <IconCheck />
                 </div>
-              )}
+                <h2 className={styles.frm_success_title}>{t('firma.success.title')}</h2>
+                <p className={styles.frm_success_desc}>{t('firma.success.desc')}</p>
 
-              {docsStatus === 'ok' && (
-                <div className={styles.frm_docs_ok}>
-                  <span className={styles.frm_docs_ok_icon}><IconCheck /></span>
-                  <div>
-                    <strong>{t('firma.docs.ok.title')}</strong>
-                    <span>{t('firma.docs.ok.desc')}</span>
-                  </div>
-                </div>
-              )}
-
-              {docsStatus === 'missing' && (
-                <div className={styles.frm_docs_missing}>
-                  <div className={styles.frm_docs_missing_head}>
-                    <span className={styles.frm_docs_missing_icon}><IconWarning /></span>
-                    <div>
-                      <strong>{t('firma.docs.missing.title')}</strong>
-                      <span>{t('firma.docs.missing.desc')}</span>
-                    </div>
-                  </div>
-                  <ul className={styles.frm_docs_missing_list}>
-                    {missingDocs.map(label => (
-                      <li key={label}>{label}</li>
-                    ))}
+                <div className={styles.frm_success_review_box}>
+                  <span className={styles.frm_success_review_label}>{t('firma.success.reviewing')}</span>
+                  <ul className={styles.frm_success_review_list}>
+                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item1')}</li>
+                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item2')}</li>
+                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item3')}</li>
+                    <li><span className={styles.frm_success_check}><IconCheck /></span>{t('firma.success.item4')}</li>
                   </ul>
-                  <button
-                    type="button"
-                    className={styles.frm_docs_upload_btn}
-                    onClick={onGoToDocuments}
-                  >
-                    {t('firma.docs.uploadBtn')}
-                  </button>
                 </div>
-              )}
-            </div>
+
+                <p className={styles.frm_success_time}>
+                  <span className={styles.frm_success_clock}>⏱</span>
+                  {t('firma.success.time')}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Firma digital */}
+                <div className={styles.frm_section}>
+                  <h2 className={styles.frm_section_title}>{t('firma.pad.title')}</h2>
+                  <p className={styles.frm_section_sub}>{t('firma.pad.sub')}</p>
+                  <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} t={t} />
+                  {docsBlocking && docsStatus !== 'loading' && (
+                    <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
+                      {t('firma.pad.docsBlocking')}
+                    </p>
+                  )}
+                  {submitting && (
+                    <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
+                      {t('firma.pad.saving')}
+                    </p>
+                  )}
+                  {submitError && (
+                    <p role="alert" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem' }}>
+                      {submitError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Documentos */}
+                <div className={styles.frm_section}>
+                  <h2 className={styles.frm_section_title}>{t('firma.docs.title')}</h2>
+
+                  {docsStatus === 'loading' && (
+                    <div className={styles.frm_docs_loading}>
+                      <span className={styles.frm_docs_spinner} />
+                      <span>{t('firma.docs.loading')}</span>
+                    </div>
+                  )}
+
+                  {docsStatus === 'ok' && (
+                    <div className={styles.frm_docs_ok}>
+                      <span className={styles.frm_docs_ok_icon}><IconCheck /></span>
+                      <div>
+                        <strong>{t('firma.docs.ok.title')}</strong>
+                        <span>{t('firma.docs.ok.desc')}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {docsStatus === 'missing' && (
+                    <div className={styles.frm_docs_missing}>
+                      <div className={styles.frm_docs_missing_head}>
+                        <span className={styles.frm_docs_missing_icon}><IconWarning /></span>
+                        <div>
+                          <strong>{t('firma.docs.missing.title')}</strong>
+                          <span>{t('firma.docs.missing.desc')}</span>
+                        </div>
+                      </div>
+                      <ul className={styles.frm_docs_missing_list}>
+                        {missingDocs.map(label => (
+                          <li key={label}>{label}</li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        className={styles.frm_docs_upload_btn}
+                        onClick={onGoToDocuments}
+                      >
+                        {t('firma.docs.uploadBtn')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>
