@@ -568,6 +568,22 @@
 
 .action_btn_muted svg { width: 1rem; height: 1rem; }
 
+.action_btn_review {
+  width: 100%;
+  border: 1.5px solid #fcd34d;
+  border-radius: 0.9rem;
+  padding: 0.8rem 1rem;
+  background: #fefce8;
+  color: #92400e;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
 /* ── Security seal (aside) ── */
 
 .security_seal {

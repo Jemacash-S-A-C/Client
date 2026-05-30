@@ -89,7 +89,7 @@ function buildEvents(
   const map = new Map<string, CalEvent[]>()
 
   for (const app of apps) {
-    if (app.status !== 'signed') continue
+    if (app.status !== 'approved') continue
 
     const evaluation = evalMap.get(app.id) ?? null
     const loanAmount = evaluation?.approved_amount != null
@@ -276,15 +276,15 @@ export function CalendarioView({ onPay }: { onPay: (info: LoanPaymentInfo) => vo
         const all = await getApplications()
         if (cancelled) return
 
-        const signed = all.filter(a => a.status === 'signed')
+        const approved = all.filter(a => a.status === 'approved')
         const [evals, payments] = await Promise.all([
-          Promise.all(signed.map(a => getEvaluation(a.id).catch(() => null))),
-          Promise.all(signed.map(a => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
+          Promise.all(approved.map(a => getEvaluation(a.id).catch(() => null))),
+          Promise.all(approved.map(a => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
         ])
         if (cancelled) return
 
-        const em = new Map<string, Evaluation | null>(signed.map((a, i) => [a.id, evals[i]]))
-        const pm = new Map<string, Payment[]>(signed.map((a, i) => [a.id, payments[i]]))
+        const em = new Map<string, Evaluation | null>(approved.map((a, i) => [a.id, evals[i]]))
+        const pm = new Map<string, Payment[]>(approved.map((a, i) => [a.id, payments[i]]))
         setApps(all)
         setEvalMap(em)
         setPaymentsMap(pm)

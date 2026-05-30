@@ -144,9 +144,9 @@ function buildLoanData(
 // ── Status display ─────────────────────────────────────────────────────────────
 
 const STATUS_KEYS: Record<string, { labelKey: string; color: string; bg: string; icon: typeof IconClock }> = {
-  submitted: { labelKey: 'prestamos.status.inReview', color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
-  approved:  { labelKey: 'prestamos.status.approved', color: '#0f7d3f', bg: '#d9f0da', icon: IconCheck   },
-  rejected:  { labelKey: 'prestamos.status.rejected', color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
+  submitted: { labelKey: 'prestamos.status.inReview',  color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
+  signed:    { labelKey: 'prestamos.status.inReview2', color: '#b45309', bg: '#fef3c7', icon: IconClock   },
+  rejected:  { labelKey: 'prestamos.status.rejected',  color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -173,24 +173,23 @@ export function MisPrestamosView({ onPay }: Props) {
         if (cancelled) return
         setApps(all)
 
-        const signedApps  = all.filter((a) => a.status === 'signed')
-        const needsEval   = all.filter((a) => a.status === 'signed' || a.status === 'approved')
+        const approvedApps = all.filter((a) => a.status === 'approved')
 
-        // Fetch evaluations and payments in parallel
+        // Fetch evaluations and payments in parallel — only for approved loans
         const [evals, paymentLists] = await Promise.all([
-          Promise.all(needsEval.map((a) => getEvaluation(a.id).catch(() => null))),
-          Promise.all(signedApps.map((a) => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
+          Promise.all(approvedApps.map((a) => getEvaluation(a.id).catch(() => null))),
+          Promise.all(approvedApps.map((a) => getPaymentsByApplication(a.id).catch(() => [] as Payment[]))),
         ])
         if (cancelled) return
 
         const evalMap = new Map<string, Evaluation | null>(
-          needsEval.map((a, i) => [a.id, evals[i]])
+          approvedApps.map((a, i) => [a.id, evals[i]])
         )
         const paymentsMap = new Map<string, Payment[]>(
-          signedApps.map((a, i) => [a.id, paymentLists[i]])
+          approvedApps.map((a, i) => [a.id, paymentLists[i]])
         )
 
-        const loanData = signedApps
+        const loanData = approvedApps
           .map((a) => buildLoanData(a, evalMap.get(a.id) ?? null, paymentsMap.get(a.id) ?? [], fmtShort))
 
         setLoans(loanData)
@@ -207,7 +206,7 @@ export function MisPrestamosView({ onPay }: Props) {
   }, [])
 
   const activeLoans = loans
-  const inProcess   = apps.filter((a) => a.status === 'submitted' || a.status === 'approved')
+  const inProcess   = apps.filter((a) => a.status === 'submitted' || a.status === 'signed')
 
   // Pagination
   const LOANS_PER_PAGE = 4

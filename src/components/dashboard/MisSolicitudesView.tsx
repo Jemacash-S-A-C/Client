@@ -21,12 +21,12 @@ const STATUS_LABEL_KEYS: Record<LoanApplication['status'], string> = {
   signed:    'solicitudes.status.signed',
 }
 
-const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple' | 'blue'> = {
+const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple' | 'blue' | 'amber'> = {
   draft:     'purple',
   submitted: 'blue',
   approved:  'green',
   rejected:  'red',
-  signed:    'green',
+  signed:    'amber',
 }
 
 const STATUS_CFG = {
@@ -34,7 +34,7 @@ const STATUS_CFG = {
   submitted: { color: '#2563eb', bg: '#dbeafe' },
   approved:  { color: '#0f7d3f', bg: '#d9f0da' },
   rejected:  { color: '#dc2626', bg: '#fef2f2' },
-  signed:    { color: '#0f7d3f', bg: '#d9f0da' },
+  signed:    { color: '#b45309', bg: '#fef3c7' },
 } as const
 
 function fmtAmount(n: number) {
@@ -62,8 +62,8 @@ export function MisSolicitudesView({ onDetalle }: Props) {
       .finally(() => setLoading(false))
   }, [])
 
-  const active   = applications.filter(a => a.status === 'submitted' || a.status === 'approved')
-  const others   = applications.filter(a => a.status !== 'submitted' && a.status !== 'approved')
+  const active   = applications.filter(a => ['submitted','signed','approved'].includes(a.status))
+  const others   = applications.filter(a => ['draft','rejected'].includes(a.status))
 
   const ACTIVE_PER_PAGE  = 4
   const activeTotal      = Math.ceil(active.length / ACTIVE_PER_PAGE)
@@ -179,11 +179,10 @@ export function MisSolicitudesView({ onDetalle }: Props) {
                           tone === 'green' ? styles.hs_green :
                           tone === 'red'   ? styles.hs_red   :
                           tone === 'blue'  ? styles.hs_blue  :
+                          tone === 'amber' ? styles.hs_amber :
                                             styles.hs_purple
                         }`}
-                        style={app.status === 'submitted' || app.status === 'approved'
-                          ? { color: cfg.color, background: cfg.bg }
-                          : undefined}
+                        style={{ color: cfg.color, background: cfg.bg }}
                       >
                         {t(STATUS_LABEL_KEYS[app.status])}
                       </span>

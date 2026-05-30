@@ -28,9 +28,9 @@ function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
 const STATUS_CFG_KEYS = {
   draft:     { labelKey: 'detalle.status.draft',     color: '#7c3aed', bg: '#ede9fe' },
   submitted: { labelKey: 'detalle.status.submitted', color: '#2563eb', bg: '#dbeafe' },
+  signed:    { labelKey: 'detalle.status.signed',    color: '#b45309', bg: '#fef3c7' },
   approved:  { labelKey: 'detalle.status.approved',  color: '#0f7d3f', bg: '#d9f0da' },
   rejected:  { labelKey: 'detalle.status.rejected',  color: '#dc2626', bg: '#fef2f2' },
-  signed:    { labelKey: 'detalle.status.signed',    color: '#0f7d3f', bg: '#d9f0da' },
 } as const
 
 // ── Timeline builder ──────────────────────────────────────────────────────────
@@ -50,29 +50,34 @@ function buildTimeline(
   const created = fmtLong(app.created_at)
   const updated = fmtLong(app.updated_at ?? app.created_at)
 
+  // Step index → active when status is:
+  // 0 Solicitud enviada  → active: draft
+  // 1 Valuación y firma  → active: submitted
+  // 2 Verificación       → active: signed
+  // 3 Resultado          → active/done: approved | rejected
   const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
-    { labelKey: 'detalle.timeline.registro',      doneOn: ['submitted','approved','rejected','signed'] },
-    { labelKey: 'detalle.timeline.enEvaluacion',  doneOn: ['approved','rejected','signed']             },
-    { labelKey: 'detalle.timeline.ofertaFinal',   doneOn: ['signed']                                  },
-    { labelKey: 'detalle.timeline.firmado',        doneOn: ['signed']                                  },
+    { labelKey: 'detalle.timeline.enviada',   doneOn: ['submitted','signed','approved','rejected'] },
+    { labelKey: 'detalle.timeline.valuacion', doneOn: ['signed','approved','rejected']              },
+    { labelKey: 'detalle.timeline.revision',  doneOn: ['approved','rejected']                       },
+    { labelKey: 'detalle.timeline.resultado', doneOn: ['approved','rejected']                       },
   ]
 
   return STEPS.map((s, i) => {
-    const done     = s.doneOn.includes(app.status)
+    const done = s.doneOn.includes(app.status)
     const isActive = !done && (
-      (i === 0 && app.status === 'draft') ||
-      (i === 1 && app.status === 'submitted') ||
-      (i === 2 && app.status === 'approved')
+      (i === 0 && app.status === 'draft')      ||
+      (i === 1 && app.status === 'submitted')  ||
+      (i === 2 && app.status === 'signed')
     )
-    const isRejected = app.status === 'rejected' && i === 1
+    const isRejected = app.status === 'rejected' && i === 2
 
     let date = tPending
-    if (i === 0)                                   date = created
-    if (i === 1 && app.status !== 'draft')         date = created
-    if (i === 2 && (app.status === 'approved' || app.status === 'signed')) date = updated
-    if (i === 3 && app.status === 'signed')        date = updated
-    if (isActive)                                  date = tInProgress
-    if (isRejected)                                date = updated
+    if (i === 0)                                          date = created
+    if (i === 1 && app.status !== 'draft')                date = created
+    if (i === 2 && ['signed','approved','rejected'].includes(app.status)) date = updated
+    if (i === 3 && ['approved','rejected'].includes(app.status))          date = updated
+    if (isActive)                                         date = tInProgress
+    if (isRejected)                                       date = updated
 
     return {
       labelKey: s.labelKey,
@@ -154,7 +159,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
 
   const cuota      = calcCuota(loanAmount, app.term_months)
   const totalCost  = cuota * app.term_months
-  const hasFinance = app.status === 'approved' || app.status === 'signed'
+  const hasFinance = app.status === 'signed' || app.status === 'approved'
 
   return (
     <div className={styles.page}>
@@ -323,31 +328,31 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
 
           {/* ── Action button ── */}
           <div className={styles.action_card}>
-            {app.status === 'approved' && onContinue && (
+            {app.status === 'submitted' && onContinue && (
               <>
-                <p className={styles.action_hint}>{t('detalle.action.approvedHint')}</p>
+                <p className={styles.action_hint}>{t('detalle.action.submittedHint')}</p>
                 <button
                   type="button"
                   className={styles.action_btn_primary}
                   onClick={() => onContinue(app.id)}
                 >
-                  {t('detalle.action.signContract')}
+                  {t('detalle.action.submittedBtn')}
                 </button>
               </>
             )}
             {app.status === 'signed' && (
               <>
                 <p className={styles.action_hint}>{t('detalle.action.signedHint')}</p>
-                <button type="button" className={styles.action_btn_success} disabled>
-                  <IconCheck /> {t('detalle.action.signedBtn')}
+                <button type="button" className={styles.action_btn_review} disabled>
+                  {t('detalle.action.signedBtn')}
                 </button>
               </>
             )}
-            {app.status === 'submitted' && (
+            {app.status === 'approved' && (
               <>
-                <p className={styles.action_hint}>{t('detalle.action.submittedHint')}</p>
-                <button type="button" className={styles.action_btn_muted} disabled>
-                  {t('detalle.action.submittedBtn')}
+                <p className={styles.action_hint}>{t('detalle.action.approvedHint')}</p>
+                <button type="button" className={styles.action_btn_success} disabled>
+                  <IconCheck /> {t('detalle.action.approvedBtn')}
                 </button>
               </>
             )}
