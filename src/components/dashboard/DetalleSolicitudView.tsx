@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
+import { approveBypass } from '../../services/application.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
@@ -135,6 +136,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [payments,   setPayments]   = useState<Payment[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [bypassing,  setBypassing]  = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -345,6 +347,27 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 <p className={styles.action_hint}>{t('detalle.action.signedHint')}</p>
                 <button type="button" className={styles.action_btn_review} disabled>
                   {t('detalle.action.signedBtn')}
+                </button>
+                <div className={styles.bypass_divider} />
+                <p className={styles.bypass_notice}>
+                  ⚠️ Solo disponible mientras el panel de aprobación no está implementado
+                </p>
+                <button
+                  type="button"
+                  className={styles.action_btn_bypass}
+                  disabled={bypassing}
+                  onClick={async () => {
+                    if (!window.confirm('¿Aprobar esta solicitud directamente? (acción provisional de desarrollo)')) return
+                    setBypassing(true)
+                    try {
+                      await approveBypass(app.id)
+                      onBack()
+                    } catch {
+                      setBypassing(false)
+                    }
+                  }}
+                >
+                  {bypassing ? 'Aprobando…' : '⚡ Aprobar solicitud (provisional)'}
                 </button>
               </>
             )}

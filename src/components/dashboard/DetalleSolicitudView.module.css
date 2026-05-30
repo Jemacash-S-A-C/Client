@@ -584,6 +584,43 @@
   gap: 0.4rem;
 }
 
+.bypass_divider {
+  border: none;
+  border-top: 1.5px dashed #e2e8e4;
+  margin: 0.25rem 0;
+}
+
+.bypass_notice {
+  font-size: 0.72rem;
+  color: #9aa39d;
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.action_btn_bypass {
+  width: 100%;
+  border: 1.5px dashed #6b7280;
+  border-radius: 0.9rem;
+  padding: 0.65rem 1rem;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.action_btn_bypass:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.action_btn_bypass:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ── Security seal (aside) ── */
 
 .security_seal {
