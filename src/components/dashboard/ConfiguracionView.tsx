@@ -179,10 +179,12 @@ function PerfilView({
             {t('config.profile.memberSince', { date: profile?.created_at ? fmtMonthYear(profile.created_at) : '—' })}
           </span>
         </div>
-        <span className={styles.perfil_verified_badge}>
-          <IconShield />
-          {t('config.profile.verified')}
-        </span>
+        {status?.email_2fa_enabled && status?.totp_enabled && (
+          <span className={styles.perfil_verified_badge}>
+            <IconShield />
+            {t('config.profile.verified')}
+          </span>
+        )}
       </div>
 
       <div className={styles.perfil_data_grid}>

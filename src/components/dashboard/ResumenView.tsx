@@ -16,6 +16,7 @@ import { getApplications } from '../../services/application.service'
 import { getEvaluation }   from '../../services/evaluation.service'
 import { getGuarantees }   from '../../services/guarantee.service'
 import { getPayments }     from '../../services/payment.service'
+import { getTwoFaStatus }  from '../../services/twofa.service'
 import type { LoanApplication, Evaluation, Guarantee, Payment } from '../../types/api.types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -197,23 +198,27 @@ interface Props {
 export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Props) {
   const { t } = useTranslation()
   const { fmtDayMonth, fmtShort } = useLocaleFormat()
-  const [apps,       setApps]       = useState<LoanApplication[]>([])
-  const [evalMap,    setEvalMap]    = useState<Map<string, Evaluation | null>>(new Map())
-  const [guarantees, setGuarantees] = useState<Guarantee[]>([])
-  const [payments,   setPayments]   = useState<Payment[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [actPage,    setActPage]    = useState(0)
+  const [apps,        setApps]       = useState<LoanApplication[]>([])
+  const [evalMap,     setEvalMap]    = useState<Map<string, Evaluation | null>>(new Map())
+  const [guarantees,  setGuarantees] = useState<Guarantee[]>([])
+  const [payments,    setPayments]   = useState<Payment[]>([])
+  const [loading,     setLoading]    = useState(true)
+  const [actPage,     setActPage]    = useState(0)
+  const [isVerified,  setIsVerified] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     async function load() {
       try {
-        const [allApps, allGs, allPays] = await Promise.all([
+        const [allApps, allGs, allPays, twoFa] = await Promise.all([
           getApplications(),
           getGuarantees().catch(() => [] as Guarantee[]),
           getPayments().catch(() => [] as Payment[]),
+          getTwoFaStatus().catch(() => null),
         ])
         if (cancelled) return
+
+        if (twoFa) setIsVerified(twoFa.email_2fa_enabled && twoFa.totp_enabled)
 
         const approved = allApps.filter(a => a.status === 'approved')
         const evals    = await Promise.all(approved.map(a => getEvaluation(a.id).catch(() => null)))
@@ -284,10 +289,12 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
           <p className={styles.greeting}>{t('resumen.greeting', { name: firstName })}</p>
           {heroSubtitle}
         </div>
-        <div className={styles.verified_badge}>
-          <span aria-hidden="true">◌</span>
-          {t('resumen.verified')}
-        </div>
+        {isVerified && (
+          <div className={styles.verified_badge}>
+            <span aria-hidden="true">◌</span>
+            {t('resumen.verified')}
+          </div>
+        )}
       </section>
 
       {/* ── Stats row ── */}

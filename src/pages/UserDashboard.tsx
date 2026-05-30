@@ -1,10 +1,8 @@
-import { type ReactElement, useState } from 'react'
+import { type ReactElement, useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './UserDashboard.module.css'
 import type { UserSession } from '../types/api.types'
 import {
-  IconSearch,
-  IconBell,
   IconSettings,
   IconChart,
   IconWallet,
@@ -13,6 +11,16 @@ import {
   IconShield,
   IconDownload,
 } from '../components/dashboard/icons'
+
+function IconLogout() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="16 17 21 12 16 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
 import { ResumenView } from '../components/dashboard/ResumenView'
 import { MisPrestamosView } from '../components/dashboard/MisPrestamosView'
 import { MisSolicitudesView } from '../components/dashboard/MisSolicitudesView'
@@ -56,6 +64,18 @@ type UserDashboardProps = {
 
 export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDashboardProps) {
   const { t } = useTranslation()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   const navItems: { view: ActiveView; label: string; icon: () => ReactElement }[] = [
     { view: 'resumen',       label: t('nav.resume'),           icon: IconChart    },
@@ -192,34 +212,51 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
 
       <div className={styles.content}>
         <header className={styles.topbar}>
-          <label className={styles.search_bar} aria-label={t('topbar.searchLabel')}>
-            <IconSearch />
-            <input type="search" placeholder={t('topbar.search')} />
-          </label>
-
           <div className={styles.topbar_actions}>
-            <button type="button" className={styles.icon_button} aria-label={t('topbar.notifications')}>
-              <IconBell />
-              <span className={styles.notification_dot} aria-hidden="true" />
-            </button>
-            <button type="button" className={styles.icon_button} aria-label={t('topbar.settings')}>
-              <IconSettings />
-            </button>
-            <button
-              type="button"
-              className={styles.user_chip}
-              onClick={onLogout}
-              title={t('topbar.logout')}
-              aria-label={t('topbar.logout')}
-            >
-              <div className={styles.user_meta}>
-                <strong>{user.displayName}</strong>
-                <span>{user.role}</span>
-              </div>
-              <span className={styles.avatar} aria-hidden="true">
-                {user.initials}
-              </span>
-            </button>
+            <div className={styles.avatar_menu_wrap} ref={menuRef}>
+              <button
+                type="button"
+                className={styles.user_chip}
+                onClick={() => setMenuOpen(o => !o)}
+                aria-expanded={menuOpen}
+              >
+                <div className={styles.user_meta}>
+                  <strong>{user.displayName}</strong>
+                  <span>{user.role}</span>
+                </div>
+                <span className={styles.avatar} aria-hidden="true">
+                  {user.initials}
+                </span>
+              </button>
+
+              {menuOpen && (
+                <div className={styles.avatar_dropdown}>
+                  <div className={styles.dropdown_header}>
+                    <span className={styles.dropdown_avatar}>{user.initials}</span>
+                    <div className={styles.dropdown_header_meta}>
+                      <strong>{user.displayName}</strong>
+                      <span>{user.role}</span>
+                    </div>
+                  </div>
+                  <div className={styles.dropdown_divider} />
+                  <button
+                    type="button"
+                    className={styles.dropdown_item}
+                    onClick={() => { setMenuOpen(false); setActiveView('configuracion') }}
+                  >
+                    <IconSettings /> {t('nav.settings')}
+                  </button>
+                  <div className={styles.dropdown_divider} />
+                  <button
+                    type="button"
+                    className={styles.dropdown_item_danger}
+                    onClick={() => { setMenuOpen(false); onLogout() }}
+                  >
+                    <IconLogout /> {t('topbar.logout')}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
