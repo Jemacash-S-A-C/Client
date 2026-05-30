@@ -4,7 +4,11 @@ import officeImg from '../../assets/representative_images/main_page.png'
 import { IconShield } from './icons'
 import styles from './TasacionResultadosView.module.css'
 import { getEvaluation } from '../../services/evaluation.service'
-import type { Evaluation } from '../../types/api.types'
+import { getGuarantee } from '../../services/guarantee.service'
+import { getApplication } from '../../services/application.service'
+import type { Evaluation, Guarantee } from '../../types/api.types'
+
+// ── Inline icons ──────────────────────────────────────────────────────────────
 
 function IconCpu() {
   return (
@@ -55,12 +59,7 @@ function IconCheckCircle() {
   )
 }
 
-const DEVICE_SPECS = [
-  { icon: IconCpu,     labelKey: 'processor', value: 'Apple M2 Chip' },
-  { icon: IconMemory,  labelKey: 'ram',        value: '16GB Unified' },
-  { icon: IconStorage, labelKey: 'storage',    value: '512GB SSD' },
-  { icon: IconBattery, labelKey: 'battery',    value: 'Salud 94%' },
-] as const
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export function TasacionResultadosView({
   onBack,
@@ -73,15 +72,56 @@ export function TasacionResultadosView({
 }) {
   const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
+  const [guarantee, setGuarantee] = useState<Guarantee | null>(null)
 
   useEffect(() => {
     if (!applicationId) return
-    getEvaluation(applicationId).then(setEvaluation).catch(() => {/* no-op */})
+    getEvaluation(applicationId).then(setEvaluation).catch(() => {})
+    getApplication(applicationId).then(async (app) => {
+      if (app.guarantee_id) {
+        try {
+          const g = await getGuarantee(app.guarantee_id)
+          setGuarantee(g)
+        } catch { /* no-op */ }
+      }
+    }).catch(() => {})
   }, [applicationId])
 
-  const displayAmount = evaluation?.approved_amount != null
-    ? Number(evaluation.approved_amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
+  // ── Derived values ────────────────────────────────────────────────────────
+
+  const approvedAmount = evaluation?.approved_amount != null
+    ? Number(evaluation.approved_amount)
+    : (guarantee?.ai_max_loan ? Number(guarantee.ai_max_loan) : null)
+
+  const displayAmount = approvedAmount != null
+    ? approvedAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
+
+  const deviceName = guarantee
+    ? `${guarantee.brand ?? ''} ${guarantee.model ?? ''} (${guarantee.manufacture_year ?? ''})`
+    : 'MacBook Air M2 (2022)'
+
+  const deviceImage = guarantee?.photo_urls?.[0] ?? officeImg
+
+  const specs = guarantee?.specs ? [
+    { icon: IconCpu,     labelKey: 'processor', value: guarantee.specs.processor ?? '—' },
+    { icon: IconMemory,  labelKey: 'ram',        value: guarantee.specs.ram ?? '—' },
+    { icon: IconStorage, labelKey: 'storage',    value: guarantee.specs.storage ?? '—' },
+    { icon: IconBattery, labelKey: 'battery',    value: guarantee.specs.battery_health ? `Salud ${guarantee.specs.battery_health}%` : '—' },
+  ] : [
+    { icon: IconCpu,     labelKey: 'processor', value: 'Apple M2 Chip' },
+    { icon: IconMemory,  labelKey: 'ram',        value: '16GB Unified' },
+    { icon: IconStorage, labelKey: 'storage',    value: '512GB SSD' },
+    { icon: IconBattery, labelKey: 'battery',    value: 'Salud 94%' },
+  ]
+
+  const aiScore = guarantee?.ai_condition_score ? Number(guarantee.ai_condition_score) : null
+  const aiFactors: string[] = guarantee?.ai_depreciation_factors ?? []
+  const aiReasoning = guarantee?.ai_reasoning ?? ''
+  const aiConfidence = guarantee?.ai_confidence ? Math.round(Number(guarantee.ai_confidence) * 100) : null
+  const aiMarket = guarantee?.ai_market_value ? Number(guarantee.ai_market_value) : null
+  const aiResale = guarantee?.ai_resale_value ? Number(guarantee.ai_resale_value) : null
+
   return (
     <div className={styles.tas_page}>
 
@@ -104,8 +144,9 @@ export function TasacionResultadosView({
 
           {/* Left */}
           <div className={styles.tas_left}>
+
             <div className={styles.tas_specs_grid}>
-              {DEVICE_SPECS.map((spec) => {
+              {specs.map((spec) => {
                 const SpecIcon = spec.icon
                 return (
                   <div key={spec.labelKey} className={styles.tas_spec_card}>
@@ -121,12 +162,80 @@ export function TasacionResultadosView({
             </div>
 
             <div className={styles.tas_device_card}>
-              <img src={officeImg} alt="MacBook Air M2" className={styles.tas_device_img} />
+              <img
+                src={deviceImage}
+                alt={deviceName}
+                className={styles.tas_device_img}
+              />
               <div className={styles.tas_device_overlay}>
                 <span>{t('tasacion.device.label')}</span>
-                <strong>MacBook Air M2 (2022)</strong>
+                <strong>{deviceName}</strong>
               </div>
             </div>
+
+            {/* AI Analysis card */}
+            {(aiScore !== null || aiFactors.length > 0 || aiReasoning) && (
+              <div className={styles.tas_ai_card}>
+                <div className={styles.tas_ai_header}>
+                  <span className={styles.tas_ai_badge}>ANÁLISIS IA · GROQ</span>
+                  {aiConfidence !== null && (
+                    <span className={styles.tas_ai_confidence}>{aiConfidence}% confianza</span>
+                  )}
+                </div>
+
+                {(aiMarket !== null || aiResale !== null) && (
+                  <div className={styles.tas_ai_values}>
+                    {aiMarket !== null && (
+                      <div className={styles.tas_ai_value_item}>
+                        <span>Precio mercado</span>
+                        <strong>S/ {aiMarket.toLocaleString('es-PE')}</strong>
+                      </div>
+                    )}
+                    {aiResale !== null && (
+                      <div className={styles.tas_ai_value_item}>
+                        <span>Valor reventa</span>
+                        <strong>S/ {aiResale.toLocaleString('es-PE')}</strong>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {aiScore !== null && (
+                  <div className={styles.tas_ai_score_row}>
+                    <span>Puntuación física</span>
+                    <div className={styles.tas_ai_score_bar_wrap}>
+                      <div className={styles.tas_ai_score_bar_bg}>
+                        <div
+                          className={styles.tas_ai_score_bar_fill}
+                          style={{
+                            width: `${(aiScore / 10) * 100}%`,
+                            background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
+                          }}
+                        />
+                      </div>
+                      <strong style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b' }}>
+                        {aiScore.toFixed(1)}/10
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
+                {aiFactors.length > 0 && (
+                  <div className={styles.tas_ai_factors}>
+                    <span className={styles.tas_ai_factors_label}>Factores de depreciación</span>
+                    <div className={styles.tas_ai_factors_list}>
+                      {aiFactors.map((f, i) => (
+                        <span key={i} className={styles.tas_ai_factor_tag}>{f}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {aiReasoning && (
+                  <p className={styles.tas_ai_reasoning}><em>{aiReasoning}</em></p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right */}
@@ -138,7 +247,7 @@ export function TasacionResultadosView({
               <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
               <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
               <p>{t('tasacion.offer.desc')}</p>
-              <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(evaluation?.approved_amount ?? null)}>
+              <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
                 {t('tasacion.accept')}
               </button>
               <div className={styles.tas_value_perks}>

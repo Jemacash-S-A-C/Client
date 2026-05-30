@@ -143,10 +143,6 @@ type Step2 = {
 
 type Step3 = { photos: Map<string, string> }
 
-type Step4 = {
-  purchase_price: string
-  estimated_value: string
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -226,10 +222,6 @@ export function RegistrarGarantiaTecView({
   const [pendingSlot, setPendingSlot] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [s4, setS4] = useState<Step4>({
-    purchase_price: '',
-    estimated_value: '',
-  })
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -255,7 +247,7 @@ export function RegistrarGarantiaTecView({
       return s2.condition !== '' && processorOk && s2.ram !== '' && s2.storage !== ''
     }
     if (step === 2) return s3.photos.size >= 4
-    if (step === 3) return s4.estimated_value.trim() !== '' && Number(s4.estimated_value) > 0
+    if (step === 3) return true
     return false
   }
 
@@ -309,7 +301,6 @@ export function RegistrarGarantiaTecView({
         type:             'tecnologia',
         name,
         description:      `Condición: ${s2.condition}. ${s1.device_category} ${s1.manufacture_year}.`,
-        estimated_value:  Number(s4.estimated_value),
         device_category:  s1.device_category,
         brand,
         model,
@@ -742,43 +733,56 @@ export function RegistrarGarantiaTecView({
   }
 
   function renderStep3() {
-    const catLabel   = DEVICE_CATEGORIES.find((c) => c.id === s1.device_category)?.label ?? s1.device_category
-    const condLabel  = CONDITION_OPTIONS.find((c) => c.id === s2.condition)
+    const catLabel     = DEVICE_CATEGORIES.find((c) => c.id === s1.device_category)?.label ?? s1.device_category
+    const condLabel    = CONDITION_OPTIONS.find((c) => c.id === s2.condition)
     const condLabelStr = condLabel ? t(condLabel.labelKey) : s2.condition
-    const brand      = effectiveBrand(s1)
-    const model      = effectiveModel(s1)
-    const unknown    = isUnknownModel(s1)
-    const cat        = s1.device_category as DeviceCategory
-    const procLabel  = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom : s2.processor
-    const hasBattery = !cat || CATEGORY_HAS_BATTERY[cat]
-    const hasScreen  = !cat || CATEGORY_HAS_SCREEN[cat]
+    const brand        = effectiveBrand(s1)
+    const model        = effectiveModel(s1)
+    const unknown      = isUnknownModel(s1)
+    const cat          = s1.device_category as DeviceCategory
+    const procLabel    = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom : s2.processor
+    const hasBattery   = !cat || CATEGORY_HAS_BATTERY[cat]
+    const hasScreen    = !cat || CATEGORY_HAS_SCREEN[cat]
+
+    const PLATFORMS = [
+      { id: 'windows', label: 'Windows', icon: '⊞' },
+      { id: 'mac',     label: 'macOS',   icon: '' },
+      { id: 'android', label: 'Android', icon: '🤖' },
+      { id: 'ios',     label: 'iOS',     icon: '' },
+    ]
 
     return (
       <div className={styles.reg_step_body}>
         <p className={styles.reg_step_desc}>{t('regGar.step3.desc')}</p>
 
-        <div className={styles.reg_two_col}>
-          <FieldRow label={t('regGar.step3.purchasePrice')}>
-            <input
-              type="number"
-              className={styles.reg_input}
-              placeholder="0.00"
-              min={0}
-              value={s4.purchase_price}
-              onChange={(e) => setS4((p) => ({ ...p, purchase_price: e.target.value }))}
-            />
-          </FieldRow>
-          <FieldRow label={t('regGar.step3.estimatedValue')} required>
-            <input
-              type="number"
-              className={styles.reg_input}
-              placeholder="0.00"
-              min={0}
-              value={s4.estimated_value}
-              onChange={(e) => setS4((p) => ({ ...p, estimated_value: e.target.value }))}
-            />
-          </FieldRow>
+        {/* ── Platform verification tiles ── */}
+        <div className={styles.reg_verify_grid}>
+          {PLATFORMS.map((p) => (
+            <div key={p.id} className={styles.reg_verify_tile}>
+              <span className={styles.reg_verify_tile_icon}>{p.icon}</span>
+              <strong>{p.label}</strong>
+              <span className={styles.reg_verify_coming}>Próximamente</span>
+              <button type="button" className={styles.reg_verify_download_btn} disabled>
+                Descargar
+              </button>
+            </div>
+          ))}
         </div>
+
+        <div className={styles.reg_info_box}>
+          <IconShield />
+          <p>{t('regGar.step3.verifyInfo')}</p>
+        </div>
+
+        {/* ── Bypass button ── */}
+        <button
+          type="button"
+          className={styles.reg_bypass_btn}
+          onClick={handleSubmit}
+          disabled={submitting}
+        >
+          {submitting ? t('regGar.registering') : t('regGar.step3.bypassBtn')}
+        </button>
 
         <div className={styles.reg_summary}>
           <h3>{t('regGar.step3.summary.title')}</h3>

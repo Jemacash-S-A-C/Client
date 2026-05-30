@@ -236,6 +236,17 @@
   letter-spacing: 0.06em;
 }
 
+.aud_warn_tag {
+  flex-shrink: 0;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  background: rgba(202, 138, 4, 0.25);
+  color: #fbbf24;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
@@ -393,6 +404,15 @@
   color: #8a958d;
   font-size: 0.76rem;
 }
+
+.aud_est_score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+}
+.aud_est_score span { color: #7a857e; font-size: 0.82rem; }
+.aud_est_score strong { color: #0f7d3f; font-size: 0.88rem; font-weight: 700; }
 
 .aud_est_state {
   display: flex;

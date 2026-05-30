@@ -51,6 +51,17 @@ export type GuaranteeSpecs = {
   screen_size?: string
 }
 
+export type AiValuationResult = {
+  condition_score: number
+  market_value_pen: number
+  resale_value_pen: number
+  max_loan_pen: number
+  depreciation_factors: string[]
+  confidence: number
+  reasoning: string
+  visual_condition: string
+}
+
 export type Guarantee = {
   id: string
   user_id: string
@@ -69,6 +80,15 @@ export type Guarantee = {
   condition?: string | null
   specs?: GuaranteeSpecs | null
   photo_urls?: string[] | null
+  // AI valuation fields
+  ai_market_value?: number | null
+  ai_resale_value?: number | null
+  ai_max_loan?: number | null
+  ai_condition_score?: number | null
+  ai_depreciation_factors?: string[] | null
+  ai_confidence?: number | null
+  ai_reasoning?: string | null
+  ai_visual_condition?: string | null
 }
 
 export type PaymentMethod = 'bcp' | 'bbva' | 'yape' | 'plin' | 'efectivo' | 'mercadopago'

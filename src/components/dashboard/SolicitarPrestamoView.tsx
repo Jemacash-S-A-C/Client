@@ -69,13 +69,13 @@ export function SolicitarPrestamoView({
   const selectedGuarantee = guarantees.find((g) => g.id === selectedGuaranteeId) ?? null
 
   const dynamicMax = selectedGuarantee
-    ? Math.floor(Number(selectedGuarantee.estimated_value) * 0.8)
+    ? Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) * 0.8 || Number(selectedGuarantee.estimated_value) * 0.8 || MAX_AMOUNT)
     : MAX_AMOUNT
   const dynamicMin = MIN_AMOUNT
 
   useEffect(() => {
     if (selectedGuarantee) {
-      const max = Math.floor(Number(selectedGuarantee.estimated_value) * 0.8)
+      const max = Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) * 0.8 || Number(selectedGuarantee.estimated_value) * 0.8 || MAX_AMOUNT)
       if (amount > max) setAmount(max)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -248,7 +248,10 @@ export function SolicitarPrestamoView({
                     <strong>{g.name}</strong>
                     <p>
                       {g.condition ? `${g.condition.charAt(0).toUpperCase() + g.condition.slice(1)} · ` : ''}
-                      Valor: S/ {Number(g.estimated_value).toLocaleString('es-PE')}
+                      {(() => {
+                        const v = Number(g.ai_resale_value) || Number(g.estimated_value) || 0
+                        return v > 0 ? `S/ ${v.toLocaleString('es-PE')}` : 'Pendiente de valuación IA'
+                      })()}
                     </p>
                     <span className={styles.sol_garantia_cta}>
                       {isSelected ? t('solicitar.guarantees.selected') : t('solicitar.guarantees.select')}
