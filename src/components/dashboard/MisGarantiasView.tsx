@@ -61,9 +61,10 @@ function GuaranteeCard({ g }: { g: Guarantee }) {
   const { t } = useTranslation()
 
   const STATUS_LABELS: Record<string, StatusInfo> = {
-    active:   { label: t('garantias.status.active'),   color: '#0f7d3f', bg: '#d9f0da' },
-    pledged:  { label: t('garantias.status.pledged'),  color: '#2563eb', bg: '#dbeafe' },
-    released: { label: t('garantias.status.released'), color: '#64748b', bg: '#f1f5f9' },
+    pending_evaluation: { label: t('garantias.status.pending_evaluation'), color: '#b45309', bg: '#fef3c7' },
+    active:             { label: t('garantias.status.active'),              color: '#0f7d3f', bg: '#d9f0da' },
+    pledged:            { label: t('garantias.status.pledged'),             color: '#2563eb', bg: '#dbeafe' },
+    released:           { label: t('garantias.status.released'),            color: '#64748b', bg: '#f1f5f9' },
   }
   const CONDITION_LABELS: Record<string, CondInfo> = {
     excelente: { label: t('garantias.condition.excelente'), color: '#0f7d3f' },
@@ -71,7 +72,7 @@ function GuaranteeCard({ g }: { g: Guarantee }) {
     regular:   { label: t('garantias.condition.regular'),   color: '#d97706' },
   }
 
-  const status = STATUS_LABELS[g.status] ?? STATUS_LABELS.active
+  const status = STATUS_LABELS[g.status] ?? STATUS_LABELS.pending_evaluation
   const cond   = g.condition ? CONDITION_LABELS[g.condition] : null
   const isVeh  = g.type === 'vehiculo'
 

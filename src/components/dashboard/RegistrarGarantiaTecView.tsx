@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createGuarantee } from '../../services/guarantee.service'
+import { createGuarantee, valuateDevice, updateGuaranteeAi } from '../../services/guarantee.service'
+import type { AiValuationResult } from '../../types/api.types'
 import { IconShield, IconCheck } from './icons'
 import {
   DEVICE_CATALOG, getYearRange, buildYearOptions,
@@ -74,6 +75,26 @@ function IconAlert() {
       <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   )
+}
+
+// ── Image compression (same as AuditorTecnicoView) ───────────────────────────
+
+function compressImage(dataUrl: string, maxSide = 512, quality = 0.55): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height, 1))
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width  = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -222,6 +243,70 @@ export function RegistrarGarantiaTecView({
   const [pendingSlot, setPendingSlot] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ── AI Valuation state ──────────────────────────────────────────────────────
+
+  type AiState = 'idle' | 'running' | 'done' | 'failed'
+  const [aiState, setAiState]   = useState<AiState>('idle')
+  const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
+  const aiRef = useRef<{ cancelled: boolean; started: boolean }>({ cancelled: false, started: false })
+
+  async function runValuation() {
+    try {
+      const cat       = s1.device_category as DeviceCategory
+      const rawPhotos = [...s3.photos.values()]
+      const photos    = rawPhotos.length > 0
+        ? await Promise.all(rawPhotos.map((p) => compressImage(p)))
+        : []
+      const procLabel = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom.trim() : s2.processor
+
+      const result = await valuateDevice({
+        device_category:  s1.device_category,
+        brand:            effectiveBrand(s1),
+        model:            effectiveModel(s1),
+        manufacture_year: s1.manufacture_year,
+        processor:        procLabel,
+        ram:              s2.ram,
+        storage:          s2.storage,
+        battery_health:   CATEGORY_HAS_BATTERY[cat] ? s2.battery_health : undefined,
+        screen_size:      CATEGORY_HAS_SCREEN[cat] && s2.screen_size ? s2.screen_size : undefined,
+        condition:        s2.condition,
+        is_reconditioned: s1.is_reconditioned,
+        photos,
+      })
+
+      if (!aiRef.current.cancelled) {
+        setAiResult(result)
+        setAiState('done')
+      }
+    } catch {
+      if (!aiRef.current.cancelled) {
+        setAiState('failed')
+      }
+    }
+  }
+
+  function handleRetryAi() {
+    aiRef.current = { cancelled: false, started: true }
+    setAiState('running')
+    setAiResult(null)
+    runValuation()
+  }
+
+  // Auto-run AI when user reaches step 3; reset on back-navigation
+  useEffect(() => {
+    if (step !== 3) {
+      aiRef.current.cancelled = true
+      aiRef.current.started   = false
+      setAiState('idle')
+      setAiResult(null)
+      return
+    }
+    if (aiRef.current.started) return
+    aiRef.current = { cancelled: false, started: true }
+    setAiState('running')
+    runValuation()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -247,7 +332,7 @@ export function RegistrarGarantiaTecView({
       return s2.condition !== '' && processorOk && s2.ram !== '' && s2.storage !== ''
     }
     if (step === 2) return s3.photos.size >= 4
-    if (step === 3) return true
+    if (step === 3) return aiState === 'done' || aiState === 'failed'
     return false
   }
 
@@ -297,7 +382,7 @@ export function RegistrarGarantiaTecView({
       if (s1.is_reconditioned)       specs.is_reconditioned  = 'true'
       if (isUnknownModel(s1))        specs.needs_verification = 'true'
 
-      await createGuarantee({
+      const created = await createGuarantee({
         type:             'tecnologia',
         name,
         description:      `Condición: ${s2.condition}. ${s1.device_category} ${s1.manufacture_year}.`,
@@ -310,6 +395,23 @@ export function RegistrarGarantiaTecView({
         specs,
         photo_urls:       PHOTO_SLOTS.filter((p) => s3.photos.has(p.id)).map((p) => s3.photos.get(p.id)!),
       })
+
+      // Persist AI valuation → auto-promotes guarantee pending_evaluation → active
+      if (aiResult) {
+        try {
+          await updateGuaranteeAi(created.id, {
+            ai_market_value:         aiResult.market_value_pen,
+            ai_resale_value:         aiResult.resale_value_pen,
+            ai_max_loan:             aiResult.max_loan_pen,
+            ai_condition_score:      aiResult.condition_score,
+            ai_depreciation_factors: aiResult.depreciation_factors,
+            ai_confidence:           aiResult.confidence,
+            ai_reasoning:            aiResult.reasoning,
+            ai_visual_condition:     aiResult.visual_condition,
+          })
+        } catch { /* non-critical — guarantee stays pending_evaluation for manual review */ }
+      }
+
       onSuccess()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar la garantía.')
@@ -755,7 +857,106 @@ export function RegistrarGarantiaTecView({
       <div className={styles.reg_step_body}>
         <p className={styles.reg_step_desc}>{t('regGar.step3.desc')}</p>
 
-        {/* ── Platform verification tiles ── */}
+        {/* ── AI Valuation — Running ── */}
+        {aiState === 'running' && (
+          <div className={styles.reg_ai_block}>
+            <div className={styles.reg_ai_spinner_lg} />
+            <div>
+              <h3 className={styles.reg_ai_title}>{t('regGar.step3.ai.running')}</h3>
+              <p className={styles.reg_ai_desc}>{t('regGar.step3.ai.runningDesc')}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── AI Valuation — Done ── */}
+        {aiState === 'done' && aiResult && (
+          <div className={styles.reg_ai_result}>
+
+            <div className={styles.reg_ai_result_header}>
+              <span className={styles.reg_ai_result_badge}>IA · Groq</span>
+              <strong style={{ fontSize: '0.95rem', color: '#14230a' }}>{t('regGar.step3.ai.done')}</strong>
+              <button type="button" className={styles.reg_ai_reanalyze} onClick={handleRetryAi}>
+                {t('regGar.step3.ai.retryBtn')}
+              </button>
+            </div>
+
+            <div className={styles.reg_ai_values}>
+              <div className={`${styles.reg_ai_value_card} ${styles.reg_ai_value_main}`}>
+                <span>{t('regGar.step3.ai.resaleValue')}</span>
+                <strong>S/ {aiResult.resale_value_pen.toLocaleString('es-PE')}</strong>
+                <small>{t('regGar.step3.ai.resaleNote')}</small>
+              </div>
+              <div className={styles.reg_ai_value_card}>
+                <span>{t('regGar.step3.ai.marketValue')}</span>
+                <strong>S/ {aiResult.market_value_pen.toLocaleString('es-PE')}</strong>
+                <small>{t('regGar.step3.ai.marketNote')}</small>
+              </div>
+              <div className={`${styles.reg_ai_value_card} ${styles.reg_ai_value_loan}`}>
+                <span>{t('regGar.step3.ai.maxLoan')}</span>
+                <strong>S/ {aiResult.max_loan_pen.toLocaleString('es-PE')}</strong>
+                <small>{t('regGar.step3.ai.loanNote')}</small>
+              </div>
+            </div>
+
+            <div className={styles.reg_ai_score_row}>
+              <span>{t('regGar.step3.ai.condScore')}</span>
+              <div style={{ flex: 1, height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${aiResult.condition_score * 10}%`,
+                  background: aiResult.condition_score >= 7
+                    ? 'linear-gradient(to right, #0f7d3f, #22c55e)'
+                    : 'linear-gradient(to right, #d97706, #f59e0b)',
+                  borderRadius: 4,
+                  transition: 'width 0.5s ease',
+                }} />
+              </div>
+              <strong style={{ fontSize: '0.9rem', color: '#14230a', whiteSpace: 'nowrap' }}>
+                {aiResult.condition_score.toFixed(1)} / 10
+              </strong>
+            </div>
+
+            {aiResult.depreciation_factors && aiResult.depreciation_factors.length > 0 && (
+              <div className={styles.reg_ai_factors}>
+                <span className={styles.reg_ai_factors_label}>{t('regGar.step3.ai.factors')}</span>
+                <div className={styles.reg_ai_factors_list}>
+                  {aiResult.depreciation_factors.map((f) => (
+                    <span key={f} className={styles.reg_ai_factor_tag}>{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {aiResult.reasoning && (
+              <p className={styles.reg_ai_reasoning}>{aiResult.reasoning}</p>
+            )}
+
+          </div>
+        )}
+
+        {/* ── AI Valuation — Failed ── */}
+        {aiState === 'failed' && (
+          <div className={styles.reg_warn_box}>
+            <IconAlert />
+            <div style={{ flex: 1 }}>
+              <strong style={{ display: 'block', marginBottom: '0.3rem' }}>{t('regGar.step3.ai.failed')}</strong>
+              <p style={{ margin: '0 0 0.6rem' }}>{t('regGar.step3.ai.failedDesc')}</p>
+              <button
+                type="button"
+                style={{
+                  fontSize: '0.8rem', fontWeight: 600, color: '#92400e',
+                  background: '#fef3c7', border: '1px solid #fcd34d',
+                  borderRadius: 6, padding: '0.3rem 0.75rem', cursor: 'pointer',
+                }}
+                onClick={handleRetryAi}
+              >
+                {t('regGar.step3.ai.retryBtn')}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Platform verification tiles (future hardware check) ── */}
         <div className={styles.reg_verify_grid}>
           {PLATFORMS.map((p) => (
             <div key={p.id} className={styles.reg_verify_tile}>
@@ -773,16 +974,6 @@ export function RegistrarGarantiaTecView({
           <IconShield />
           <p>{t('regGar.step3.verifyInfo')}</p>
         </div>
-
-        {/* ── Bypass button ── */}
-        <button
-          type="button"
-          className={styles.reg_bypass_btn}
-          onClick={handleSubmit}
-          disabled={submitting}
-        >
-          {submitting ? t('regGar.registering') : t('regGar.step3.bypassBtn')}
-        </button>
 
         <div className={styles.reg_summary}>
           <h3>{t('regGar.step3.summary.title')}</h3>

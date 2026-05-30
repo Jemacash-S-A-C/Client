@@ -69,7 +69,7 @@ export type Guarantee = {
   name: string
   description: string | null
   estimated_value: number
-  status: 'active' | 'pledged' | 'released'
+  status: 'pending_evaluation' | 'active' | 'pledged' | 'released'
   created_at: string
   // Technology-specific (present when type === 'tecnologia')
   device_category?: string | null
