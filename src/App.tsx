@@ -171,7 +171,7 @@ function App() {
         />
 
         {page === 'home' ? (
-          <Home />
+          <Home onRegister={goToRegister} />
         ) : page === 'blog' ? (
           <BlogPage featuredBackgroundSrc={heroImg} />
         ) : page === 'valuar' ? (

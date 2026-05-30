@@ -48,7 +48,11 @@ function IconPaid() {
   );
 }
 
-function Home() {
+interface HomeProps {
+  onRegister?: () => void
+}
+
+function Home({ onRegister }: HomeProps) {
   const [amount, setAmount] = useState(15000)
   const [plazo, setPlazo]   = useState<SimPlazo>(12)
 
@@ -127,7 +131,7 @@ function Home() {
                 <strong>{plazo} meses</strong>
               </div>
             </div>
-            <button type="button" className={styles.loan_cta}>Iniciar solicitud ahora</button>
+            <button type="button" className={styles.loan_cta} onClick={onRegister}>Iniciar solicitud ahora</button>
           </article>
         </div>
 
