@@ -27,7 +27,8 @@ export type LoanApplication = {
   guarantee?: Guarantee | null   // populated when fetched via findAll
   amount: number
   term_months: number
-  status: 'draft' | 'submitted' | 'signed' | 'approved' | 'disbursed' | 'rejected'
+  status: 'draft' | 'submitted' | 'signed' | 'approved' | 'disbursed' | 'defaulted' | 'rejected'
+  disbursed_at: string | null
   created_at: string
   updated_at: string
 }
@@ -69,7 +70,7 @@ export type Guarantee = {
   name: string
   description: string | null
   estimated_value: number
-  status: 'pending_evaluation' | 'active' | 'pledged' | 'released'
+  status: 'pending_evaluation' | 'active' | 'pledged' | 'released' | 'seized'
   created_at: string
   // Technology-specific (present when type === 'tecnologia')
   device_category?: string | null

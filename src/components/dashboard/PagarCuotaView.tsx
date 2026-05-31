@@ -120,6 +120,50 @@ function fmt(n: number) {
   return n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+const DEFAULT_GRACE_DAYS = 45
+
+/** Returns days overdue (positive) or days until due (negative/zero). */
+function daysOverdue(dueDate: Date): number {
+  const diffMs = Date.now() - dueDate.getTime()
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+}
+
+// ── Overdue warning banner ─────────────────────────────────────────────────────
+
+function OverdueBanner({ nextPaymentDate }: { nextPaymentDate: Date }) {
+  const { t } = useTranslation()
+  const overdue = daysOverdue(nextPaymentDate)
+  if (overdue <= 0) return null
+
+  const daysLeft = DEFAULT_GRACE_DAYS - overdue
+  const isCritical = daysLeft <= 10
+
+  return (
+    <div className={`${styles.overdue_banner} ${isCritical ? styles.overdue_banner_critical : styles.overdue_banner_warn}`}>
+      <svg className={styles.overdue_icon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      <div className={styles.overdue_body}>
+        {daysLeft > 0 ? (
+          <>
+            <strong>{t('pagar.overdue.title', { days: overdue })}</strong>
+            <span>{t('pagar.overdue.desc')}</span>
+            <span className={styles.overdue_days_left}>
+              {t('pagar.overdue.daysLeft', { days: daysLeft })}
+            </span>
+          </>
+        ) : (
+          <>
+            <strong>{t('pagar.overdue.criticalTitle')}</strong>
+            <span>{t('pagar.overdue.criticalDesc')}</span>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Mock card form (used when no real MP key is configured) ────────────────────
 
 interface MockFormProps {
@@ -342,6 +386,8 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
               <strong>{fmtLong(info.nextPaymentDate)}</strong>
             </div>
           </div>
+
+          <OverdueBanner nextPaymentDate={info.nextPaymentDate} />
 
           <h2 className={styles.methods_title}>{t('pagar.methods.title')}</h2>
           <div className={styles.methods_grid}>

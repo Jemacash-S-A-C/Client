@@ -282,6 +282,55 @@
   text-align: center;
 }
 
+/* ── Overdue warning banner ── */
+
+.overdue_banner {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin-bottom: 0.25rem;
+}
+
+.overdue_banner_warn {
+  background: #fff7ed;
+  border: 1.5px solid #fb923c;
+  color: #7c2d12;
+}
+
+.overdue_banner_critical {
+  background: #fef2f2;
+  border: 1.5px solid #ef4444;
+  color: #7f1d1d;
+}
+
+.overdue_icon {
+  flex-shrink: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-top: 0.05rem;
+}
+
+.overdue_body strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.overdue_days_left {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  background: #fca5a5;
+  color: #7f1d1d;
+}
+
 /* Success */
 
 .success_wrap {

@@ -32,6 +32,7 @@ const STATUS_CFG_KEYS = {
   signed:     { labelKey: 'detalle.status.signed',     color: '#b45309', bg: '#fef3c7' },
   approved:   { labelKey: 'detalle.status.approved',   color: '#0a6b34', bg: '#d9f0da' },
   disbursed:  { labelKey: 'detalle.status.disbursed',  color: '#0f7d3f', bg: '#d9f0da' },
+  defaulted:  { labelKey: 'detalle.status.defaulted',  color: '#7f1d1d', bg: '#fee2e2' },
   rejected:   { labelKey: 'detalle.status.rejected',   color: '#dc2626', bg: '#fef2f2' },
 } as const
 
@@ -59,11 +60,11 @@ function buildTimeline(
   // 3 Aprobada      → active: approved (waiting for pickup)
   // 4 Desembolso    → done: disbursed
   const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
-    { labelKey: 'detalle.timeline.enviada',    doneOn: ['submitted','signed','approved','disbursed','rejected'] },
-    { labelKey: 'detalle.timeline.valuacion',  doneOn: ['signed','approved','disbursed','rejected']             },
-    { labelKey: 'detalle.timeline.revision',   doneOn: ['approved','disbursed','rejected']                      },
-    { labelKey: 'detalle.timeline.aprobada',   doneOn: ['approved','disbursed']                                 },
-    { labelKey: 'detalle.timeline.desembolso', doneOn: ['disbursed']                                            },
+    { labelKey: 'detalle.timeline.enviada',    doneOn: ['submitted','signed','approved','disbursed','defaulted','rejected'] },
+    { labelKey: 'detalle.timeline.valuacion',  doneOn: ['signed','approved','disbursed','defaulted','rejected']             },
+    { labelKey: 'detalle.timeline.revision',   doneOn: ['approved','disbursed','defaulted','rejected']                      },
+    { labelKey: 'detalle.timeline.aprobada',   doneOn: ['approved','disbursed','defaulted']                                 },
+    { labelKey: 'detalle.timeline.desembolso', doneOn: ['disbursed','defaulted']                                            },
   ]
 
   return STEPS.map((s, i) => {
@@ -167,7 +168,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
 
   const cuota      = calcCuota(loanAmount, app.term_months)
   const totalCost  = cuota * app.term_months
-  const hasFinance = app.status === 'signed' || app.status === 'approved' || app.status === 'disbursed'
+  const hasFinance = ['signed','approved','disbursed','defaulted'].includes(app.status)
 
   return (
     <div className={styles.page}>
@@ -411,6 +412,14 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 <p className={styles.action_hint}>{t('detalle.action.disbursedHint')}</p>
                 <button type="button" className={styles.action_btn_success} disabled>
                   <IconCheck /> {t('detalle.action.disbursedBtn')}
+                </button>
+              </>
+            )}
+            {app.status === 'defaulted' && (
+              <>
+                <p className={styles.action_hint}>{t('detalle.action.defaultedHint')}</p>
+                <button type="button" className={styles.action_btn_danger} disabled>
+                  <IconWarning /> {t('detalle.action.defaultedBtn')}
                 </button>
               </>
             )}

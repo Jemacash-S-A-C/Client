@@ -52,12 +52,13 @@ interface ActivityItem {
 // ── Derived helpers ───────────────────────────────────────────────────────────
 
 const APP_STATUS_MAP: Record<string, { titleKey: string; tone: ActivityTone }> = {
-  disbursed: { titleKey: 'activity.loanDisbursed', tone: 'green'  },
-  approved:  { titleKey: 'activity.loanApproved',  tone: 'green'  },
-  signed:    { titleKey: 'activity.loanSigned',    tone: 'amber'  },
-  submitted: { titleKey: 'activity.loanSubmitted', tone: 'indigo' },
-  rejected:  { titleKey: 'activity.loanRejected',  tone: 'rose'   },
-  draft:     { titleKey: 'activity.loanDraft',     tone: 'amber'  },
+  disbursed: { titleKey: 'activity.loanDisbursed',  tone: 'green'  },
+  defaulted: { titleKey: 'activity.loanDefaulted',  tone: 'rose'   },
+  approved:  { titleKey: 'activity.loanApproved',   tone: 'green'  },
+  signed:    { titleKey: 'activity.loanSigned',     tone: 'amber'  },
+  submitted: { titleKey: 'activity.loanSubmitted',  tone: 'indigo' },
+  rejected:  { titleKey: 'activity.loanRejected',   tone: 'rose'   },
+  draft:     { titleKey: 'activity.loanDraft',      tone: 'amber'  },
 }
 
 function buildActivityFeed(
@@ -71,7 +72,8 @@ function buildActivityFeed(
   for (const app of apps) {
     const info = APP_STATUS_MAP[app.status]
     if (!info) continue
-    const statusText = app.status === 'disbursed' ? t('activity.status.disbursed')
+    const statusText = app.status === 'disbursed'  ? t('activity.status.disbursed')
+      : app.status === 'defaulted' ? t('activity.status.defaulted')
       : app.status === 'approved'  ? t('activity.status.approved')
       : app.status === 'submitted' ? t('activity.status.submitted')
       : app.status === 'signed'    ? t('activity.status.signed')

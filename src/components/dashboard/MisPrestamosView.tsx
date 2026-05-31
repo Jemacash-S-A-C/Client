@@ -93,11 +93,12 @@ function buildLoanData(
   const cuota = calcCuota(loanAmount, app.term_months)
   const totalCost = cuota * app.term_months
 
-  const createdAt = new Date(app.created_at)
+  // Use disbursed_at as the loan start; fall back to created_at for old loans
+  const baseDate  = app.disbursed_at ? new Date(app.disbursed_at) : new Date(app.created_at)
   const now = new Date()
   const msPerMonth = 30.44 * 24 * 3600 * 1000
   const monthsElapsed = Math.min(
-    Math.floor((now.getTime() - createdAt.getTime()) / msPerMonth),
+    Math.floor((now.getTime() - baseDate.getTime()) / msPerMonth),
     app.term_months,
   )
 
@@ -108,8 +109,8 @@ function buildLoanData(
   const remainingAmount = Math.max(totalCost - paidAmount, 0)
   const pct = totalCost > 0 ? Math.round((paidAmount / totalCost) * 100) : 0
 
-  // Next payment date based on actual paid cuotas
-  const nextPaymentDate = new Date(createdAt)
+  // Next payment date based on disbursed_at + months paid
+  const nextPaymentDate = new Date(baseDate)
   nextPaymentDate.setMonth(nextPaymentDate.getMonth() + paidCount + 1)
 
   // Build movements: paid cuotas + disbursement event
@@ -144,10 +145,11 @@ function buildLoanData(
 // ── Status display ─────────────────────────────────────────────────────────────
 
 const STATUS_KEYS: Record<string, { labelKey: string; color: string; bg: string; icon: typeof IconClock }> = {
-  submitted: { labelKey: 'prestamos.status.inReview',   color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
-  signed:    { labelKey: 'prestamos.status.inReview2',  color: '#b45309', bg: '#fef3c7', icon: IconClock   },
-  approved:  { labelKey: 'prestamos.status.pickup',     color: '#0a6b34', bg: '#d9f0da', icon: IconClock   },
-  rejected:  { labelKey: 'prestamos.status.rejected',   color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
+  submitted:  { labelKey: 'prestamos.status.inReview',   color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
+  signed:     { labelKey: 'prestamos.status.inReview2',  color: '#b45309', bg: '#fef3c7', icon: IconClock   },
+  approved:   { labelKey: 'prestamos.status.pickup',     color: '#0a6b34', bg: '#d9f0da', icon: IconClock   },
+  rejected:   { labelKey: 'prestamos.status.rejected',   color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
+  defaulted:  { labelKey: 'prestamos.status.defaulted',  color: '#7f1d1d', bg: '#fee2e2', icon: IconWarning },
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -207,7 +209,7 @@ export function MisPrestamosView({ onPay }: Props) {
   }, [])
 
   const activeLoans = loans
-  const inProcess   = apps.filter((a) => ['submitted', 'signed', 'approved'].includes(a.status))
+  const inProcess   = apps.filter((a) => ['submitted', 'signed', 'approved', 'defaulted'].includes(a.status))
 
   // Pagination
   const LOANS_PER_PAGE = 4

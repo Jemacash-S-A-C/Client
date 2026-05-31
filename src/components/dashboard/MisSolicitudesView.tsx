@@ -19,6 +19,7 @@ const STATUS_LABEL_KEYS: Record<LoanApplication['status'], string> = {
   signed:     'solicitudes.status.signed',
   approved:   'solicitudes.status.approved',
   disbursed:  'solicitudes.status.disbursed',
+  defaulted:  'solicitudes.status.defaulted',
   rejected:   'solicitudes.status.rejected',
 }
 
@@ -28,6 +29,7 @@ const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple'
   signed:     'amber',
   approved:   'green',
   disbursed:  'green',
+  defaulted:  'red',
   rejected:   'red',
 }
 
@@ -37,6 +39,7 @@ const STATUS_CFG = {
   signed:     { color: '#b45309', bg: '#fef3c7' },
   approved:   { color: '#0a6b34', bg: '#d9f0da' },
   disbursed:  { color: '#0f7d3f', bg: '#d9f0da' },
+  defaulted:  { color: '#7f1d1d', bg: '#fee2e2' },
   rejected:   { color: '#dc2626', bg: '#fef2f2' },
 } as const
 
@@ -66,7 +69,7 @@ export function MisSolicitudesView({ onDetalle }: Props) {
   }, [])
 
   const active   = applications.filter(a => ['submitted','signed','approved','disbursed'].includes(a.status))
-  const others   = applications.filter(a => ['draft','rejected'].includes(a.status))
+  const others   = applications.filter(a => ['draft','rejected','defaulted'].includes(a.status))
 
   const ACTIVE_PER_PAGE  = 4
   const activeTotal      = Math.ceil(active.length / ACTIVE_PER_PAGE)

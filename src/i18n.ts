@@ -135,12 +135,14 @@ const resources = {
       'activity.status.signed':     'En revisión',
       'activity.status.approved':   'Aprobado — Recogida pendiente',
       'activity.status.disbursed':  'Activo',
+      'activity.status.defaulted':  'Incumplimiento',
       'activity.status.rejected':   'Rechazado',
       'activity.status.completed':  'Completado',
       // Activity title labels
       'activity.loanSigned':      'Solicitud en revisión',
       'activity.loanApproved':    'Préstamo aprobado — recogida coordinada',
       'activity.loanDisbursed':   'Préstamo activo — desembolsado',
+      'activity.loanDefaulted':   'Incumplimiento de pago — garantía embargada',
       'activity.loanSubmitted':   'Solicitud enviada',
       'activity.loanRejected':    'Solicitud rechazada',
       'activity.loanDraft':       'Solicitud en borrador',
@@ -212,11 +214,12 @@ const resources = {
       'prestamos.movement.typePago': 'PAGO',
       'prestamos.movement.typeDesembolso': 'DESEMBOLSO',
       // Status badges
-      'prestamos.status.inReview':  'En proceso',
-      'prestamos.status.inReview2': 'En revisión',
-      'prestamos.status.pickup':    'Recogida coordinada',
-      'prestamos.status.approved':  'Aprobado',
-      'prestamos.status.rejected':  'Rechazado',
+      'prestamos.status.inReview':   'En proceso',
+      'prestamos.status.inReview2':  'En revisión',
+      'prestamos.status.pickup':     'Recogida coordinada',
+      'prestamos.status.approved':   'Aprobado',
+      'prestamos.status.rejected':   'Rechazado',
+      'prestamos.status.defaulted':  'Incumplimiento',
       // Movements
       'prestamos.movement.disbursement': 'Desembolso — {{id}}',
       'prestamos.movement.cuota': 'Cuota {{num}} — {{id}}',
@@ -245,6 +248,7 @@ const resources = {
       'solicitudes.status.signed':     'EN REVISIÓN',
       'solicitudes.status.approved':   'APROBADO',
       'solicitudes.status.disbursed':  'ACTIVO',
+      'solicitudes.status.defaulted':  'INCUMPLIMIENTO',
       'solicitudes.status.rejected':   'RECHAZADO',
 
       // ── SubirDocumentosView ───────────────────────────────────────────────
@@ -537,6 +541,12 @@ const resources = {
       'pagar.method.efectivo.name': 'Efectivo',
       'pagar.method.efectivo.desc': 'Pago en agencia o agente',
       'pagar.method.comingSoon': 'Próximamente',
+      // Overdue payment warning
+      'pagar.overdue.title':        'Cuota con {{days}} día(s) de retraso',
+      'pagar.overdue.desc':         'Paga antes de que se cumpla el período de gracia para evitar que tu garantía sea embargada.',
+      'pagar.overdue.daysLeft':     '{{days}} día(s) restantes antes del incumplimiento',
+      'pagar.overdue.criticalTitle':'¡Atención! Plazo de gracia agotado',
+      'pagar.overdue.criticalDesc': 'Tu préstamo está en proceso de ser declarado en incumplimiento. Contacta con nosotros de inmediato.',
 
       // ── DetalleSolicitudView ──────────────────────────────────────────────
       'detalle.backBtn': 'Mis Solicitudes',
@@ -569,6 +579,8 @@ const resources = {
       'detalle.action.approvedBtn':    'Recogida en coordinación 📦',
       'detalle.action.disbursedHint':  '¡Tu crédito está activo! El dispositivo fue recibido y el desembolso se realizó. Consulta tu cronograma de pagos.',
       'detalle.action.disbursedBtn':   'Crédito activo ✓',
+      'detalle.action.defaultedHint':  'Tu préstamo fue declarado en incumplimiento por falta de pago. La garantía registrada ha sido embargada conforme al contrato firmado.',
+      'detalle.action.defaultedBtn':   'Garantía embargada ⚠',
       'detalle.action.rejectedHint':   'Lamentablemente tu solicitud no pudo ser aprobada en esta oportunidad. Puedes presentar una nueva solicitud.',
       'detalle.action.rejectedBtn':    'Solicitud no aprobada',
       'detalle.security.title': 'Información protegida',
@@ -587,6 +599,7 @@ const resources = {
       'detalle.status.signed':     'En revisión',
       'detalle.status.approved':   'Aprobado — Recogida pendiente',
       'detalle.status.disbursed':  'Crédito activo',
+      'detalle.status.defaulted':  'Incumplimiento — Garantía embargada',
       'detalle.status.rejected':   'Rechazado',
 
       // ── FirmaVerificacionView ─────────────────────────────────────────────
@@ -951,14 +964,16 @@ const resources = {
       'activity.status.signed':     'Under review',
       'activity.status.approved':   'Approved — Pickup pending',
       'activity.status.disbursed':  'Active',
+      'activity.status.defaulted':  'Default',
       'activity.status.rejected':   'Rejected',
       'activity.status.completed':  'Completed',
-      'activity.loanSigned':      'Application under review',
-      'activity.loanApproved':    'Loan approved — pickup coordinated',
-      'activity.loanDisbursed':   'Loan active — disbursed',
-      'activity.loanSubmitted':   'Application submitted',
-      'activity.loanRejected':    'Application rejected',
-      'activity.loanDraft':       'Application draft',
+      'activity.loanSigned':       'Application under review',
+      'activity.loanApproved':     'Loan approved — pickup coordinated',
+      'activity.loanDisbursed':    'Loan active — disbursed',
+      'activity.loanDefaulted':    'Payment default — collateral seized',
+      'activity.loanSubmitted':    'Application submitted',
+      'activity.loanRejected':     'Application rejected',
+      'activity.loanDraft':        'Application draft',
       'activity.payment': 'Installment payment',
 
       // ── MisGarantiasView ──────────────────────────────────────────────────
@@ -1023,11 +1038,12 @@ const resources = {
       'prestamos.movement.type': 'TYPE',
       'prestamos.movement.typePago': 'PAYMENT',
       'prestamos.movement.typeDesembolso': 'DISBURSEMENT',
-      'prestamos.status.inReview':  'In process',
-      'prestamos.status.inReview2': 'Under review',
-      'prestamos.status.pickup':    'Pickup coordinated',
-      'prestamos.status.approved':  'Approved',
-      'prestamos.status.rejected':  'Rejected',
+      'prestamos.status.inReview':   'In process',
+      'prestamos.status.inReview2':  'Under review',
+      'prestamos.status.pickup':     'Pickup coordinated',
+      'prestamos.status.approved':   'Approved',
+      'prestamos.status.rejected':   'Rejected',
+      'prestamos.status.defaulted':  'Default',
       'prestamos.movement.disbursement': 'Disbursement — {{id}}',
       'prestamos.movement.cuota': 'Installment {{num}} — {{id}}',
 
@@ -1054,6 +1070,7 @@ const resources = {
       'solicitudes.status.signed':     'UNDER REVIEW',
       'solicitudes.status.approved':   'APPROVED',
       'solicitudes.status.disbursed':  'ACTIVE',
+      'solicitudes.status.defaulted':  'DEFAULT',
       'solicitudes.status.rejected':   'REJECTED',
 
       // ── SubirDocumentosView ───────────────────────────────────────────────
@@ -1335,6 +1352,12 @@ const resources = {
       'pagar.method.efectivo.name': 'Cash',
       'pagar.method.efectivo.desc': 'Payment at agency or agent',
       'pagar.method.comingSoon': 'Coming soon',
+      // Overdue payment warning
+      'pagar.overdue.title':        'Payment {{days}} day(s) overdue',
+      'pagar.overdue.desc':         'Pay before the grace period ends to avoid your collateral being seized.',
+      'pagar.overdue.daysLeft':     '{{days}} day(s) remaining before default',
+      'pagar.overdue.criticalTitle':'Warning! Grace period expired',
+      'pagar.overdue.criticalDesc': 'Your loan is being declared in default. Contact us immediately.',
 
       // ── DetalleSolicitudView ──────────────────────────────────────────────
       'detalle.backBtn': 'My Applications',
@@ -1367,6 +1390,8 @@ const resources = {
       'detalle.action.approvedBtn':    'Pickup being coordinated 📦',
       'detalle.action.disbursedHint':  'Your credit is active! The device was received and the funds have been disbursed. Check your payment schedule.',
       'detalle.action.disbursedBtn':   'Credit active ✓',
+      'detalle.action.defaultedHint':  'Your loan has been declared in default due to non-payment. The registered collateral has been seized as per the signed contract.',
+      'detalle.action.defaultedBtn':   'Collateral seized ⚠',
       'detalle.action.rejectedHint':   'Unfortunately your application could not be approved at this time. You may submit a new application.',
       'detalle.action.rejectedBtn':    'Application not approved',
       'detalle.security.title': 'Information protected',
@@ -1383,6 +1408,7 @@ const resources = {
       'detalle.status.signed':     'Under review',
       'detalle.status.approved':   'Approved — Pickup pending',
       'detalle.status.disbursed':  'Credit active',
+      'detalle.status.defaulted':  'Default — Collateral seized',
       'detalle.status.rejected':   'Rejected',
 
       // ── FirmaVerificacionView ─────────────────────────────────────────────
