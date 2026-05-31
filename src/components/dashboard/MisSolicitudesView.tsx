@@ -21,6 +21,7 @@ const STATUS_LABEL_KEYS: Record<LoanApplication['status'], string> = {
   disbursed:  'solicitudes.status.disbursed',
   defaulted:  'solicitudes.status.defaulted',
   rejected:   'solicitudes.status.rejected',
+  cancelled:  'solicitudes.status.cancelled',
 }
 
 const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple' | 'blue' | 'amber'> = {
@@ -31,6 +32,7 @@ const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple'
   disbursed:  'green',
   defaulted:  'red',
   rejected:   'red',
+  cancelled:  'red',
 }
 
 const STATUS_CFG = {
@@ -41,6 +43,7 @@ const STATUS_CFG = {
   disbursed:  { color: '#0f7d3f', bg: '#d9f0da' },
   defaulted:  { color: '#7f1d1d', bg: '#fee2e2' },
   rejected:   { color: '#dc2626', bg: '#fef2f2' },
+  cancelled:  { color: '#6b7280', bg: '#f3f4f6' },
 } as const
 
 function fmtAmount(n: number) {

@@ -57,8 +57,10 @@ const APP_STATUS_MAP: Record<string, { titleKey: string; tone: ActivityTone }> =
   approved:  { titleKey: 'activity.loanApproved',   tone: 'green'  },
   signed:    { titleKey: 'activity.loanSigned',     tone: 'amber'  },
   submitted: { titleKey: 'activity.loanSubmitted',  tone: 'indigo' },
+  tasacion:  { titleKey: 'activity.loanTasacion',   tone: 'indigo' }, // virtual: submitted + AI done
   rejected:  { titleKey: 'activity.loanRejected',   tone: 'rose'   },
   draft:     { titleKey: 'activity.loanDraft',      tone: 'amber'  },
+  // cancelled is intentionally omitted — abandoned applications don't show in the feed
 }
 
 function buildActivityFeed(
@@ -70,11 +72,16 @@ function buildActivityFeed(
   const items: ActivityItem[] = []
 
   for (const app of apps) {
-    const info = APP_STATUS_MAP[app.status]
+    // Submitted apps that already have AI data are in the tasación stage, not just "enviada"
+    const effectiveStatus = (app.status === 'submitted' && app.guarantee?.ai_resale_value)
+      ? 'tasacion'
+      : app.status
+    const info = APP_STATUS_MAP[effectiveStatus]
     if (!info) continue
     const statusText = app.status === 'disbursed'  ? t('activity.status.disbursed')
       : app.status === 'defaulted' ? t('activity.status.defaulted')
       : app.status === 'approved'  ? t('activity.status.approved')
+      : effectiveStatus === 'tasacion' ? t('activity.status.tasacion')
       : app.status === 'submitted' ? t('activity.status.submitted')
       : app.status === 'signed'    ? t('activity.status.signed')
       : app.status === 'rejected'  ? t('activity.status.rejected')
@@ -175,7 +182,8 @@ const ARTICLES = [
 
 const RESUME_CFG: Record<string, { pct: number; stepKey: string }> = {
   draft:     { pct: 20, stepKey: 'resumen.resume.stepDraft'     },
-  submitted: { pct: 60, stepKey: 'resumen.resume.stepSubmitted' },
+  submitted: { pct: 45, stepKey: 'resumen.resume.stepSubmitted' },
+  tasacion:  { pct: 75, stepKey: 'resumen.resume.stepTasacion'  },
 }
 
 function CircleRing({ pct }: { pct: number }) {
@@ -215,7 +223,9 @@ function ResumeCard({
   onResume?: (app: LoanApplication) => void
 }) {
   const { t } = useTranslation()
-  const cfg = RESUME_CFG[app.status] ?? RESUME_CFG.submitted
+  // If the AI auditor has already run, show the tasacion step instead of the auditor step
+  const aiDone = app.status === 'submitted' && !!app.guarantee?.ai_resale_value
+  const cfg = aiDone ? RESUME_CFG.tasacion : (RESUME_CFG[app.status] ?? RESUME_CFG.submitted)
   const shortAmt = `S/ ${Number(app.amount).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
 
   return (
@@ -274,7 +284,7 @@ interface Props {
   onGarantias?:       () => void
   onPay?:             () => void
   onResume?:          (app: LoanApplication) => void
-  onResumableChange?: (has: boolean) => void
+  onResumableChange?: (app: LoanApplication | null) => void
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -331,11 +341,13 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResu
     [apps],
   )
 
-  // Notify parent shell so it can show the sidebar badge
+  // Notify parent shell so it can update the sidebar badge.
+  // Guard: skip while loading so we don't flash null before the fetch completes.
   useEffect(() => {
-    onResumableChange?.(resumableApp !== null)
+    if (loading) return
+    onResumableChange?.(resumableApp)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumableApp])
+  }, [resumableApp, loading])
   const activeGs    = useMemo(() => guarantees.filter(g => g.status !== 'released'), [guarantees])
 
   const totalCredit = useMemo(() => {

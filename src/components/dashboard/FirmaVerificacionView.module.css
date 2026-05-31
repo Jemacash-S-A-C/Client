@@ -598,6 +598,103 @@
   }
 }
 
+/* ── Captured signature panel ────────────────────────────────────────────── */
+
+.frm_captured_panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.75rem;
+  background: #f9fdf9;
+  border: 1.5px solid #d9f0da;
+  border-radius: 16px;
+}
+
+.frm_captured_badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #0f7d3f;
+  font-size: 0.95rem;
+}
+
+.frm_captured_check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  background: #0f7d3f;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.frm_captured_check svg { width: 0.8rem; height: 0.8rem; color: #fff; }
+
+.frm_captured_desc {
+  font-size: 0.88rem;
+  color: #4a5e4d;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.frm_captured_img {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border: 1.5px solid #d9f0da;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.5rem;
+}
+
+.frm_captured_error {
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.frm_captured_actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.frm_redo_btn {
+  border: 1.5px solid rgba(68, 84, 72, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: #5c675e;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.6rem 1.1rem;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease;
+}
+
+.frm_redo_btn:hover { border-color: rgba(68,84,72,0.4); color: #1a221c; }
+.frm_redo_btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.frm_accept_btn {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #13a347 0%, #0f7d3f 100%);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 0.72rem 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15, 125, 63, 0.3);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: box-shadow 0.16s ease, transform 0.12s ease;
+}
+
+.frm_accept_btn:hover { box-shadow: 0 8px 24px rgba(15,125,63,0.4); transform: translateY(-1px); }
+.frm_accept_btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
 /* ── Success panel ────────────────────────────────────────────────────────── */
 
 .frm_success_panel {

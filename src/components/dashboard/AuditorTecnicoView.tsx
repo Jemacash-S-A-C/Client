@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { IconShield, IconCheck } from './icons'
 import styles from './AuditorTecnicoView.module.css'
-import { getApplication } from '../../services/application.service'
+import { getApplication, cancelApplication } from '../../services/application.service'
 import { getGuarantee, valuateDevice, updateGuaranteeAi } from '../../services/guarantee.service'
 import { updateEvaluation } from '../../services/evaluation.service'
 import type { AiValuationResult, Guarantee } from '../../types/api.types'
@@ -43,12 +43,12 @@ function compressImage(dataUrl: string, maxSide = 512, quality = 0.55): Promise<
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function AuditorTecnicoView({
-  onBack,
   onComplete,
+  onCancel,
   applicationId,
 }: {
-  onBack: () => void
   onComplete: () => void
+  onCancel: () => void
   applicationId?: string | null
 }) {
   const { t } = useTranslation()
@@ -257,6 +257,20 @@ export function AuditorTecnicoView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationId])
 
+  // ── Cancel application ──────────────────────────────────────────────────────
+
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancel() {
+    if (!window.confirm(t('auditor.cancelConfirm'))) return
+    setCancelling(true)
+    try {
+      if (applicationId) await cancelApplication(applicationId)
+    } catch { /* proceed regardless */ }
+    finally { setCancelling(false) }
+    onCancel()
+  }
+
   // ── Approve & navigate ──────────────────────────────────────────────────────
 
   async function handleViewResults() {
@@ -295,7 +309,14 @@ export function AuditorTecnicoView({
 
       <header className={styles.aud_header}>
         <span className={styles.aud_brand}>Jemacash</span>
-        <button type="button" className={styles.aud_back_btn} onClick={onBack}>{t('auditor.back')}</button>
+        <button
+          type="button"
+          className={styles.aud_back_btn}
+          onClick={handleCancel}
+          disabled={cancelling}
+        >
+          {cancelling ? '…' : t('auditor.cancelBtn')}
+        </button>
       </header>
 
       <div className={styles.aud_layout}>

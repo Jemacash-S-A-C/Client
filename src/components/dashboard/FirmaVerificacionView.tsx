@@ -127,14 +127,12 @@ function SignaturePad({
 }
 
 export function FirmaVerificacionView({
-  onBack,
   onFinalize,
   onGoToDocuments,
   user,
   applicationId,
   approvedAmount,
 }: {
-  onBack: () => void
   onFinalize: () => void
   onGoToDocuments: () => void
   user: UserSession
@@ -150,15 +148,15 @@ export function FirmaVerificacionView({
   const [alreadySigned, setAlreadySigned] = useState(false)
   const [docsStatus, setDocsStatus] = useState<'loading' | 'ok' | 'missing'>('loading')
   const [missingDocs, setMissingDocs] = useState<string[]>([])
+  /** Base64 of the drawn signature — set after "Confirmar Firma", before actual submission */
+  const [capturedSignature, setCapturedSignature] = useState<string | null>(null)
 
   useEffect(() => {
     if (!applicationId) return
     getSignature(applicationId)
-      .then(async () => {
+      .then(() => {
         setAlreadySigned(true)
-        // Check if it was previously auto-approved
-        const app = await getApplication(applicationId).catch(() => null)
-        if (app?.status === 'approved') setAutoApproved(true)
+        setAutoApproved(true) // always show the pickup coordination card
         setSubmitDone(true)
       })
       .catch(() => { /* no signature yet */ })
@@ -178,29 +176,37 @@ export function FirmaVerificacionView({
       })
   }, [])
 
-  const isSignedOrDone = alreadySigned || submitDone
+  // Pad is locked once signature is captured or the form is done
+  const isSignedOrDone = alreadySigned || submitDone || !!capturedSignature
   const docsBlocking = docsStatus !== 'ok'
 
   const displayAmount = approvedAmount != null
     ? Number(approvedAmount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
 
-  async function handleConfirmSignature(base64: string) {
+  /** Step 1 — user confirmed their drawing; store locally, don't hit API yet */
+  function handleCapture(base64: string) {
     setSigned(true)
-    if (!applicationId) return
+    setCapturedSignature(base64)
+  }
+
+  /** Step 2 — user clicked "Aceptar solicitud"; now submit to backend */
+  async function handleSubmitSignature() {
+    if (!capturedSignature || !applicationId) return
     setSubmitting(true)
     setSubmitError(null)
     try {
       await createSignature(applicationId, {
-        signature_base64: base64,
+        signature_base64: capturedSignature,
         document_urls: [],
       })
-      // Check resulting status to know if we auto-approved
-      const app = await getApplication(applicationId).catch(() => null)
-      if (app?.status === 'approved') setAutoApproved(true)
+      // Both approved and signed paths lead to pickup coordination — always show that card
+      setAutoApproved(true)
       setSubmitDone(true)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al guardar la firma.')
+      // Let user retry — clear captured so they can re-draw if needed
+      setCapturedSignature(null)
     } finally {
       setSubmitting(false)
     }
@@ -309,26 +315,54 @@ export function FirmaVerificacionView({
                   </p>
                 </div>
               )
+            ) : capturedSignature ? (
+              /* ── Step 2: signature captured, waiting for user to accept ── */
+              <div className={styles.frm_captured_panel}>
+                <div className={styles.frm_captured_badge}>
+                  <span className={styles.frm_captured_check}><IconCheck /></span>
+                  <strong>{t('firma.captured')}</strong>
+                </div>
+                <p className={styles.frm_captured_desc}>{t('firma.capturedDesc')}</p>
+
+                <img
+                  src={capturedSignature}
+                  alt="Vista previa de tu firma"
+                  className={styles.frm_captured_img}
+                />
+
+                {submitError && (
+                  <p role="alert" className={styles.frm_captured_error}>{submitError}</p>
+                )}
+
+                <div className={styles.frm_captured_actions}>
+                  <button
+                    type="button"
+                    className={styles.frm_redo_btn}
+                    onClick={() => { setCapturedSignature(null); setSigned(false) }}
+                    disabled={submitting}
+                  >
+                    {t('firma.redoBtn')}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.frm_accept_btn}
+                    onClick={handleSubmitSignature}
+                    disabled={submitting}
+                  >
+                    {submitting ? t('firma.acceptSubmitting') : t('firma.acceptBtn')}
+                  </button>
+                </div>
+              </div>
             ) : (
               <>
                 {/* Firma digital */}
                 <div className={styles.frm_section}>
                   <h2 className={styles.frm_section_title}>{t('firma.pad.title')}</h2>
                   <p className={styles.frm_section_sub}>{t('firma.pad.sub')}</p>
-                  <SignaturePad onSigned={setSigned} onConfirm={handleConfirmSignature} disabled={isSignedOrDone || docsBlocking} t={t} />
+                  <SignaturePad onSigned={setSigned} onConfirm={handleCapture} disabled={isSignedOrDone || docsBlocking} t={t} />
                   {docsBlocking && docsStatus !== 'loading' && (
                     <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
                       {t('firma.pad.docsBlocking')}
-                    </p>
-                  )}
-                  {submitting && (
-                    <p style={{ fontSize: '0.8rem', color: '#0f7d3f', marginTop: '0.5rem' }}>
-                      {t('firma.pad.saving')}
-                    </p>
-                  )}
-                  {submitError && (
-                    <p role="alert" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '0.5rem' }}>
-                      {submitError}
                     </p>
                   )}
                 </div>
@@ -397,28 +431,15 @@ export function FirmaVerificacionView({
           </div>
         </div>
         <div className={styles.frm_actions_row}>
-          {!submitDone && (
+          {submitDone && (
             <button
               type="button"
-              className={styles.frm_cancel_btn}
-              onClick={onBack}
-              disabled={submitting}
+              className={styles.frm_finalize_btn}
+              onClick={onFinalize}
             >
-              {t('firma.cancel')}
+              {autoApproved ? t('firma.finalizeApproved') : t('firma.finalizeComplete')}
             </button>
           )}
-          <button
-            type="button"
-            className={styles.frm_finalize_btn}
-            onClick={submitDone ? onFinalize : onBack}
-            disabled={submitting || (!submitDone && docsBlocking)}
-          >
-            {submitDone
-              ? autoApproved
-                ? t('firma.finalizeApproved')
-                : t('firma.finalizeComplete')
-              : t('firma.finalize')}
-          </button>
         </div>
       </div>
 

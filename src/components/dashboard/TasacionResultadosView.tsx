@@ -5,7 +5,7 @@ import { IconShield } from './icons'
 import styles from './TasacionResultadosView.module.css'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getGuarantee } from '../../services/guarantee.service'
-import { getApplication } from '../../services/application.service'
+import { getApplication, cancelApplication } from '../../services/application.service'
 import type { Evaluation, Guarantee } from '../../types/api.types'
 
 // ── Inline icons ──────────────────────────────────────────────────────────────
@@ -62,17 +62,28 @@ function IconCheckCircle() {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function TasacionResultadosView({
-  onBack,
+  onCancel,
   onAccept,
   applicationId,
 }: {
-  onBack: () => void
+  onCancel: () => void
   onAccept: (amount: number | null) => void
   applicationId?: string | null
 }) {
   const { t } = useTranslation()
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [guarantee, setGuarantee] = useState<Guarantee | null>(null)
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancel() {
+    if (!window.confirm(t('tasacion.cancelConfirm'))) return
+    setCancelling(true)
+    try {
+      if (applicationId) await cancelApplication(applicationId)
+    } catch { /* proceed regardless */ }
+    finally { setCancelling(false) }
+    onCancel()
+  }
 
   useEffect(() => {
     if (!applicationId) return
@@ -140,7 +151,14 @@ export function TasacionResultadosView({
       {/* ── Minimal header ─────────────────────────────── */}
       <header className={styles.tas_header}>
         <span className={styles.tas_brand}>Jemacash</span>
-        <button type="button" className={styles.tas_back_btn} onClick={onBack}>{t('tasacion.back')}</button>
+        <button
+          type="button"
+          className={styles.tas_back_btn}
+          onClick={handleCancel}
+          disabled={cancelling}
+        >
+          {cancelling ? '…' : t('tasacion.cancelBtn')}
+        </button>
       </header>
 
       {/* ── Main ───────────────────────────────────────── */}

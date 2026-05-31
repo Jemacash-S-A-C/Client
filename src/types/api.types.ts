@@ -27,7 +27,7 @@ export type LoanApplication = {
   guarantee?: Guarantee | null   // populated when fetched via findAll
   amount: number
   term_months: number
-  status: 'draft' | 'submitted' | 'signed' | 'approved' | 'disbursed' | 'defaulted' | 'rejected'
+  status: 'draft' | 'submitted' | 'signed' | 'approved' | 'disbursed' | 'defaulted' | 'cancelled' | 'rejected'
   disbursed_at: string | null
   created_at: string
   updated_at: string

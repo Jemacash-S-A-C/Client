@@ -93,10 +93,24 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
   const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
-  /** Mirrors whether ResumenView found a resumable (draft/submitted) application */
-  const [hasResumable, setHasResumable] = useState(false)
+  /** Resumable app surfaced by ResumenView — null when none */
+  const [resumableApp, setResumableApp] = useState<LoanApplication | null>(null)
+  const hasResumable = resumableApp !== null
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
+
+  /** Navigate to the correct step for a resumable application. */
+  function handleResume(app: LoanApplication) {
+    setActiveApplicationId(app.id)
+    if (app.status === 'draft') {
+      setActiveView('solicitar')
+    } else if (app.guarantee?.ai_resale_value) {
+      // AI auditor already ran — skip it and go straight to tasacion
+      setActiveView('tasacion')
+    } else {
+      setActiveView('auditoria')
+    }
+  }
 
   // ── Full-screen flow views ────────────────────────────────────────────────
 
@@ -146,7 +160,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     return (
       <TasacionResultadosView
         applicationId={activeApplicationId}
-        onBack={() => setActiveView('auditoria')}
+        onCancel={() => { setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes') }}
         onAccept={(amount) => { setActiveApprovedAmount(amount); setActiveView('firma') }}
       />
     )
@@ -157,8 +171,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <FirmaVerificacionView
         applicationId={activeApplicationId}
         approvedAmount={activeApprovedAmount}
-        onBack={() => setActiveView('tasacion')}
-        onFinalize={() => setActiveView('solicitudes')}
+        onFinalize={() => { setResumableApp(null); setActiveView('solicitudes') }}
         onGoToDocuments={() => {
           setReturnFromDocsTo('firma')
           setActiveView('documentos')
@@ -172,7 +185,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     return (
       <AuditorTecnicoView
         applicationId={activeApplicationId}
-        onBack={() => setActiveView('solicitar')}
+        onCancel={() => { setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes') }}
         onComplete={() => setActiveView('tasacion')}
       />
     )
@@ -205,7 +218,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         <button
           type="button"
           className={`${styles.sidebar_cta} ${hasResumable ? styles.sidebar_cta_resume : ''}`}
-          onClick={() => setActiveView('solicitar')}
+          onClick={() => resumableApp ? handleResume(resumableApp) : setActiveView('solicitar')}
         >
           {hasResumable ? (
             <>
@@ -278,12 +291,8 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
               onSolicitar={() => setActiveView('solicitar')}
               onGarantias={() => setActiveView('garantias')}
               onPay={() => setActiveView('prestamos')}
-              onResume={(app) => {
-                setActiveApplicationId(app.id)
-                // draft → back to solicitar form; submitted → continue to auditoría/firma
-                setActiveView(app.status === 'draft' ? 'solicitar' : 'auditoria')
-              }}
-              onResumableChange={setHasResumable}
+              onResume={handleResume}
+              onResumableChange={setResumableApp}
             />
           )}
           {activeView === 'prestamos' && (

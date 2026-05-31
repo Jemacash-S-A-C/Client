@@ -34,6 +34,7 @@ const STATUS_CFG_KEYS = {
   disbursed:  { labelKey: 'detalle.status.disbursed',  color: '#0f7d3f', bg: '#d9f0da' },
   defaulted:  { labelKey: 'detalle.status.defaulted',  color: '#7f1d1d', bg: '#fee2e2' },
   rejected:   { labelKey: 'detalle.status.rejected',   color: '#dc2626', bg: '#fef2f2' },
+  cancelled:  { labelKey: 'detalle.status.cancelled',  color: '#6b7280', bg: '#f3f4f6' },
 } as const
 
 // ── Timeline builder ──────────────────────────────────────────────────────────
@@ -428,6 +429,14 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                 <p className={styles.action_hint}>{t('detalle.action.rejectedHint')}</p>
                 <button type="button" className={styles.action_btn_muted} disabled>
                   <IconWarning /> {t('detalle.action.rejectedBtn')}
+                </button>
+              </>
+            )}
+            {app.status === 'cancelled' && (
+              <>
+                <p className={styles.action_hint}>{t('detalle.action.cancelledHint')}</p>
+                <button type="button" className={styles.action_btn_muted} disabled>
+                  {t('detalle.action.cancelledBtn')}
                 </button>
               </>
             )}

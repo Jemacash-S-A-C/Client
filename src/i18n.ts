@@ -119,7 +119,8 @@ const resources = {
       'resumen.resume.pill':          'EN PROGRESO',
       'resumen.resume.title':         'Tienes una solicitud en curso',
       'resumen.resume.stepDraft':     'Completa los datos de tu solicitud para continuar.',
-      'resumen.resume.stepSubmitted': 'Solo falta firmar el contrato para finalizar.',
+      'resumen.resume.stepSubmitted': 'El auditor técnico está analizando tu garantía.',
+      'resumen.resume.stepTasacion':  'Auditoría lista. Revisa la tasación y firma el contrato.',
       'resumen.resume.months':        'meses',
       'resumen.resume.cta':           'Reanudar →',
       'resumen.resume.aria':          'Solicitud en progreso',
@@ -154,7 +155,10 @@ const resources = {
       'activity.loanDisbursed':   'Préstamo activo — desembolsado',
       'activity.loanDefaulted':   'Incumplimiento de pago — garantía embargada',
       'activity.loanSubmitted':   'Solicitud enviada',
+      'activity.loanTasacion':    'Solicitud en revisión de tasación',
+      'activity.status.tasacion': 'En tasación',
       'activity.loanRejected':    'Solicitud rechazada',
+      'activity.loanCancelled':   'Solicitud cancelada',
       'activity.loanDraft':       'Solicitud en borrador',
       'activity.payment': 'Pago de cuota',
 
@@ -260,6 +264,7 @@ const resources = {
       'solicitudes.status.disbursed':  'ACTIVO',
       'solicitudes.status.defaulted':  'INCUMPLIMIENTO',
       'solicitudes.status.rejected':   'RECHAZADO',
+      'solicitudes.status.cancelled':  'CANCELADO',
 
       // ── SubirDocumentosView ───────────────────────────────────────────────
       'docs.title': 'Subir Documentos',
@@ -593,6 +598,8 @@ const resources = {
       'detalle.action.defaultedBtn':   'Garantía embargada ⚠',
       'detalle.action.rejectedHint':   'Lamentablemente tu solicitud no pudo ser aprobada en esta oportunidad. Puedes presentar una nueva solicitud.',
       'detalle.action.rejectedBtn':    'Solicitud no aprobada',
+      'detalle.action.cancelledHint':  'Esta solicitud fue cancelada. La garantía vinculada ha quedado disponible. Puedes iniciar una nueva solicitud cuando lo desees.',
+      'detalle.action.cancelledBtn':   'Solicitud cancelada',
       'detalle.security.title': 'Información protegida',
       'detalle.security.desc': 'Datos encriptados bajo normativa SBS Perú',
       // Timeline step labels
@@ -611,6 +618,7 @@ const resources = {
       'detalle.status.disbursed':  'Crédito activo',
       'detalle.status.defaulted':  'Incumplimiento — Garantía embargada',
       'detalle.status.rejected':   'Rechazado',
+      'detalle.status.cancelled':  'Cancelado',
 
       // ── FirmaVerificacionView ─────────────────────────────────────────────
       'firma.title': 'Firma y Verificación de Identidad',
@@ -631,6 +639,11 @@ const resources = {
       'firma.pad.docsBlocking': 'Sube los documentos requeridos para habilitar la firma.',
       'firma.pad.alreadySigned': 'Firma ya registrada',
       'firma.pad.saving': 'Guardando firma…',
+      'firma.captured':         'Firma capturada ✓',
+      'firma.capturedDesc':     'Tu firma quedó registrada. Revísala y acepta para enviar tu solicitud.',
+      'firma.redoBtn':          '← Volver a firmar',
+      'firma.acceptBtn':        'Aceptar solicitud →',
+      'firma.acceptSubmitting': 'Enviando solicitud…',
       'firma.docs.title': 'Verificación de Documentos',
       'firma.docs.loading': 'Verificando documentos…',
       'firma.docs.ok.title': 'Documentos en orden',
@@ -647,8 +660,8 @@ const resources = {
       'firma.finalizeApproved': 'Ver mi préstamo →',
       'firma.finalize': 'Finalizar y Solicitar Desembolso →',
       // Auto-approved panel
-      'firma.success.approved.title':   '¡Solicitud aprobada! 🎉',
-      'firma.success.approved.desc':    'Todo está en orden. Un agente de Jemacash se pondrá en contacto contigo para coordinar la recogida de tu dispositivo.',
+      'firma.success.approved.title':   '¡Contrato firmado! Un agente te contactará pronto.',
+      'firma.success.approved.desc':    'Tu solicitud fue procesada correctamente. Un agente de Jemacash se pondrá en contacto contigo para coordinar la recogida de tu dispositivo.',
       'firma.success.approved.whatNow': 'Resumen de la aprobación:',
       'firma.success.approved.item1':   'Valuación IA completada y verificada',
       'firma.success.approved.item2':   'Documentos recibidos correctamente',
@@ -827,6 +840,8 @@ const resources = {
       'auditor.estimate.preferential': 'TASA PREFERENCIAL',
       'auditor.estimate.aiValue': 'Valor de reventa estimado por IA',
       'auditor.estimate.conditionScore': 'Puntuación de condición',
+      'auditor.cancelBtn':    'Cancelar solicitud',
+      'auditor.cancelConfirm': '¿Seguro que deseas cancelar esta solicitud? La garantía quedará disponible y esta acción no se puede deshacer.',
 
       // ── TasacionResultadosView (additional) ──────────────────────────────────
       'tasacion.subtitle': 'Nuestro sistema ha verificado los componentes de tu dispositivo con precisión quirúrgica. Aquí están los detalles técnicos para tu respaldo financiero.',
@@ -837,6 +852,8 @@ const resources = {
       'tasacion.seal.protectionSub': 'SSL 256-bit',
       'tasacion.seal.desc': 'Jemacash es una marca de servicios financieros registrados ante la SBS. Operamos bajo las más estrictas normas de transparencia y seguridad editorial.',
       'tasacion.device.label': 'DISPOSITIVO IDENTIFICADO',
+      'tasacion.cancelBtn':    'Cancelar solicitud',
+      'tasacion.cancelConfirm': '¿Seguro que deseas cancelar? La garantía quedará disponible y esta acción no se puede deshacer.',
 
       // ── FirmaVerificacionView — contract body ────────────────────────────────
       'firma.contract.text': 'CONTRATO DE PRÉSTAMO DE DINERO\n\nConste por el presente documento el Contrato de Préstamo de Dinero que celebran de una parte JEMACASH S.A.C., con R.U.C. N° 20601234567, con domicilio en Lima, a quien en adelante se le denominará LA EMPRESA; y de la otra parte, el CLIENTE debidamente identificado con los datos proporcionados en la solicitud.\n\nPRIMERA: OBJETO DEL CONTRATO. LA EMPRESA otorga un préstamo al CLIENTE por el monto especificado en el resumen del crédito. El CLIENTE se obliga a devolver dicho monto más los intereses pactados de acuerdo al cronograma de pagos.\n\nSEGUNDA: INTERESES Y COMISIONES. Las partes acuerdan una Tasa Efectiva Anual (TEA) fija por la vigencia del crédito. En caso de mora, se aplicarán las tasas legales máximas permitidas por la Superintendencia de Banca y Seguros del Perú (SBS).\n\nTERCERA: GARANTÍA. El CLIENTE autoriza el uso del activo registrado como garantía para respaldar la operación crediticia, de conformidad con la normativa vigente.\n\nCUARTA: RESOLUCIÓN ANTICIPADA. El CLIENTE podrá cancelar anticipadamente el préstamo sin penalidad, previa comunicación formal a LA EMPRESA con no menos de 5 días hábiles de anticipación.',
@@ -959,7 +976,8 @@ const resources = {
       'resumen.resume.pill':          'IN PROGRESS',
       'resumen.resume.title':         'You have an application in progress',
       'resumen.resume.stepDraft':     'Complete your application details to continue.',
-      'resumen.resume.stepSubmitted': 'Just sign the contract to finish.',
+      'resumen.resume.stepSubmitted': 'The technical auditor is analyzing your collateral.',
+      'resumen.resume.stepTasacion':  'Audit done. Review the valuation and sign the contract.',
       'resumen.resume.months':        'months',
       'resumen.resume.cta':           'Resume →',
       'resumen.resume.aria':          'Application in progress',
@@ -992,7 +1010,10 @@ const resources = {
       'activity.loanDisbursed':    'Loan active — disbursed',
       'activity.loanDefaulted':    'Payment default — collateral seized',
       'activity.loanSubmitted':    'Application submitted',
+      'activity.loanTasacion':     'Application under valuation review',
+      'activity.status.tasacion':  'Valuation review',
       'activity.loanRejected':     'Application rejected',
+      'activity.loanCancelled':    'Application cancelled',
       'activity.loanDraft':        'Application draft',
       'activity.payment': 'Installment payment',
 
@@ -1092,6 +1113,7 @@ const resources = {
       'solicitudes.status.disbursed':  'ACTIVE',
       'solicitudes.status.defaulted':  'DEFAULT',
       'solicitudes.status.rejected':   'REJECTED',
+      'solicitudes.status.cancelled':  'CANCELLED',
 
       // ── SubirDocumentosView ───────────────────────────────────────────────
       'docs.title': 'Upload Documents',
@@ -1414,6 +1436,8 @@ const resources = {
       'detalle.action.defaultedBtn':   'Collateral seized ⚠',
       'detalle.action.rejectedHint':   'Unfortunately your application could not be approved at this time. You may submit a new application.',
       'detalle.action.rejectedBtn':    'Application not approved',
+      'detalle.action.cancelledHint':  'This application was cancelled. The linked collateral is now available. You can start a new application whenever you are ready.',
+      'detalle.action.cancelledBtn':   'Application cancelled',
       'detalle.security.title': 'Information protected',
       'detalle.security.desc': 'Data encrypted under SBS Peru regulations',
       'detalle.timeline.enviada':    'Application submitted',
@@ -1430,6 +1454,7 @@ const resources = {
       'detalle.status.disbursed':  'Credit active',
       'detalle.status.defaulted':  'Default — Collateral seized',
       'detalle.status.rejected':   'Rejected',
+      'detalle.status.cancelled':  'Cancelled',
 
       // ── FirmaVerificacionView ─────────────────────────────────────────────
       'firma.title': 'Signature & Identity Verification',
@@ -1450,6 +1475,11 @@ const resources = {
       'firma.pad.docsBlocking': 'Upload the required documents to enable signing.',
       'firma.pad.alreadySigned': 'Signature already registered',
       'firma.pad.saving': 'Saving signature…',
+      'firma.captured':         'Signature captured ✓',
+      'firma.capturedDesc':     'Your signature has been recorded. Review it and accept to submit your application.',
+      'firma.redoBtn':          '← Re-sign',
+      'firma.acceptBtn':        'Accept application →',
+      'firma.acceptSubmitting': 'Submitting application…',
       'firma.docs.title': 'Document Verification',
       'firma.docs.loading': 'Verifying documents…',
       'firma.docs.ok.title': 'Documents in order',
@@ -1466,8 +1496,8 @@ const resources = {
       'firma.finalizeApproved': 'View my loan →',
       'firma.finalize': 'Finalize & Request Disbursement →',
       // Auto-approved panel
-      'firma.success.approved.title':   'Application approved! 🎉',
-      'firma.success.approved.desc':    'Everything is in order. A Jemacash agent will contact you to coordinate the collection of your device.',
+      'firma.success.approved.title':   'Contract signed! An agent will contact you soon.',
+      'firma.success.approved.desc':    'Your application has been processed. A Jemacash agent will contact you to coordinate the collection of your device.',
       'firma.success.approved.whatNow': 'Approval summary:',
       'firma.success.approved.item1':   'AI valuation completed and verified',
       'firma.success.approved.item2':   'Documents received correctly',
@@ -1637,6 +1667,8 @@ const resources = {
       'auditor.estimate.preferential': 'PREFERENTIAL RATE',
       'auditor.estimate.aiValue': 'AI-estimated resale value',
       'auditor.estimate.conditionScore': 'Condition score',
+      'auditor.cancelBtn':    'Cancel application',
+      'auditor.cancelConfirm': 'Are you sure you want to cancel this application? The collateral will be freed and this action cannot be undone.',
 
       // ── TasacionResultadosView (additional) ──────────────────────────────────
       'tasacion.subtitle': 'Our system has verified your device components with surgical precision. Here are the technical details for your financial backing.',
@@ -1647,6 +1679,8 @@ const resources = {
       'tasacion.seal.protectionSub': 'SSL 256-bit',
       'tasacion.seal.desc': 'Jemacash is a registered financial services brand with the SBS. We operate under the strictest standards of transparency and editorial security.',
       'tasacion.device.label': 'IDENTIFIED DEVICE',
+      'tasacion.cancelBtn':    'Cancel application',
+      'tasacion.cancelConfirm': 'Are you sure you want to cancel? The collateral will be freed and this action cannot be undone.',
 
       // ── FirmaVerificacionView — contract body ────────────────────────────────
       'firma.contract.text': 'LOAN AGREEMENT\n\nThis document constitutes the Loan Agreement entered into on one side by JEMACASH S.A.C., with Tax ID N° 20601234567, domiciled in Lima, hereinafter referred to as THE COMPANY; and on the other side, the CLIENT duly identified with the information provided in the application.\n\nFIRST: PURPOSE OF AGREEMENT. THE COMPANY grants a loan to the CLIENT in the amount specified in the credit summary. THE CLIENT agrees to repay said amount plus the agreed interest according to the payment schedule.\n\nSECOND: INTEREST AND FEES. The parties agree on a fixed Annual Effective Rate (AER) for the duration of the credit. In the event of default, the maximum legal rates permitted by the Superintendency of Banking and Insurance of Peru (SBS) shall apply.\n\nTHIRD: COLLATERAL. THE CLIENT authorizes the use of the registered asset as collateral to back the credit operation, in accordance with current regulations.\n\nFOURTH: EARLY TERMINATION. THE CLIENT may cancel the loan early without penalty, provided formal notice is given to THE COMPANY no less than 5 business days in advance.',
