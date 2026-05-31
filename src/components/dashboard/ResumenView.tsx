@@ -171,6 +171,84 @@ const ARTICLES = [
   },
 ]
 
+// ── Resume card ───────────────────────────────────────────────────────────────
+
+const RESUME_CFG: Record<string, { pct: number; stepKey: string }> = {
+  draft:     { pct: 20, stepKey: 'resumen.resume.stepDraft'     },
+  submitted: { pct: 60, stepKey: 'resumen.resume.stepSubmitted' },
+}
+
+function CircleRing({ pct }: { pct: number }) {
+  const R = 20
+  const SIZE = 48
+  const circ = 2 * Math.PI * R
+  const filled = (pct / 100) * circ
+  return (
+    <svg
+      className={styles.resume_ring}
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      aria-hidden="true"
+    >
+      {/* track */}
+      <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
+        strokeWidth="4" className={styles.resume_ring_track} />
+      {/* fill */}
+      <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
+        strokeWidth="4" strokeLinecap="round"
+        className={styles.resume_ring_fill}
+        strokeDasharray={`${filled} ${circ}`}
+        strokeDashoffset={circ * 0.25}
+      />
+      <text x={SIZE / 2} y={SIZE / 2 + 1} textAnchor="middle" dominantBaseline="middle"
+        className={styles.resume_ring_text}>
+        {pct}%
+      </text>
+    </svg>
+  )
+}
+
+function ResumeCard({
+  app,
+  onResume,
+}: {
+  app: LoanApplication
+  onResume?: (app: LoanApplication) => void
+}) {
+  const { t } = useTranslation()
+  const cfg = RESUME_CFG[app.status] ?? RESUME_CFG.submitted
+  const shortAmt = `S/ ${Number(app.amount).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
+
+  return (
+    <div className={styles.resume_card} role="region" aria-label={t('resumen.resume.aria')}>
+      <div className={styles.resume_left}>
+        <CircleRing pct={cfg.pct} />
+      </div>
+
+      <div className={styles.resume_body}>
+        <span className={styles.resume_pill}>{t('resumen.resume.pill')}</span>
+        <strong className={styles.resume_title}>{t('resumen.resume.title')}</strong>
+        <p className={styles.resume_step}>{t(cfg.stepKey)}</p>
+        <span className={styles.resume_meta}>
+          {shortAmt} · {app.term_months} {t('resumen.resume.months')}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className={styles.resume_btn}
+        onClick={() => onResume?.(app)}
+      >
+        {t('resumen.resume.cta')}
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function Skeleton() {
@@ -191,15 +269,17 @@ function Skeleton() {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  firstName:    string
-  onSolicitar?: () => void
-  onGarantias?: () => void
-  onPay?:       () => void
+  firstName:          string
+  onSolicitar?:       () => void
+  onGarantias?:       () => void
+  onPay?:             () => void
+  onResume?:          (app: LoanApplication) => void
+  onResumableChange?: (has: boolean) => void
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Props) {
+export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResume, onResumableChange }: Props) {
   const { t } = useTranslation()
   const { fmtDayMonth, fmtShort } = useLocaleFormat()
   const [apps,        setApps]       = useState<LoanApplication[]>([])
@@ -244,6 +324,18 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
 
   const activeLoans = useMemo(() => apps.filter(a => a.status === 'disbursed'), [apps])
   const pendingApps = useMemo(() => apps.filter(a => ['submitted', 'signed', 'approved'].includes(a.status)), [apps])
+
+  // Most recent app that the user hasn't finished processing (can resume)
+  const resumableApp = useMemo(
+    () => apps.find(a => a.status === 'submitted' || a.status === 'draft') ?? null,
+    [apps],
+  )
+
+  // Notify parent shell so it can show the sidebar badge
+  useEffect(() => {
+    onResumableChange?.(resumableApp !== null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumableApp])
   const activeGs    = useMemo(() => guarantees.filter(g => g.status !== 'released'), [guarantees])
 
   const totalCredit = useMemo(() => {
@@ -335,6 +427,11 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay }: Prop
           </div>
         </div>
       </div>
+
+      {/* ── Resume in-progress application ── */}
+      {resumableApp && (
+        <ResumeCard app={resumableApp} onResume={onResume} />
+      )}
 
       {/* ── Activity + Next payment ── */}
       <section className={styles.activity_grid}>

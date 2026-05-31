@@ -93,6 +93,8 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
   const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
+  /** Mirrors whether ResumenView found a resumable (draft/submitted) application */
+  const [hasResumable, setHasResumable] = useState(false)
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
 
@@ -202,11 +204,20 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
 
         <button
           type="button"
-          className={styles.sidebar_cta}
+          className={`${styles.sidebar_cta} ${hasResumable ? styles.sidebar_cta_resume : ''}`}
           onClick={() => setActiveView('solicitar')}
         >
-          <span aria-hidden="true">+</span>
-          {t('nav.requestLoan')}
+          {hasResumable ? (
+            <>
+              <span className={styles.resume_dot} aria-hidden="true" />
+              {t('nav.resumeLoan')}
+            </>
+          ) : (
+            <>
+              <span aria-hidden="true">+</span>
+              {t('nav.requestLoan')}
+            </>
+          )}
         </button>
       </aside>
 
@@ -267,6 +278,12 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
               onSolicitar={() => setActiveView('solicitar')}
               onGarantias={() => setActiveView('garantias')}
               onPay={() => setActiveView('prestamos')}
+              onResume={(app) => {
+                setActiveApplicationId(app.id)
+                // draft → back to solicitar form; submitted → continue to auditoría/firma
+                setActiveView(app.status === 'draft' ? 'solicitar' : 'auditoria')
+              }}
+              onResumableChange={setHasResumable}
             />
           )}
           {activeView === 'prestamos' && (
