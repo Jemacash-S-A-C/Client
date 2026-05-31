@@ -280,7 +280,7 @@ export function SolicitarPrestamoView({
             <h3>{t('solicitar.advisory.title')}</h3>
             <p>{t('solicitar.advisory.desc')}</p>
           </div>
-          <button type="button" className={styles.sol_advisory_btn}>{t('solicitar.advisory.btn')}</button>
+          <button type="button" className={styles.sol_advisory_btn} onClick={() => window.open('https://wa.me/971471039', '_blank')}>{t('solicitar.advisory.btn')}</button>
         </div>
       </div>
 

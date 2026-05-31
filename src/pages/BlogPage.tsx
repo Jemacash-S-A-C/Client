@@ -1,7 +1,9 @@
-import { blogCategories } from '../data/blogContent'
 import styles from './BlogPage.module.css'
 
-type BlogPageProps = { featuredBackgroundSrc: string }
+type BlogPageProps = { 
+  featuredBackgroundSrc: string
+  onPostClick: (postId: string) => void
+}
 
 const recentStories = [
   {
@@ -42,13 +44,9 @@ const recentStories = [
   },
 ] as const
 
-const trendingStories = [
-  { id: '01', title: 'Top 5 Cuentas de Ahorro que pagan más de 6%', reads: '12k lecturas' },
-  { id: '02', title: '¿Comprar casa en 2024? Lo que dice el BCR', reads: '9k lecturas' },
-  { id: '03', title: 'Guía para el pago de impuestos 4ta Categoría', reads: '7k lecturas' },
-] as const
+const trendingStories = recentStories
 
-export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
+export default function BlogPage({ featuredBackgroundSrc, onPostClick }: BlogPageProps) {
   return (
     <div className={styles.blog_page}>
       <section className={styles.blog_featured} aria-labelledby="blog-featured-title">
@@ -68,10 +66,14 @@ export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
             Descubre las estrategias clave y herramientas digitales para proteger tu capital y
             hacer crecer tus ahorros en soles est...
           </p>
-          <a href="#" className={styles.blog_featured_cta}>
+          <button 
+            type="button"
+            className={styles.blog_featured_cta}
+            onClick={() => onPostClick('1')}
+          >
             Leer artículo completo
             <span aria-hidden="true">→</span>
-          </a>
+          </button>
         </div>
       </section>
 
@@ -79,10 +81,7 @@ export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
         <div className={styles.blog_recent}>
           <div className={styles.blog_recent_header}>
             <h2 className={styles.blog_recent_title}>Recent Stories</h2>
-            <div className={styles.blog_nav_buttons} aria-hidden="true">
-              <button type="button">‹</button>
-              <button type="button">›</button>
-            </div>
+            
           </div>
 
           <div className={styles.blog_cards_grid}>
@@ -99,9 +98,13 @@ export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
                       <span aria-hidden="true">◷</span>
                       {story.readTime}
                     </p>
-                    <a href="#" className={styles.blog_card_link}>
+                    <button 
+                      type="button" 
+                      className={styles.blog_card_link}
+                      onClick={() => onPostClick(story.id)}
+                    >
                       Leer más →
-                    </a>
+                    </button>
                   </div>
                 </div>
               </article>
@@ -110,17 +113,6 @@ export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
         </div>
 
         <aside className={styles.blog_sidebar} aria-label="Barra lateral">
-          <div className={styles.blog_categories}>
-            <h3>Explorar Categorías</h3>
-            <div className={styles.blog_categories_list}>
-              {blogCategories.map((category) => (
-                <button key={category} type="button">
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className={styles.blog_newsletter}>
             <h3>Únete a nuestra comunidad financiera</h3>
             <p>
@@ -136,11 +128,16 @@ export default function BlogPage({ featuredBackgroundSrc }: BlogPageProps) {
           <div className={styles.blog_trending}>
             <h3>Trending en Jemacash</h3>
             {trendingStories.map((story) => (
-              <article key={story.id}>
-                <p className={styles.blog_trending_index}>{story.id}</p>
+              <article 
+                key={story.id} 
+                className={styles.blog_trending_article}
+                onClick={() => onPostClick(story.id)}
+              >
+                <div className={`${styles.blog_trending_image} ${styles[`tone_${story.tone}`]}`} />
                 <div>
+                  <span className={styles.blog_trending_badge}>{story.category}</span>
                   <h4>{story.title}</h4>
-                  <p>{story.reads}</p>
+                  <p>{story.readTime}</p>
                 </div>
               </article>
             ))}

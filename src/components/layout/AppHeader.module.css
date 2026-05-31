@@ -19,11 +19,8 @@
 }
 
 .brand {
-  color: #0f7d3f;
-  font-size: 1.35rem;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
+  display: flex;
+  align-items: center;
 }
 
 .brand_button {
@@ -34,6 +31,18 @@
   padding: 0;
   text-align: left;
   font-family: "Inter", sans-serif;
+}
+
+.brand_logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none;
+  padding: 0;
+  margin: 0;
+  mix-blend-mode: multiply;
 }
 
 .menu {
@@ -195,8 +204,8 @@
     padding: 0.7rem 0.9rem;
   }
 
-  .brand {
-    font-size: 1.2rem;
+  .brand_logo {
+    height: 48px;
   }
 
   .menu_toggle {

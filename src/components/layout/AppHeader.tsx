@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from 'react-i18next'
 import styles from "./AppHeader.module.css";
+import jemacashLogo from '../../assets/partner_logos/jemacashlogo.png'
 
 export type AppPage = "home" | "blog" | "nosotros" | "valuar";
 
@@ -47,7 +48,7 @@ export function AppHeader({
     <header className={styles.topbar}>
       <div className={styles.topbar_inner}>
         <button type="button" className={`${styles.brand} ${styles.brand_button}`} onClick={goHome}>
-          Jemacash
+          <img src={jemacashLogo} alt="Jemacash" className={styles.brand_logo} />
         </button>
 
         <nav className={styles.menu} aria-label="Navegación principal">

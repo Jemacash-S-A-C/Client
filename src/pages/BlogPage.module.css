@@ -112,6 +112,13 @@
   text-underline-offset: 0.22em;
   font-weight: 700;
   padding: 0.72rem 1.15rem;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.blog_featured_cta:hover {
+  background: #0c662c;
 }
 
 .blog_content {
@@ -265,6 +272,15 @@
   text-decoration: none;
   font-weight: 700;
   font-size: clamp(0.84rem, 0.9vw, 0.96rem);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.blog_card_link:hover {
+  text-decoration: underline;
 }
 
 .blog_sidebar {
@@ -381,32 +397,49 @@
 }
 
 .blog_trending article {
-  display: grid;
-  grid-template-columns: 2.6rem minmax(0, 1fr);
-  gap: 0.55rem;
+  display: flex;
   align-items: start;
+  gap: 0.75rem;
   margin-top: 0.6rem;
+  border-radius: 0.6rem;
+  padding: 0.4rem;
+  transition: background 0.2s;
+  cursor: pointer;
 }
 
-.blog_trending_index {
-  margin: 0;
-  font-size: clamp(1.45rem, 1.8vw, 2rem);
-  color: #b0b9ac;
-  line-height: 1;
+.blog_trending article:hover {
+  background: #e9eee4;
+}
+
+.blog_trending_image {
+  width: 60px;
+  height: 60px;
+  border-radius: 0.6rem;
+  flex-shrink: 0;
+}
+
+.blog_trending_badge {
+  display: inline-block;
+  border-radius: 999px;
+  background: var(--pill);
+  color: #eef1ff;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
   font-weight: 700;
+  margin-bottom: 0.3rem;
 }
 
 .blog_trending h4 {
   margin: 0;
   color: #1e271f;
-  font-size: clamp(0.92rem, 1vw, 1.06rem);
+  font-size: clamp(0.88rem, 0.95vw, 1rem);
   line-height: 1.3;
 }
 
 .blog_trending article p {
-  margin: 0.2rem 0 0;
+  margin: 0;
   color: #4a5548;
-  font-size: clamp(0.8rem, 0.85vw, 0.9rem);
+  font-size: clamp(0.78rem, 0.82vw, 0.88rem);
 }
 
 @media (max-width: 1180px) {

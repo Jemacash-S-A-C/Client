@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import BlogPage from './pages/BlogPage'
+import BlogPostDetail from './pages/BlogPostDetail'
 import AppFooter from './components/layout/AppFooter'
 import { LoginModal } from './components/login/LoginModal'
 import { ResetPasswordModal } from './components/login/ResetPasswordModal'
@@ -21,11 +22,12 @@ import { setAppTimezone } from './utils/tz'
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
 
 type AuthModal = null | 'register' | 'login'
-type Page = 'home' | 'blog' | 'nosotros' | 'valuar'
+type Page = 'home' | 'blog' | 'blog-post' | 'nosotros' | 'valuar'
 
 function App() {
   const { i18n } = useTranslation()
   const [page, setPage] = useState<Page>('home')
+  const [selectedBlogPostId, setSelectedBlogPostId] = useState<string | null>(null)
   const [authModal, setAuthModal] = useState<AuthModal>(null)
   const [session, setSession] = useState<UserSession | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -159,9 +161,9 @@ function App() {
 
   return (
     <>
-      <main className={`landing${page === 'blog' ? ' landing--blog' : ''}`}>
+      <main className={`landing${page === 'blog' || page === 'blog-post' ? ' landing--blog' : ''}`}>
         <AppHeader
-          activePage={page}
+          activePage={page === 'blog-post' ? 'blog' : page}
           onGoHome={() => setPage('home')}
           onGoBlog={() => setPage('blog')}
           onGoNosotros={() => setPage('nosotros')}
@@ -173,7 +175,18 @@ function App() {
         {page === 'home' ? (
           <Home onRegister={goToRegister} />
         ) : page === 'blog' ? (
-          <BlogPage featuredBackgroundSrc={heroImg} />
+          <BlogPage 
+            featuredBackgroundSrc={heroImg} 
+            onPostClick={(postId) => {
+              setSelectedBlogPostId(postId)
+              setPage('blog-post')
+            }}
+          />
+        ) : page === 'blog-post' ? (
+          <BlogPostDetail 
+            postId={selectedBlogPostId || ''} 
+            onBack={() => setPage('blog')}
+          />
         ) : page === 'valuar' ? (
           <ValuarEquipo />
         ) : (

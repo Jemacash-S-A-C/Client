@@ -1,0 +1,135 @@
+.blog_post_detail {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(1.2rem, 2vw, 2rem) clamp(1rem, 1.5vw, 1.5rem);
+  background: #f6f7f4;
+  min-height: 100vh;
+}
+
+.back_button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid #adb8a8;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #1e271f;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.back_button:hover {
+  background: #e9eee4;
+  border-color: #8a9686;
+}
+
+.post_article {
+  background: #fff;
+  border-radius: 1.2rem;
+  padding: clamp(1.5rem, 2.5vw, 2.5rem);
+  box-shadow: 0 4px 20px rgba(45, 66, 36, 0.08);
+}
+
+.post_header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e9eee4;
+}
+
+.post_badge {
+  display: inline-block;
+  border-radius: 999px;
+  background: #5662c7;
+  color: #eef1ff;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.tone_security {
+  background: #0b4d61;
+}
+
+.tone_education {
+  background: #0f2c5f;
+}
+
+.tone_market {
+  background: #1a2534;
+}
+
+.tone_tech {
+  background: #12518f;
+}
+
+.post_title {
+  margin: 0 0 1rem;
+  color: #162019;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.post_excerpt {
+  margin: 0 0 0.8rem;
+  color: #475246;
+  font-size: clamp(1rem, 1.2vw, 1.15rem);
+  line-height: 1.5;
+}
+
+.post_read_time {
+  margin: 0;
+  color: #6a7568;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.post_content {
+  color: #1e271f;
+  font-size: clamp(1rem, 1.1vw, 1.1rem);
+  line-height: 1.7;
+}
+
+.post_content h2 {
+  margin: 2rem 0 1rem;
+  color: #162019;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.post_content p {
+  margin: 0 0 1.2rem;
+}
+
+.post_content ul {
+  margin: 0 0 1.2rem;
+  padding-left: 1.5rem;
+}
+
+.post_content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .blog_post_detail {
+    padding: 1rem;
+  }
+
+  .post_article {
+    padding: 1.5rem;
+  }
+
+  .post_title {
+    font-size: 1.6rem;
+  }
+}
