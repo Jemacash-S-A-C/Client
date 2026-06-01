@@ -241,6 +241,7 @@ export function RegistrarGarantiaTecView({
 
   const [s3, setS3] = useState<Step3>({ photos: new Map() })
   const [pendingSlot, setPendingSlot] = useState<string | null>(null)
+  const [imageSizeError, setImageSizeError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── AI Valuation state ──────────────────────────────────────────────────────
@@ -345,7 +346,7 @@ export function RegistrarGarantiaTecView({
     const file = e.target.files?.[0]
     if (!file || !pendingSlot) return
     if (file.size > 2 * 1024 * 1024) {
-      alert('La imagen debe ser menor a 2 MB.')
+      setImageSizeError('La imagen debe ser menor a 2 MB.')
       e.target.value = ''
       return
     }
@@ -1103,6 +1104,36 @@ export function RegistrarGarantiaTecView({
           </button>
         )}
       </div>
+
+      {imageSizeError && (
+        <div
+          className={styles.reg_modal_overlay}
+          role="presentation"
+          onClick={() => setImageSizeError(null)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="image-size-error-title"
+            className={styles.reg_modal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="image-size-error-title" className={styles.reg_modal_title}>
+              Archivo demasiado grande
+            </h3>
+            <p className={styles.reg_modal_text}>{imageSizeError}</p>
+            <div className={styles.reg_modal_actions}>
+              <button
+                type="button"
+                className={styles.reg_modal_btn}
+                onClick={() => setImageSizeError(null)}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
