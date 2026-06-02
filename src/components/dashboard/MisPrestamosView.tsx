@@ -16,6 +16,8 @@ import { getPaymentsByApplication } from '../../services/payment.service'
 import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import type { LoanPaymentInfo } from './PagarCuotaView'
 
+type MovementFilter = 'all' | 'pago' | 'desembolso'
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const TASA_MENSUAL = 0.0125
@@ -166,6 +168,8 @@ export function MisPrestamosView({ onPay }: Props) {
   const [loading, setLoading] = useState(true)
   const [procesPage, setProcesPage] = useState(0)
   const [movPage,    setMovPage]    = useState(0)
+  const [movementFilter, setMovementFilter] = useState<MovementFilter>('all')
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -228,9 +232,48 @@ export function MisPrestamosView({ onPay }: Props) {
     .flatMap((l) => l.movements)
     .sort((a, b) => (a.type === 'pago' ? -1 : b.type === 'pago' ? 1 : 0))
 
+  const filteredMovements = movementFilter === 'all'
+    ? allMovements
+    : allMovements.filter((movement) => movement.type === movementFilter)
+
   const MOV_PER_PAGE    = 5
-  const movTotal        = Math.ceil(allMovements.length / MOV_PER_PAGE)
-  const visibleMovements = allMovements.slice(movPage * MOV_PER_PAGE, (movPage + 1) * MOV_PER_PAGE)
+  const movTotal        = Math.max(1, Math.ceil(filteredMovements.length / MOV_PER_PAGE))
+  const visibleMovements = filteredMovements.slice(movPage * MOV_PER_PAGE, (movPage + 1) * MOV_PER_PAGE)
+
+  useEffect(() => {
+    setMovPage(0)
+  }, [movementFilter])
+
+  const filterLabel = movementFilter === 'all'
+    ? 'Todos'
+    : movementFilter === 'pago'
+      ? t('prestamos.movement.typePago')
+      : t('prestamos.movement.typeDesembolso')
+
+  function handleExportMovements() {
+    const rows = filteredMovements.map((movement) => [
+      t(movement.conceptKey, movement.conceptVars),
+      movement.date,
+      `${movement.type === 'pago' ? '-' : '+'} S/ ${fmt(movement.amount)}`,
+      movement.type === 'pago' ? t('prestamos.movement.typePago') : t('prestamos.movement.typeDesembolso'),
+      movement.id,
+    ])
+
+    const csv = [
+      ['Concepto', 'Fecha', 'Monto', 'Tipo', 'Referencia'].join(','),
+      ...rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `movimientos-prestamos-${movementFilter}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   // ── Loading ────────────────────────────────────────────────────────────────
 
@@ -409,10 +452,42 @@ export function MisPrestamosView({ onPay }: Props) {
           <div className={styles.movements_head}>
             <h2 className={styles.section_title}>{t('prestamos.movement.title')}</h2>
             <div className={styles.movements_actions}>
-              <button type="button" className={styles.outline_btn}>
-                <IconFilter /> {t('prestamos.movement.filter')}
-              </button>
-              <button type="button" className={styles.outline_btn}>
+              <div className={styles.filter_wrap}>
+                <button
+                  type="button"
+                  className={styles.outline_btn}
+                  onClick={() => setFilterMenuOpen((open) => !open)}
+                >
+                  <IconFilter /> {t('prestamos.movement.filter')}
+                </button>
+                {filterMenuOpen && (
+                  <div className={styles.filter_menu}>
+                    <button
+                      type="button"
+                      className={`${styles.filter_option} ${movementFilter === 'all' ? styles.filter_option_active : ''}`}
+                      onClick={() => { setMovementFilter('all'); setFilterMenuOpen(false) }}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filter_option} ${movementFilter === 'pago' ? styles.filter_option_active : ''}`}
+                      onClick={() => { setMovementFilter('pago'); setFilterMenuOpen(false) }}
+                    >
+                      {t('prestamos.movement.typePago')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.filter_option} ${movementFilter === 'desembolso' ? styles.filter_option_active : ''}`}
+                      onClick={() => { setMovementFilter('desembolso'); setFilterMenuOpen(false) }}
+                    >
+                      {t('prestamos.movement.typeDesembolso')}
+                    </button>
+                  </div>
+                )}
+              </div>
+              <span className={styles.filter_status}>{filterLabel}</span>
+              <button type="button" className={styles.outline_btn} onClick={handleExportMovements}>
                 <IconDownload /> {t('prestamos.movement.export')}
               </button>
             </div>
