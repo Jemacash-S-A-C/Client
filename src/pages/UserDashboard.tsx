@@ -87,6 +87,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     { view: 'calendario',    label: t('nav.calendar'),         icon: IconCalendar },
   ]
   const [activeView, setActiveView] = useState<ActiveView>('resumen')
+  const skipNextHistoryPushRef = useRef(false)
   const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null)
   const [activeApprovedAmount, setActiveApprovedAmount] = useState<number | null>(null)
   const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>('garantias')
@@ -98,6 +99,27 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const hasResumable = resumableApp !== null
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
+
+  useEffect(() => {
+    window.history.replaceState({ dashboardView: activeView }, '')
+    const onPopState = (event: PopStateEvent) => {
+      const prevView = event.state?.dashboardView as ActiveView | undefined
+      if (!prevView) return
+      skipNextHistoryPushRef.current = true
+      setActiveView(prevView)
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (skipNextHistoryPushRef.current) {
+      skipNextHistoryPushRef.current = false
+      return
+    }
+    window.history.pushState({ dashboardView: activeView }, '')
+  }, [activeView])
 
   /** Navigate to the correct step for a resumable application. */
   function handleResume(app: LoanApplication) {
