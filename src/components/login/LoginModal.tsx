@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { IconEye, IconEyeOff, IconGoogle } from './LoginIcons'
 import { LegalModal, type LegalType } from '../layout/LegalModal'
 import { forgotPassword } from '../../services/auth.service'
+import { socialAvatars } from './socialAvatars'
 import styles from './LoginModal.module.css'
 
 type LoginPayload = {
@@ -104,9 +105,9 @@ export function LoginModal({
         </div>
         <div className={styles.login_social_pill}>
           <div className={styles.login_avatar_stack} aria-hidden="true">
-            <span className={styles.login_avatar} />
-            <span className={styles.login_avatar} />
-            <span className={styles.login_avatar} />
+            {socialAvatars.map((avatar, index) => (
+              <img key={index} className={styles.login_avatar} src={avatar} alt="" />
+            ))}
           </div>
           <div className={styles.login_social_text}>
             <strong>{t('login.aside.users')}</strong>

@@ -153,17 +153,14 @@
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.85);
   margin-left: -0.6rem;
-  background: linear-gradient(135deg, #c8e6d0, #7cb892);
+  display: block;
+  object-fit: cover;
+  background: #cfe1d4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .login_avatar:first-child {
   margin-left: 0;
-  background: linear-gradient(135deg, #fde4cf, #e8a87c);
-}
-
-.login_avatar:nth-child(2) {
-  background: linear-gradient(135deg, #d4e4fc, #7a9fd6);
 }
 
 .login_social_text {
