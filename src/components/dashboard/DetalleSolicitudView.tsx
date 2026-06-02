@@ -127,6 +127,8 @@ function IconLaptop() {
   )
 }
 
+type ConfirmAction = 'approve' | 'disburse'
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -145,6 +147,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const [loading,    setLoading]    = useState(true)
   const [bypassing,   setBypassing]   = useState(false)
   const [disbursing,  setDisbursing]  = useState(false)
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -170,6 +173,31 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const cuota      = calcCuota(loanAmount, app.term_months)
   const totalCost  = cuota * app.term_months
   const hasFinance = ['signed','approved','disbursed','defaulted'].includes(app.status)
+
+  async function handleConfirmAction() {
+    if (confirmAction === 'approve') {
+      setConfirmAction(null)
+      setBypassing(true)
+      try {
+        await approveBypass(app.id)
+        onBack()
+      } catch {
+        setBypassing(false)
+      }
+      return
+    }
+
+    if (confirmAction === 'disburse') {
+      setConfirmAction(null)
+      setDisbursing(true)
+      try {
+        await disburseApplication(app.id)
+        onBack()
+      } catch {
+        setDisbursing(false)
+      }
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -364,16 +392,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                   type="button"
                   className={styles.action_btn_bypass}
                   disabled={bypassing}
-                  onClick={async () => {
-                    if (!window.confirm('¿Aprobar esta solicitud directamente? (acción provisional de desarrollo)')) return
-                    setBypassing(true)
-                    try {
-                      await approveBypass(app.id)
-                      onBack()
-                    } catch {
-                      setBypassing(false)
-                    }
-                  }}
+                  onClick={() => setConfirmAction('approve')}
                 >
                   {bypassing ? 'Aprobando…' : '⚡ Aprobar solicitud (provisional)'}
                 </button>
@@ -393,16 +412,7 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
                   type="button"
                   className={styles.action_btn_bypass}
                   disabled={disbursing}
-                  onClick={async () => {
-                    if (!window.confirm('¿Confirmar recogida física y desembolsar? (acción provisional de desarrollo)')) return
-                    setDisbursing(true)
-                    try {
-                      await disburseApplication(app.id)
-                      onBack()
-                    } catch {
-                      setDisbursing(false)
-                    }
-                  }}
+                  onClick={() => setConfirmAction('disburse')}
                 >
                   {disbursing ? 'Desembolsando…' : '📦 Confirmar recogida y desembolsar (provisional)'}
                 </button>
@@ -453,6 +463,39 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
 
         </aside>
       </div>
+
+      {confirmAction && (
+        <div className={styles.confirm_overlay} role="presentation">
+          <div
+            className={styles.confirm_modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="detalle-confirm-title"
+            aria-describedby="detalle-confirm-message"
+          >
+            <div className={styles.confirm_badge}>
+              <IconWarning />
+            </div>
+            <h3 id="detalle-confirm-title" className={styles.confirm_title}>
+              Confirmar acción
+            </h3>
+            <p id="detalle-confirm-message" className={styles.confirm_message}>
+              {confirmAction === 'approve'
+                ? '¿Aprobar esta solicitud directamente? Esta acción provisional continuará el flujo sin pasar por el panel de aprobación.'
+                : '¿Confirmar recogida física y desembolsar? Esta acción provisional marcará la solicitud como desembolsada.'}
+            </p>
+            <div className={styles.confirm_actions}>
+              <button type="button" className={styles.confirm_btn_secondary} onClick={() => setConfirmAction(null)}>
+                Cancelar
+              </button>
+              <button type="button" className={styles.confirm_btn_primary} onClick={handleConfirmAction}>
+                {confirmAction === 'approve' ? 'Aprobar solicitud' : 'Confirmar y desembolsar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
