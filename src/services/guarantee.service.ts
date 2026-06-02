@@ -63,3 +63,13 @@ export async function valuateDevice(data: {
 }): Promise<AiValuationResult> {
   return api.post<AiValuationResult>('/guarantees/ai-valuate', data)
 }
+
+export async function reportGuaranteeAudit(id: string, data: {
+  serial_number: string
+  brand?: string
+  model?: string
+  manufacture_year?: string
+  specs: GuaranteeSpecs
+}): Promise<Guarantee> {
+  return api.patch<Guarantee>(`/guarantees/${id}/audit-report`, data)
+}

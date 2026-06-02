@@ -50,6 +50,17 @@ export type GuaranteeSpecs = {
   storage?: string
   battery_health?: string
   screen_size?: string
+  os_name?: string
+  os_version?: string
+  cpu_name?: string
+  gpu_name?: string
+  motherboard?: string
+  total_ram_gb?: string
+  primary_disk?: string
+  primary_disk_size_gb?: string
+  audit_verified?: string
+  audit_source?: string
+  audit_completed_at?: string
 }
 
 export type AiValuationResult = {
