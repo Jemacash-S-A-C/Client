@@ -61,6 +61,8 @@ interface DocSlotCfg {
   soon?: boolean
 }
 
+const MAX_FILES_PER_SLOT = 3
+
 const DOC_SLOTS: DocSlotCfg[] = [
   {
     type: 'dni',
@@ -82,22 +84,6 @@ const DOC_SLOTS: DocSlotCfg[] = [
     descKey:  'docs.slot.utilityBill.desc',
     accepts: 'image/*,.pdf',
     required: true,
-  },
-  {
-    type: 'soat',
-    labelKey: 'docs.slot.soat.label',
-    descKey:  'docs.slot.soat.desc',
-    accepts: 'image/*,.pdf',
-    required: false,
-    soon: true,
-  },
-  {
-    type: 'vehicle_card',
-    labelKey: 'docs.slot.vehicleCard.label',
-    descKey:  'docs.slot.vehicleCard.desc',
-    accepts: 'image/*,.pdf',
-    required: false,
-    soon: true,
   },
   {
     type: 'other',
@@ -163,9 +149,10 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
   }
 
   const isImage = (mime: string) => mime.startsWith('image/')
+  const maxReached = uploaded.length >= MAX_FILES_PER_SLOT
 
   return (
-    <div className={`${styles.slot} ${cfg.required ? styles.slot_required : ''} ${cfg.soon ? styles.slot_disabled : ''}`}>
+    <div className={`${styles.slot} ${cfg.required ? styles.slot_required : ''}`}>
       <div className={styles.slot_header}>
         <div className={styles.slot_title_wrap}>
           <span className={styles.slot_icon}>
@@ -176,8 +163,8 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
             <span className={styles.slot_desc}>{t(cfg.descKey)}</span>
           </div>
         </div>
-        <span className={`${styles.slot_badge} ${cfg.soon ? styles.slot_badge_soon : styles.slot_badge_missing}`}>
-          {cfg.soon ? t('docs.status.comingSoon') : uploaded.length === 0 ? t('docs.status.notUploaded') : (
+        <span className={`${styles.slot_badge} ${uploaded.length === 0 ? styles.slot_badge_missing : ''}`}>
+          {uploaded.length === 0 ? t('docs.status.notUploaded') : (
             <span style={{ color: STATUS_COLOR_CFG[uploaded[0].status]?.color }}>
               {t(STATUS_LABEL_KEYS[uploaded[0].status] ?? 'docs.status.pending')}
             </span>
@@ -185,47 +172,47 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
         </span>
       </div>
 
-      {cfg.soon ? (
-        <div className={styles.slot_soon_body}>
-          {t('docs.soon.available')}
-        </div>
-      ) : (
-        <>
-          {/* Uploaded files */}
-          {uploaded.length > 0 && (
-            <div className={styles.uploaded_list}>
-              {uploaded.map(doc => (
-                <div key={doc.id} className={styles.uploaded_row}>
-                  <span className={styles.uploaded_icon}>
-                    {isImage(doc.mime_type) ? <IconImage /> : <IconFile />}
-                  </span>
-                  <div className={styles.uploaded_info}>
-                    <strong>{doc.original_name}</strong>
-                    <span>{fmtSize(doc.file_size)} · {fmtShort(doc.created_at)}</span>
-                  </div>
-                  <span
-                    className={styles.uploaded_status}
-                    style={{
-                      color: STATUS_COLOR_CFG[doc.status]?.color,
-                      background: STATUS_COLOR_CFG[doc.status]?.bg,
-                    }}
-                  >
-                    {t(STATUS_LABEL_KEYS[doc.status] ?? 'docs.status.pending')}
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.delete_btn}
-                    onClick={() => { void onDelete(doc.id) }}
-                    aria-label={t('docs.deleteLabel')}
-                  >
-                    <IconTrash />
-                  </button>
+      <>
+        {/* Uploaded files */}
+        {uploaded.length > 0 && (
+          <div className={styles.uploaded_list}>
+            {uploaded.map(doc => (
+              <div key={doc.id} className={styles.uploaded_row}>
+                <span className={styles.uploaded_icon}>
+                  {isImage(doc.mime_type) ? <IconImage /> : <IconFile />}
+                </span>
+                <div className={styles.uploaded_info}>
+                  <strong>{doc.original_name}</strong>
+                  <span>{fmtSize(doc.file_size)} · {fmtShort(doc.created_at)}</span>
                 </div>
-              ))}
-            </div>
-          )}
+                <span
+                  className={styles.uploaded_status}
+                  style={{
+                    color: STATUS_COLOR_CFG[doc.status]?.color,
+                    background: STATUS_COLOR_CFG[doc.status]?.bg,
+                  }}
+                >
+                  {t(STATUS_LABEL_KEYS[doc.status] ?? 'docs.status.pending')}
+                </span>
+                <button
+                  type="button"
+                  className={styles.delete_btn}
+                  onClick={() => { void onDelete(doc.id) }}
+                  aria-label={t('docs.deleteLabel')}
+                >
+                  <IconTrash />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
-          {/* Drop zone */}
+        {/* Drop zone — hidden when limit reached */}
+        {maxReached ? (
+          <div className={styles.dropzone_max}>
+            {t('docs.dropzone.maxReached', { max: MAX_FILES_PER_SLOT })}
+          </div>
+        ) : (
           <div
             className={`${styles.dropzone} ${dragging ? styles.dropzone_over : ''} ${loading ? styles.dropzone_loading : ''}`}
             onClick={() => !loading && inputRef.current?.click()}
@@ -249,15 +236,15 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
             ) : (
               <>
                 <span className={styles.dropzone_icon}><IconUpload /></span>
-                <span className={styles.dropzone_text}>
-                  {uploaded.length > 0 ? t('docs.dropzone.replace') : t('docs.dropzone.upload')}
+                <span className={styles.dropzone_text}>{t('docs.dropzone.upload')}</span>
+                <span className={styles.dropzone_hint}>
+                  {t('docs.dropzone.hint', { current: uploaded.length, max: MAX_FILES_PER_SLOT })}
                 </span>
-                <span className={styles.dropzone_hint}>{t('docs.dropzone.hint')}</span>
               </>
             )}
           </div>
-        </>
-      )}
+        )}
+      </>
     </div>
   )
 }

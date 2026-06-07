@@ -303,7 +303,7 @@ function MetodosPagoView() {
 // ─── SeguridadView ────────────────────────────────────────────────────────────
 
 type TwofaAppStep   = 'idle' | 'loading' | 'setup' | 'verifying' | 'active'
-type TwofaEmailStep = 'idle' | 'input' | 'sending' | 'otp' | 'verifying' | 'active'
+type TwofaEmailStep = 'idle' | 'sending' | 'otp' | 'verifying' | 'active'
 
 function SeguridadView({ user }: { user: UserSession }) {
   const { t } = useTranslation()
@@ -414,15 +414,16 @@ function SeguridadView({ user }: { user: UserSession }) {
   // ── Email OTP ─────────────────────────────────────────────────────────────────
 
   async function handleEmailSend() {
-    if (!emailAddress.includes('@')) { showToast('error', t('config.security.error.invalidEmail')); return }
+    const addr = emailAddress || user.email
+    setEmailAddress(addr)
     setEmailStep('sending')
     try {
-      await emailOtpSend(emailAddress)
+      await emailOtpSend(addr)
       setEmailStep('otp')
-      showToast('success', t('config.toast.emailOtpSent', { email: emailAddress }))
+      showToast('success', t('config.toast.emailOtpSent', { email: addr }))
     } catch (err) {
       showToast('error', err instanceof Error ? err.message : t('config.error.saveError'))
-      setEmailStep('input')
+      setEmailStep('idle')
     }
   }
 
@@ -627,7 +628,7 @@ function SeguridadView({ user }: { user: UserSession }) {
                     </button>
                   ) : emailStep === 'idle' ? (
                     <button type="button" className={styles.twofa_activate}
-                      onClick={() => { setEmailAddress(user.email); setEmailStep('input') }}>
+                      onClick={() => { setEmailAddress(user.email); void handleEmailSend() }}>
                       {t('config.security.twofa.email.activate')}
                     </button>
                   ) : (
@@ -642,25 +643,6 @@ function SeguridadView({ user }: { user: UserSession }) {
                   <div className={styles.twofa_active_row}>
                     <span className={styles.twofa_status_active}>{t('config.security.twofa.active')}</span>
                     <span className={styles.twofa_active_desc}>{t('config.security.twofa.email.activeDesc')}</span>
-                  </div>
-                )}
-
-                {emailStep === 'input' && (
-                  <div className={styles.twofa_panel}>
-                    <p className={styles.twofa_panel_desc}>{t('config.security.twofa.email.confirmDesc')}</p>
-                    <label className={styles.perfil_field}>
-                      <span>{t('config.security.twofa.email.label')}</span>
-                      <input
-                        type="email"
-                        value={emailAddress}
-                        onChange={(e) => setEmailAddress(e.target.value)}
-                        placeholder="tu@correo.com"
-                      />
-                    </label>
-                    <button type="button" className={styles.twofa_confirm_btn}
-                      onClick={handleEmailSend} disabled={emailBusy}>
-                      {t('config.security.twofa.email.sendCode')}
-                    </button>
                   </div>
                 )}
 
