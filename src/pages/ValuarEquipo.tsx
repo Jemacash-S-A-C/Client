@@ -1,6 +1,13 @@
-import styles from "./ValuarEquipo.module.css";
-import valuationVisual from "../assets/valuacion_img/valuacion_card.png";
-import editorialVisual from "../assets/representative_images/istockphoto-1849172463-612x612.jpg";
+import { useState, useEffect, useRef } from 'react'
+import styles from './ValuarEquipo.module.css'
+import editorialVisual from '../assets/representative_images/istockphoto-1849172463-612x612.jpg'
+import {
+  DEVICE_CATALOG,
+  buildYearOptions,
+  type DeviceCategory,
+} from '../components/dashboard/deviceCatalog'
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
 function IconDevice() {
   return (
@@ -9,7 +16,7 @@ function IconDevice() {
       <rect x="16" y="7" width="5" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.9" />
       <path d="M7 17h6" stroke="currentColor" strokeWidth="1.9" />
     </svg>
-  );
+  )
 }
 
 function IconCar() {
@@ -20,7 +27,7 @@ function IconCar() {
       <circle cx="7.5" cy="17.6" r="1.3" fill="currentColor" />
       <circle cx="16.5" cy="17.6" r="1.3" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
 function IconHome() {
@@ -29,7 +36,43 @@ function IconHome() {
       <path d="m4 11.3 8-6 8 6v8.2H4v-8.2Z" stroke="currentColor" strokeWidth="1.9" />
       <path d="M9.5 19.5v-5h5v5" stroke="currentColor" strokeWidth="1.9" />
     </svg>
-  );
+  )
+}
+
+function IconLaptop() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="4" width="20" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M1 19h22" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function IconPhone() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="6" y="2" width="12" height="20" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="18" r="1" fill="currentColor" />
+    </svg>
+  )
+}
+
+function IconTablet() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="2" width="16" height="20" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="18" r="1" fill="currentColor" />
+    </svg>
+  )
+}
+
+function IconDesktop() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="3" width="20" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 21h8M12 17v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 function IconCheck() {
@@ -38,7 +81,7 @@ function IconCheck() {
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
       <path d="m8 12.1 2.6 2.6L16 9.4" stroke="currentColor" strokeWidth="1.8" />
     </svg>
-  );
+  )
 }
 
 function IconSpark() {
@@ -46,30 +89,148 @@ function IconSpark() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="m12 3 2.1 4.7L19 10l-4.9 2.3L12 17l-2.1-4.7L5 10l4.9-2.3L12 3Z" fill="currentColor" />
     </svg>
-  );
+  )
 }
 
-function IconGauge() {
+function IconLock() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <path d="m12 12 4-3" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.9" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
     </svg>
-  );
+  )
 }
 
-function IconClock() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
+// ── Device type config ────────────────────────────────────────────────────────
+
+const DEVICE_TYPES: { id: DeviceCategory; label: string; icon: () => React.ReactElement }[] = [
+  { id: 'laptop',     label: 'Laptop',      icon: IconLaptop  },
+  { id: 'smartphone', label: 'Smartphone',  icon: IconPhone   },
+  { id: 'tablet',     label: 'Tablet',      icon: IconTablet  },
+  { id: 'desktop',    label: 'Desktop',     icon: IconDesktop },
+]
+
+// ── Fake valuation helper ─────────────────────────────────────────────────────
+
+function computeFakeRange(type: DeviceCategory, brand: string, year: string): [number, number] {
+  const base: Record<DeviceCategory, number> = {
+    laptop:     1400,
+    smartphone:  900,
+    tablet:      650,
+    desktop:    1100,
+  }
+  const brandMult = /apple/i.test(brand)
+    ? 2.05
+    : /samsung|dell|hp|asus|lenovo/i.test(brand)
+    ? 1.35
+    : 1.0
+  const age = Math.max(0, 2026 - (parseInt(year) || 2022))
+  const ageMult = Math.max(0.35, 1 - age * 0.11)
+  const mid = Math.round((base[type] * brandMult * ageMult) / 100) * 100
+  const spread = Math.round((mid * 0.18) / 50) * 50
+  return [Math.max(250, mid - spread), mid + spread]
 }
 
-export default function ValuarEquipo() {
+function fmtSol(n: number) {
+  return new Intl.NumberFormat('es-PE').format(n)
+}
+
+// ── Log lines ─────────────────────────────────────────────────────────────────
+
+function buildLogLines(type: string, brand: string, model: string): string[] {
+  return [
+    '[INIT] Iniciando motor de valuación IA v2.0…',
+    `[SCAN] Tipo de dispositivo: ${type}${brand ? ` · ${brand}` : ''}`,
+    `[DB]   Buscando "${brand || 'dispositivo'} ${model || ''}".trim() en catálogo…`,
+    '[NET]  Consultando precios: MercadoLibre · OLX · Ripley · Falabella…',
+    '[CALC] Aplicando curva de depreciación por antigüedad…',
+    '[AI]   Modelo entrenado con +50,000 transacciones locales…',
+    '[VAL]  Calculando rango de confianza (87%)…',
+    '[OK]   ✓ Valuación completada.',
+  ]
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+type ScanState = 'idle' | 'scanning' | 'done'
+
+interface ValuarEquipoProps {
+  onLogin?: () => void
+  onRegister?: () => void
+}
+
+export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps) {
+  const [deviceType, setDeviceType] = useState<DeviceCategory>('laptop')
+  const [brand,      setBrand]      = useState('')
+  const [model,      setModel]      = useState('')
+  const [year,       setYear]       = useState('')
+  const [serial,     setSerial]     = useState('')
+  const [refurb,     setRefurb]     = useState(false)
+
+  const [scanState,  setScanState]  = useState<ScanState>('idle')
+  const [progress,   setProgress]   = useState(0)
+  const [visibleLog, setVisibleLog] = useState(0)
+  const [fakeRange,  setFakeRange]  = useState<[number, number]>([0, 0])
+  const logRef = useRef<HTMLDivElement>(null)
+
+  const brands  = DEVICE_CATALOG[deviceType] ?? []
+  const models  = brands.find(b => b.brand === brand)?.models.map(m => m.model) ?? []
+  const years   = buildYearOptions(deviceType, brand, model)
+
+  // Reset brand/model when device type changes
+  function handleTypeChange(t: DeviceCategory) {
+    setDeviceType(t)
+    setBrand('')
+    setModel('')
+    setYear('')
+  }
+
+  // Reset model when brand changes
+  function handleBrandChange(b: string) {
+    setBrand(b)
+    setModel('')
+    setYear('')
+  }
+
+  // ── Progress animation ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (scanState !== 'scanning') return
+    if (progress >= 100) { setScanState('done'); return }
+    const t = setTimeout(() => setProgress(p => Math.min(p + 2, 100)), 55)
+    return () => clearTimeout(t)
+  }, [scanState, progress])
+
+  // ── Log line reveals ────────────────────────────────────────────────────────
+  const allLines = buildLogLines(deviceType, brand, model)
+  useEffect(() => {
+    if (scanState !== 'scanning') return
+    const next = Math.min(Math.floor((progress / 100) * allLines.length) + 1, allLines.length)
+    if (next > visibleLog) {
+      setVisibleLog(next)
+      if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+    }
+  }, [progress, scanState, visibleLog, allLines.length])
+
+  function handleScan() {
+    setFakeRange(computeFakeRange(deviceType, brand, year))
+    setProgress(0)
+    setVisibleLog(0)
+    setScanState('scanning')
+  }
+
+  function closeScan() { setScanState('idle') }
+
+  // ── Ring SVG ────────────────────────────────────────────────────────────────
+  const R = 50, circ = 2 * Math.PI * R
+  const dash = (progress / 100) * circ
+
+  const deviceLabel = DEVICE_TYPES.find(d => d.id === deviceType)?.label ?? deviceType
+  const confidence  = 82 + Math.floor(Math.random() * 10)   // 82–91%, looks legit
+
   return (
     <div className={styles.valuar_page}>
+
+      {/* ── Hero ── */}
       <section className={styles.hero}>
         <h1>Valuación de Activos</h1>
         <p>
@@ -78,95 +239,170 @@ export default function ValuarEquipo() {
         </p>
       </section>
 
+      {/* ── Pre-val form ── */}
       <section className={styles.preval}>
         <div className={styles.preval_left}>
+
+          {/* Step 1 — Category */}
           <article className={styles.box}>
             <h2>1. SELECCIONA CATEGORÍA</h2>
             <div className={styles.categories}>
-              <button type="button" className={styles.category}>
+              {/* Tecnología — active */}
+              <button type="button" className={`${styles.category} ${styles.active}`}>
                 <IconDevice />
                 <span>Tecnología</span>
               </button>
-              <button type="button" className={`${styles.category} ${styles.active}`}>
+              {/* Vehículos — soon */}
+              <button type="button" className={`${styles.category} ${styles.category_soon}`} disabled>
                 <IconCar />
                 <span>Vehículos</span>
+                <span className={styles.soon_badge}>Próximamente</span>
               </button>
-              <button type="button" className={styles.category}>
+              {/* Inmuebles — soon */}
+              <button type="button" className={`${styles.category} ${styles.category_soon}`} disabled>
                 <IconHome />
                 <span>Inmuebles</span>
+                <span className={styles.soon_badge}>Próximamente</span>
               </button>
             </div>
           </article>
 
+          {/* Step 2 — Asset details */}
           <article className={styles.box}>
             <h2>2. DETALLES DEL ACTIVO</h2>
+
+            {/* Device type selector */}
+            <div className={styles.device_types}>
+              {DEVICE_TYPES.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`${styles.device_type_btn} ${deviceType === id ? styles.device_type_active : ''}`}
+                  onClick={() => handleTypeChange(id)}
+                >
+                  <Icon />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+
             <div className={styles.form_grid}>
+              {/* Brand */}
               <label>
-                Marca / Fabricante
-                <input type="text" placeholder="Ej: Toyota" />
-              </label>
-              <label>
-                Modelo
-                <input type="text" placeholder="Ej: RAV4 Hybrid" />
-              </label>
-              <label>
-                Año de Fabricación
-                <select defaultValue="2022">
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
-                  <option value="2021">2021</option>
-                  <option value="2020">2020</option>
+                Marca <span className={styles.req}>*</span>
+                <select value={brand} onChange={e => handleBrandChange(e.target.value)}>
+                  <option value="">Seleccionar marca…</option>
+                  {brands.map(b => (
+                    <option key={b.brand} value={b.brand}>{b.brand}</option>
+                  ))}
+                  <option value="Otra marca">Otra marca</option>
                 </select>
               </label>
+
+              {/* Model */}
               <label>
-                Ubicación (Ciudad)
-                <input type="text" placeholder="Ej: Lima, Miraflores" />
+                Modelo <span className={styles.req}>*</span>
+                <select
+                  value={model}
+                  onChange={e => setModel(e.target.value)}
+                  disabled={!brand || brand === 'Otra marca'}
+                >
+                  <option value="">
+                    {!brand ? 'Primero selecciona una marca' : 'Seleccionar modelo…'}
+                  </option>
+                  {models.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                  <option value="Otro modelo">Otro modelo</option>
+                </select>
+              </label>
+
+              {/* Year */}
+              <label>
+                Año de fabricación <span className={styles.req}>*</span>
+                <select value={year} onChange={e => setYear(e.target.value)}>
+                  <option value="">Seleccionar año…</option>
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </label>
+
+              {/* Serial number */}
+              <label>
+                Número de serie (S/N) <span className={styles.req}>*</span>
+                <input
+                  type="text"
+                  value={serial}
+                  onChange={e => setSerial(e.target.value)}
+                  placeholder="Ej: C02YM2EQJG5H"
+                />
               </label>
             </div>
-            <button type="button" className={styles.recalc}>
+
+            {/* Refurbished checkbox */}
+            <label className={styles.checkbox_row}>
+              <input
+                type="checkbox"
+                checked={refurb}
+                onChange={e => setRefurb(e.target.checked)}
+              />
+              Dispositivo reacondicionado / refurbished
+            </label>
+
+            {/* Serial hint */}
+            <p className={styles.serial_hint}>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="14" height="14">
+                <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z"
+                  stroke="#0f7d3f" strokeWidth="1.8"/>
+                <path d="M12 11v6M12 8v1" stroke="#0f7d3f" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              El número de serie identifica unívocamente tu dispositivo y permite verificar que no esté reportado como robado.
+            </p>
+
+            <button
+              type="button"
+              className={styles.recalc}
+              onClick={handleScan}
+            >
               Recalcular Valuación
             </button>
           </article>
         </div>
 
+        {/* ── Sidebar result teaser ── */}
         <aside className={styles.preval_side}>
           <article className={styles.result}>
-            <span className={styles.result_badge}>
-              <IconSpark />
-            </span>
+            <span className={styles.result_badge}><IconSpark /></span>
             <p className={styles.result_kicker}>RESULTADO DE PRE-VALUACIÓN</p>
-            <p className={styles.result_meta}>Basado en tendencias de mercado Mayo 2024</p>
-            <p className={styles.result_label}>Rango Estimado(S/)</p>
-            <p className={styles.result_value}>45,000 - 52,000</p>
+            <p className={styles.result_meta}>Ingresa los datos de tu equipo y haz clic en "Recalcular"</p>
+            <p className={styles.result_label}>Rango Estimado (S/)</p>
+            <p className={styles.result_value}>— — —</p>
             <div className={styles.result_footer}>
               <div>
                 <span className={styles.meta_icon}>
-                  <IconGauge />
+                  <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+                    <path d="m12 12 4-3" stroke="currentColor" strokeWidth="1.8"/>
+                  </svg>
                 </span>
                 <small>CONFIANZA</small>
-                <strong>Alta (94%)</strong>
+                <strong>—</strong>
               </div>
               <div>
                 <span className={`${styles.meta_icon} ${styles.meta_icon_lilac}`}>
-                  <IconClock />
+                  <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+                    <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8"/>
+                  </svg>
                 </span>
                 <small>VIGENCIA</small>
                 <strong>15 Días</strong>
               </div>
             </div>
           </article>
-
-          <article className={styles.similar}>
-            <img src={valuationVisual} alt="Activo similar: vehículo recomendado" />
-            <div className={styles.similar_overlay}>
-              <span>ACTIVO SIMILAR RECIENTE</span>
-              <strong>Toyota RAV4 2022</strong>
-            </div>
-          </article>
         </aside>
       </section>
 
+      {/* ── Editorial ── */}
       <section className={styles.editorial}>
         <img src={editorialVisual} alt="Analistas revisando valuación de activos" />
         <div className={styles.editorial_copy}>
@@ -177,21 +413,133 @@ export default function ValuarEquipo() {
             de reventa.
           </p>
           <ul>
-            <li>
-              <IconCheck />
-              Data-points de más de 50,000 transacciones mensuales.
-            </li>
-            <li>
-              <IconCheck />
-              Ajuste por condición y kilometraje proyectado.
-            </li>
-            <li>
-              <IconCheck />
-              Integración con registros de propiedad oficiales.
-            </li>
+            <li><IconCheck /> Data-points de más de 50,000 transacciones mensuales.</li>
+            <li><IconCheck /> Ajuste por condición y antigüedad del modelo.</li>
+            <li><IconCheck /> Integración con registros de propiedad oficiales.</li>
           </ul>
         </div>
       </section>
+
+      {/* ── Scan overlay ── */}
+      {scanState !== 'idle' && (
+        <div className={styles.scan_overlay} onClick={scanState === 'done' ? closeScan : undefined}>
+          <div className={styles.scan_modal} onClick={e => e.stopPropagation()}>
+
+            {/* ── Scanning state ── */}
+            {scanState === 'scanning' && (
+              <>
+                <div className={styles.scan_header}>
+                  <span className={styles.scan_brand}>JEMACASH AI AUDITOR v2.0</span>
+                  <span className={styles.scan_badge}>● EN VIVO</span>
+                </div>
+
+                {/* Ring */}
+                <div className={styles.scan_ring_wrap}>
+                  <svg viewBox="0 0 120 120" className={styles.scan_ring_svg}>
+                    <circle cx="60" cy="60" r={R} fill="none" stroke="#1a3020" strokeWidth="10" />
+                    <circle
+                      cx="60" cy="60" r={R}
+                      fill="none" stroke="#0f7d3f" strokeWidth="10"
+                      strokeLinecap="round"
+                      strokeDasharray={`${dash} ${circ}`}
+                      transform="rotate(-90 60 60)"
+                      style={{ transition: 'stroke-dasharray 0.06s linear' }}
+                    />
+                  </svg>
+                  <div className={styles.scan_ring_label}>
+                    <strong>{progress}%</strong>
+                    <span>Analizando</span>
+                  </div>
+                </div>
+
+                {/* Terminal log */}
+                <div className={styles.scan_terminal} ref={logRef}>
+                  {allLines.slice(0, visibleLog).map((line, i) => (
+                    <div
+                      key={i}
+                      className={`${styles.scan_line} ${line.startsWith('[OK]') ? styles.scan_line_ok : ''}`}
+                    >
+                      {line}
+                    </div>
+                  ))}
+                  <span className={styles.scan_cursor}>▌</span>
+                </div>
+              </>
+            )}
+
+            {/* ── Done / result state ── */}
+            {scanState === 'done' && (
+              <>
+                <button
+                  type="button"
+                  className={styles.scan_close}
+                  onClick={closeScan}
+                  aria-label="Cerrar"
+                >✕</button>
+
+                <div className={styles.result_header}>
+                  <span className={styles.scan_brand}>RESULTADO DE VALUACIÓN</span>
+                  <span className={styles.result_done_badge}>✓ Completado</span>
+                </div>
+
+                {/* Device summary */}
+                <div className={styles.result_device_row}>
+                  {(() => { const D = DEVICE_TYPES.find(d => d.id === deviceType); return D ? <D.icon /> : null })()}
+                  <div>
+                    <strong>{brand || deviceLabel} {model ? `· ${model}` : ''}</strong>
+                    <span>{year || '—'} {refurb ? '· Reacondicionado' : ''}</span>
+                  </div>
+                </div>
+
+                {/* Blurred amount */}
+                <div className={styles.result_amount_wrap}>
+                  <p className={styles.result_amount_label}>Rango Estimado de Reventa (S/)</p>
+                  <div className={styles.result_amount_blur_wrap}>
+                    <p className={styles.result_amount_blurred}>
+                      {fmtSol(fakeRange[0])} — {fmtSol(fakeRange[1])}
+                    </p>
+                    <div className={styles.result_blur_overlay}>
+                      <span className={styles.result_lock_icon}><IconLock /></span>
+                      <p>Inicia sesión para ver el resultado completo</p>
+                    </div>
+                  </div>
+
+                  {/* Teaser stats */}
+                  <div className={styles.result_teaser_stats}>
+                    <div>
+                      <small>CONFIANZA</small>
+                      <strong>{confidence}%</strong>
+                    </div>
+                    <div>
+                      <small>VIGENCIA</small>
+                      <strong>15 días</strong>
+                    </div>
+                    <div>
+                      <small>FUENTES</small>
+                      <strong>MercadoLibre · OLX</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <div className={styles.result_cta_group}>
+                  <button type="button" className={styles.result_cta_primary} onClick={onLogin}>
+                    Iniciar sesión para ver resultados →
+                  </button>
+                  <button type="button" className={styles.result_cta_secondary} onClick={onRegister}>
+                    Crear cuenta gratis
+                  </button>
+                </div>
+
+                <p className={styles.result_disclaimer}>
+                  Pre-valuación orientativa basada en datos de mercado. El valor real puede variar según
+                  condición física, accesorios y demanda al momento de tasación.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }

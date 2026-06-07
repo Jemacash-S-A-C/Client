@@ -329,7 +329,12 @@ export function AuditorTecnicoView({
     <div className={styles.aud_page}>
 
       <header className={styles.aud_header}>
-        <span className={styles.aud_brand}>Jemacash</span>
+        <div className={styles.aud_header_left}>
+          <span className={styles.aud_brand}>Jemacash</span>
+          <span className={`${styles.aud_live_badge} ${aiDone ? styles.aud_live_done : ''}`}>
+            {aiDone ? '✓ COMPLETADO' : '● ANALIZANDO'}
+          </span>
+        </div>
         <button
           type="button"
           className={styles.aud_back_btn}
@@ -349,11 +354,11 @@ export function AuditorTecnicoView({
           <div className={styles.aud_hero_card}>
             <div className={styles.aud_ring_wrap} aria-label={`Progreso: ${progress}%`}>
               <svg className={styles.aud_ring_svg} viewBox="0 0 128 128">
-                <circle cx="64" cy="64" r="54" fill="none" stroke="#d9f0da" strokeWidth="10" />
+                <circle cx="64" cy="64" r="54" fill="none" stroke="#1a3020" strokeWidth="10" />
                 <circle
                   cx="64" cy="64" r="54"
                   fill="none"
-                  stroke="#0f7d3f"
+                  stroke="#4ade80"
                   strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray={`${dash} ${circumference}`}
@@ -370,6 +375,20 @@ export function AuditorTecnicoView({
             <div className={styles.aud_hero_copy}>
               <h1>{t('auditor.title')}</h1>
               <p>{t('auditor.desc')}</p>
+              <div className={styles.aud_status_chips}>
+                <div className={styles.aud_chip}>
+                  <small>PROTOCOLO</small>
+                  <strong>SSL TLS 1.3</strong>
+                </div>
+                <div className={styles.aud_chip}>
+                  <small>MOTOR IA</small>
+                  <strong>GROQ LLAMA-4</strong>
+                </div>
+                <div className={`${styles.aud_chip} ${styles.aud_chip_status}`}>
+                  <small>ESTADO</small>
+                  <strong>{aiDone ? 'LISTO' : 'EN CURSO'}</strong>
+                </div>
+              </div>
             </div>
           </div>
 

@@ -188,7 +188,7 @@ function App() {
             onBack={() => setPage('blog')}
           />
         ) : page === 'valuar' ? (
-          <ValuarEquipo />
+          <ValuarEquipo onLogin={() => goToLogin()} onRegister={goToRegister} />
         ) : (
           <Nosotros />
         )}
