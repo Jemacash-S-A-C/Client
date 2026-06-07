@@ -207,43 +207,111 @@
   gap: 0.9rem;
 }
 
-/* Value card */
+/* Value card — dark futuristic */
+
+@keyframes tas_live_pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
 
 .tas_value_card {
-  background: linear-gradient(145deg, #3a3fa8 0%, #5060d0 100%);
+  background: #0d1f13;
+  background-image: radial-gradient(rgba(15, 125, 63, 0.11) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border: 1px solid rgba(74, 222, 128, 0.22);
   border-radius: 1.35rem;
-  padding: 1.4rem 1.4rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: #f0fdf4;
+  position: relative;
+  box-shadow:
+    0 0 40px rgba(15, 125, 63, 0.1),
+    0 24px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Terminal header strip ── */
+
+.tas_value_term_header {
+  background: rgba(6, 15, 9, 0.65);
+  border-bottom: 1px solid rgba(74, 222, 128, 0.1);
+  padding: 0.52rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.tas_value_dots {
+  display: flex;
+  gap: 0.32rem;
+}
+
+.tas_value_dots span {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+}
+
+.dot_red    { background: #ff5f57; }
+.dot_yellow { background: #ffbd2e; }
+.dot_green  { background: #28c840; }
+
+.tas_value_term_title {
+  flex: 1;
+  color: rgba(74, 222, 128, 0.35);
+  font-size: 0.59rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-family: 'Courier New', monospace;
+}
+
+.tas_value_live {
+  color: #4ade80;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-family: 'Courier New', monospace;
+  animation: tas_live_pulse 1.6s ease-in-out infinite;
+}
+
+/* ── Body ── */
+
+.tas_value_body {
+  padding: 1.2rem 1.4rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  color: #fff;
+  flex: 1;
   position: relative;
-  overflow: hidden;
 }
 
 .tas_value_bg_icon {
   position: absolute;
-  right: -0.5rem;
+  right: -0.8rem;
   top: 50%;
   transform: translateY(-50%);
   font-size: 9rem;
-  color: rgba(255, 255, 255, 0.06);
+  color: rgba(74, 222, 128, 0.04);
   line-height: 1;
   pointer-events: none;
+  text-shadow: 0 0 60px rgba(74, 222, 128, 0.08);
 }
 
 .tas_value_label {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.13em;
+  color: rgba(74, 222, 128, 0.45);
   text-transform: uppercase;
+  font-family: 'Courier New', monospace;
   position: relative;
 }
 
 .tas_value_amount {
   font-size: 1rem;
   font-weight: 800;
+  color: #4ade80;
+  text-shadow: 0 0 24px rgba(74, 222, 128, 0.45);
   position: relative;
   line-height: 1;
 }
@@ -253,39 +321,37 @@
   letter-spacing: -0.04em;
 }
 
-.tas_value_card > p {
-  color: rgba(255, 255, 255, 0.78);
+.tas_value_body > p {
+  color: rgba(134, 239, 172, 0.55);
   font-size: 0.78rem;
   line-height: 1.45;
   position: relative;
 }
 
 .tas_accept_btn {
-  border: 0;
-  border-radius: 999px;
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  border-radius: 0.8rem;
   background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
   color: #fff;
   font-size: 0.92rem;
   font-weight: 800;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
   cursor: pointer;
   width: 100%;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 22px rgba(74, 222, 128, 0.18),
+    0 8px 22px rgba(0, 0, 0, 0.3);
   position: relative;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.14s ease;
+  letter-spacing: 0.01em;
+  margin-top: 0.2rem;
 }
 
 .tas_accept_btn:hover {
   transform: translateY(-1px);
-}
-
-.tas_value_perks {
-  display: flex;
-  justify-content: center;
-  gap: 1.2rem;
-  font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.65);
-  position: relative;
+  box-shadow:
+    0 0 35px rgba(74, 222, 128, 0.28),
+    0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 /* Seals card */

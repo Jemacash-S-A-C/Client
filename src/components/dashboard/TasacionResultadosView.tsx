@@ -309,16 +309,23 @@ export function TasacionResultadosView({
 
             {/* Value card */}
             <div className={styles.tas_value_card}>
-              <div className={styles.tas_value_bg_icon} aria-hidden="true">⬡</div>
-              <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
-              <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
-              <p>{t('tasacion.offer.desc')}</p>
-              <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
-                {t('tasacion.accept')}
-              </button>
-              <div className={styles.tas_value_perks}>
-                <span>⚡ Desembolso en 15 min</span>
-                <span>🔒 Trámite 100% Seguro</span>
+              <div className={styles.tas_value_term_header}>
+                <div className={styles.tas_value_dots}>
+                  <span className={styles.dot_red} />
+                  <span className={styles.dot_yellow} />
+                  <span className={styles.dot_green} />
+                </div>
+                <span className={styles.tas_value_term_title}>OFERTA APROBADA</span>
+                <span className={styles.tas_value_live}>● LIVE</span>
+              </div>
+              <div className={styles.tas_value_body}>
+                <div className={styles.tas_value_bg_icon} aria-hidden="true">⊙</div>
+                <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
+                <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
+                <p>{t('tasacion.offer.desc')}</p>
+                <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
+                  {t('tasacion.accept')}
+                </button>
               </div>
             </div>
 
