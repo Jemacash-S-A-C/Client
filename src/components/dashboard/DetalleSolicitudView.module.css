@@ -141,7 +141,7 @@
 .summary_identity span {
   color: #6e7c72;
   font-size: 0.76rem;
-  font-family: 'Courier New', monospace;
+
   letter-spacing: 0.08em;
 }
 
@@ -199,7 +199,7 @@
 }
 
 .mono {
-  font-family: 'Courier New', monospace;
+
   font-size: 0.82rem !important;
   letter-spacing: 0.04em;
 }
@@ -459,7 +459,7 @@
 .payment_ref {
   color: #9aa09c;
   font-size: 0.68rem;
-  font-family: 'Courier New', monospace;
+
   letter-spacing: 0.04em;
 }
 

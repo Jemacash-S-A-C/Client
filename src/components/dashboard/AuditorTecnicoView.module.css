@@ -1,57 +1,25 @@
-/* ─── AuditorTecnicoView — dark futuristic theme ─────────────────────────── */
-
-:root {
-  --aud-bg:         #060f09;
-  --aud-card:       #0d1f13;
-  --aud-border:     rgba(15, 125, 63, 0.22);
-  --aud-glow:       rgba(74, 222, 128, 0.18);
-  --aud-green:      #0f7d3f;
-  --aud-lime:       #4ade80;
-  --aud-lime-soft:  #86efac;
-  --aud-text:       #f0fdf4;
-  --aud-muted:      #4b7055;
-  --aud-amber:      #fbbf24;
-}
+/* ─── AuditorTecnicoView — clean light theme ─────────────────────────────── */
 
 /* ── Page ── */
 
 .aud_page {
   min-height: 100vh;
-  background: var(--aud-bg);
-  background-image: radial-gradient(rgba(15, 125, 63, 0.13) 1px, transparent 1px);
-  background-size: 26px 26px;
-  color: var(--aud-text);
+  background: linear-gradient(180deg, #f4f8ee 0%, #eaf1e2 100%);
   display: flex;
   flex-direction: column;
-  position: relative;
-}
-
-/* CRT scanline overlay */
-.aud_page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.07) 3px,
-    rgba(0, 0, 0, 0.07) 4px
-  );
-  pointer-events: none;
-  z-index: 0;
+  color: var(--ink);
 }
 
 /* ── Header ── */
 
 .aud_header {
-  background: rgba(6, 15, 9, 0.88);
-  border-bottom: 1px solid var(--aud-border);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(68, 84, 72, 0.1);
   padding: 0.85rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -64,55 +32,44 @@
 }
 
 .aud_brand {
-  color: var(--aud-lime);
+  color: #0a4f2b;
   font-size: 1.2rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+  letter-spacing: -0.03em;
 }
 
 .aud_live_badge {
-  background: rgba(74, 222, 128, 0.08);
-  border: 1px solid rgba(74, 222, 128, 0.22);
-  color: var(--aud-lime);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.68rem;
+  font-weight: 700;
   padding: 0.22rem 0.65rem;
   border-radius: 999px;
-  font-family: 'Courier New', monospace;
-  animation: pulse_badge 1.6s ease-in-out infinite;
 }
 
 .aud_live_done {
-  animation: none;
-  border-color: rgba(74, 222, 128, 0.35);
-  background: rgba(74, 222, 128, 0.12);
+  background: #dcfce7;
+  color: #15803d;
 }
 
 @keyframes pulse_badge {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  50%       { opacity: 0.5; }
 }
 
 .aud_back_btn {
-  border: 1px solid rgba(74, 222, 128, 0.18);
-  background: rgba(15, 125, 63, 0.06);
-  color: var(--aud-lime-soft);
-  font-size: 0.82rem;
+  border: 0;
+  background: none;
+  color: #7a857e;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  padding: 0.38rem 0.9rem;
-  border-radius: 0.5rem;
-  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  padding: 0.4rem 0;
+  transition: color 0.14s;
 }
 
-.aud_back_btn:hover {
-  background: rgba(15, 125, 63, 0.16);
-  border-color: rgba(74, 222, 128, 0.4);
-  color: var(--aud-lime);
-}
+.aud_back_btn:hover { color: var(--green); }
 
 /* ── Layout ── */
 
@@ -120,13 +77,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) 300px;
   grid-template-rows: auto auto;
-  gap: 1.2rem;
+  gap: 1.1rem;
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
   padding: 1.8rem 2rem 2rem;
-  position: relative;
-  z-index: 1;
 }
 
 /* ── Main panel ── */
@@ -142,62 +97,29 @@
 /* ── Hero card (ring + title, horizontal) ── */
 
 .aud_hero_card {
-  background: var(--aud-card);
-  border: 1px solid var(--aud-border);
-  border-radius: 1.5rem;
-  padding: 2rem 2.5rem;
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.35rem;
+  padding: 1.8rem 2.2rem;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 2.2rem;
-  box-shadow: 0 0 50px rgba(15, 125, 63, 0.08), 0 24px 60px rgba(0, 0, 0, 0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Decorative corner accent */
-.aud_hero_card::before {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 100px; height: 100px;
-  background: conic-gradient(
-    from 180deg at 100% 0%,
-    transparent 45deg,
-    rgba(74, 222, 128, 0.12) 90deg,
-    transparent 135deg
-  );
-  pointer-events: none;
-}
-
-/* Bottom-left accent */
-.aud_hero_card::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0;
-  width: 60px; height: 60px;
-  background: conic-gradient(
-    from 0deg at 0% 100%,
-    transparent 45deg,
-    rgba(74, 222, 128, 0.08) 90deg,
-    transparent 135deg
-  );
-  pointer-events: none;
+  gap: 2rem;
+  box-shadow: 0 8px 24px rgba(46, 63, 49, 0.08);
 }
 
 /* ── Ring ── */
 
 .aud_ring_wrap {
   position: relative;
-  width: 148px;
-  height: 148px;
+  width: 140px;
+  height: 140px;
   flex-shrink: 0;
 }
 
 .aud_ring_svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.3));
 }
 
 .aud_ring_label {
@@ -211,21 +133,19 @@
 }
 
 .aud_ring_label strong {
-  color: var(--aud-text);
-  font-size: 2.2rem;
+  color: #1a221c;
+  font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
-  text-shadow: 0 0 24px rgba(74, 222, 128, 0.55);
 }
 
 .aud_ring_label span {
-  color: var(--aud-lime);
-  font-size: 0.5rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
+  color: var(--green);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-family: 'Courier New', monospace;
 }
 
 /* ── Hero copy ── */
@@ -233,83 +153,79 @@
 .aud_hero_copy {
   flex: 1;
   display: grid;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .aud_hero_copy h1 {
-  color: var(--aud-text);
-  font-size: 1.5rem;
+  color: #1a221c;
+  font-size: 1.45rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.15;
 }
 
 .aud_hero_copy p {
-  color: var(--aud-lime-soft);
-  font-size: 0.85rem;
+  color: #5c675e;
+  font-size: 0.86rem;
   line-height: 1.5;
-  opacity: 0.75;
 }
 
 /* Status chips */
+
 .aud_status_chips {
   display: flex;
-  gap: 0.6rem;
-  margin-top: 0.65rem;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
   flex-wrap: wrap;
 }
 
 .aud_chip {
-  background: rgba(15, 125, 63, 0.1);
-  border: 1px solid rgba(15, 125, 63, 0.22);
-  border-radius: 0.6rem;
-  padding: 0.42rem 0.72rem;
+  background: #fff;
+  border: 1px solid rgba(15, 125, 63, 0.16);
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.85rem;
   display: grid;
-  gap: 0.08rem;
+  gap: 0.05rem;
+  box-shadow: 0 2px 8px rgba(46, 63, 49, 0.06);
 }
 
 .aud_chip small {
   display: block;
-  color: var(--aud-muted);
-  font-size: 0.55rem;
+  color: #9aa39d;
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  font-family: 'Courier New', monospace;
 }
 
 .aud_chip strong {
   display: block;
-  color: var(--aud-lime-soft);
-  font-size: 0.7rem;
+  color: #1a221c;
+  font-size: 0.82rem;
   font-weight: 700;
-  font-family: 'Courier New', monospace;
 }
 
 .aud_chip_status strong {
-  color: var(--aud-lime);
-  text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+  color: var(--green);
 }
 
-/* ── Terminal ── */
+/* ── Terminal (keeps dark for contrast) ── */
 
 .aud_terminal {
-  background: #020705;
+  background: #0d1a10;
   border: 1px solid rgba(15, 125, 63, 0.15);
   border-radius: 1.2rem;
   overflow: hidden;
-  box-shadow:
-    0 0 50px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(74, 222, 128, 0.06);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
 .aud_term_header {
-  background: var(--aud-card);
+  background: #111f15;
   padding: 0.65rem 1rem;
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  border-bottom: 1px solid rgba(15, 125, 63, 0.1);
+  border-bottom: 1px solid rgba(15, 125, 63, 0.12);
 }
 
 .aud_term_dots {
@@ -318,21 +234,20 @@
 }
 
 .aud_term_dots span {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.6rem;
+  height: 0.6rem;
   border-radius: 50%;
 }
 
-.dot_red    { background: #ff5f57; }
-.dot_yellow { background: #ffbd2e; }
+.dot_red       { background: #ff5f57; }
+.dot_yellow    { background: #ffbd2e; }
 .dot_green_dot { background: #28c840; }
 
 .aud_term_title {
-  color: rgba(74, 222, 128, 0.35);
-  font-size: 0.62rem;
+  color: rgba(134, 239, 172, 0.35);
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  font-family: 'Courier New', monospace;
+  letter-spacing: 0.08em;
 }
 
 .aud_term_body {
@@ -344,14 +259,13 @@
   flex-direction: column;
   gap: 0.28rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(74, 222, 128, 0.12) transparent;
+  scrollbar-color: rgba(74, 222, 128, 0.1) transparent;
 }
 
 .aud_log_line {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  font-family: 'Courier New', monospace;
   font-size: 0.74rem;
   line-height: 1.5;
   border-radius: 0.3rem;
@@ -363,32 +277,30 @@
 }
 
 .aud_log_time {
-  color: rgba(74, 222, 128, 0.28);
+  color: rgba(134, 239, 172, 0.28);
   flex-shrink: 0;
   font-size: 0.66rem;
 }
 
 .aud_log_sep {
-  color: rgba(74, 222, 128, 0.18);
+  color: rgba(134, 239, 172, 0.18);
   flex-shrink: 0;
 }
 
 .aud_log_text {
-  color: rgba(209, 250, 229, 0.65);
+  color: rgba(209, 250, 229, 0.6);
   flex: 1;
 }
 
-.aud_log_text_active {
-  color: var(--aud-lime);
-}
+.aud_log_text_active { color: #4ade80; }
 
 .aud_verified_tag {
   flex-shrink: 0;
-  border: 1px solid rgba(74, 222, 128, 0.22);
+  border: 1px solid rgba(74, 222, 128, 0.2);
   border-radius: 0.25rem;
   padding: 0.07rem 0.4rem;
-  background: rgba(74, 222, 128, 0.1);
-  color: var(--aud-lime);
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
   font-size: 0.57rem;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -396,11 +308,11 @@
 
 .aud_warn_tag {
   flex-shrink: 0;
-  border: 1px solid rgba(251, 191, 36, 0.22);
+  border: 1px solid rgba(251, 191, 36, 0.2);
   border-radius: 0.25rem;
   padding: 0.07rem 0.4rem;
-  background: rgba(251, 191, 36, 0.1);
-  color: var(--aud-amber);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
   font-size: 0.57rem;
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -408,39 +320,36 @@
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50%       { opacity: 0; }
 }
 
 .aud_cursor {
-  color: var(--aud-lime);
-  font-family: 'Courier New', monospace;
+  color: #4ade80;
   font-size: 0.74rem;
   animation: blink 1s step-end infinite;
-  text-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
   width: fit-content;
 }
 
 .aud_results_btn {
-  border: 1px solid rgba(74, 222, 128, 0.28);
-  border-radius: 0.55rem;
-  background: rgba(74, 222, 128, 0.07);
-  color: var(--aud-lime);
-  font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--green);
+  color: #fff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 0.7rem 1rem;
   cursor: pointer;
   text-align: left;
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
   width: 100%;
-  letter-spacing: 0.04em;
-  transition: background 0.14s, box-shadow 0.14s, border-color 0.14s;
+  letter-spacing: 0.01em;
+  transition: background 0.14s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(15, 125, 63, 0.3);
 }
 
 .aud_results_btn:hover {
-  background: rgba(74, 222, 128, 0.14);
-  border-color: rgba(74, 222, 128, 0.5);
-  box-shadow: 0 0 20px rgba(74, 222, 128, 0.12);
+  background: #0d6e36;
+  transform: translateY(-1px);
 }
 
 /* ── Right sidebar ── */
@@ -456,49 +365,45 @@
 /* Secure card */
 
 .aud_secure_card {
-  background: #0d1525;
-  border: 1px solid rgba(99, 130, 214, 0.22);
-  border-radius: 1.35rem;
-  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.2rem;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  box-shadow: 0 0 30px rgba(60, 80, 200, 0.06);
+  box-shadow: 0 6px 18px rgba(46, 63, 49, 0.07);
 }
 
 .aud_secure_icon {
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 0.6rem;
-  background: rgba(99, 130, 214, 0.12);
-  border: 1px solid rgba(99, 130, 214, 0.22);
+  background: #eef2ff;
+  border: 1px solid rgba(99, 102, 241, 0.15);
   display: inline-grid;
   place-items: center;
-  color: #93c5fd;
+  color: #6366f1;
 }
 
-.aud_secure_icon svg {
-  width: 1.05rem;
-  height: 1.05rem;
-}
+.aud_secure_icon svg { width: 1.05rem; height: 1.05rem; }
 
 .aud_secure_card h3 {
-  color: #f0f9ff;
-  font-size: 1rem;
+  color: #1a221c;
+  font-size: 0.96rem;
   font-weight: 800;
-  line-height: 1.2;
 }
 
 .aud_secure_card p {
-  color: rgba(147, 197, 253, 0.65);
-  font-size: 0.77rem;
+  color: #5c675e;
+  font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .aud_secure_list {
   list-style: none;
   padding: 0;
-  margin: 0.2rem 0 0;
+  margin: 0.1rem 0 0;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -509,30 +414,22 @@
   align-items: center;
   gap: 0.42rem;
   font-size: 0.8rem;
-  color: rgba(200, 225, 255, 0.85);
+  color: #374151;
 }
 
-.aud_check {
-  display: inline-flex;
-  color: var(--aud-lime);
-  flex-shrink: 0;
-}
-
-.aud_check svg {
-  width: 0.82rem;
-  height: 0.82rem;
-}
+.aud_check { display: inline-flex; color: var(--green); flex-shrink: 0; }
+.aud_check svg { width: 0.82rem; height: 0.82rem; }
 
 /* Estimate card */
 
 .aud_estimate_card {
-  background: var(--aud-card);
-  border: 1px solid rgba(15, 125, 63, 0.28);
-  border-radius: 1.35rem;
+  background: #fff;
+  border: 1px solid rgba(15, 125, 63, 0.14);
+  border-radius: 1.2rem;
   padding: 1.1rem 1.2rem;
   display: grid;
   gap: 0.4rem;
-  box-shadow: 0 0 30px rgba(15, 125, 63, 0.1), 0 20px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 22px rgba(46, 63, 49, 0.08);
 }
 
 .aud_est_head {
@@ -544,83 +441,63 @@
 }
 
 .aud_est_label {
-  color: var(--aud-muted);
-  font-size: 0.58rem;
-  font-weight: 800;
+  color: #9aa39d;
+  font-size: 0.6rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-family: 'Courier New', monospace;
 }
 
 .aud_est_amount {
-  color: var(--aud-lime);
-  font-size: 2rem;
+  color: var(--green);
+  font-size: 1.9rem;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.1;
-  text-shadow: 0 0 24px rgba(74, 222, 128, 0.4);
 }
 
 .aud_est_amount span {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--aud-muted);
+  color: #9aa39d;
   letter-spacing: 0;
-  text-shadow: none;
 }
 
 .aud_est_sub {
-  color: var(--aud-muted);
+  color: #9aa39d;
   font-size: 0.73rem;
-  font-family: 'Courier New', monospace;
 }
 
 .aud_est_score {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.3rem;
+  margin-top: 0.2rem;
 }
 
-.aud_est_score span {
-  color: var(--aud-muted);
-  font-size: 0.8rem;
-}
-
-.aud_est_score strong {
-  color: var(--aud-lime);
-  font-size: 0.88rem;
-  font-weight: 700;
-}
+.aud_est_score span { color: #7a857e; font-size: 0.8rem; }
+.aud_est_score strong { color: var(--green); font-size: 0.88rem; font-weight: 700; }
 
 .aud_est_state {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 0.3rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid rgba(15, 125, 63, 0.15);
+  margin-top: 0.2rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(68, 84, 72, 0.08);
 }
 
-.aud_est_state span {
-  color: var(--aud-muted);
-  font-size: 0.8rem;
-}
-
-.aud_est_state strong {
-  color: var(--aud-lime-soft);
-  font-size: 0.85rem;
-}
+.aud_est_state span { color: #7a857e; font-size: 0.8rem; }
+.aud_est_state strong { color: #1a221c; font-size: 0.85rem; }
 
 .tasa_badge {
   border-radius: 0.4rem;
-  padding: 0.24rem 0.6rem;
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.2);
-  color: var(--aud-lime);
-  font-size: 0.6rem;
+  padding: 0.22rem 0.6rem;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   flex-shrink: 0;
 }
@@ -628,43 +505,30 @@
 /* Shield promo card */
 
 .aud_shield_card {
-  background: var(--aud-card);
-  border: 1px solid rgba(15, 125, 63, 0.2);
-  border-radius: 1.35rem;
-  padding: 1.3rem;
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.2rem;
+  padding: 1.2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  min-height: 100px;
-  position: relative;
-  overflow: hidden;
-  background-image:
-    linear-gradient(rgba(15, 125, 63, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 125, 63, 0.05) 1px, transparent 1px);
-  background-size: 18px 18px;
+  gap: 0.6rem;
+  min-height: 90px;
+  box-shadow: 0 4px 14px rgba(46, 63, 49, 0.06);
 }
 
 .aud_shield_visual {
-  font-size: 3.5rem;
-  color: rgba(74, 222, 128, 0.07);
+  font-size: 2.2rem;
+  color: #d1e8d4;
   line-height: 1;
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-shadow: 0 0 40px rgba(74, 222, 128, 0.2);
 }
 
 .aud_shield_label {
-  color: var(--aud-lime-soft);
+  color: #5c675e;
   font-size: 0.82rem;
   font-weight: 700;
   text-align: center;
-  position: relative;
-  z-index: 1;
 }
 
 /* ── Footer ── */
@@ -672,26 +536,24 @@
 .aud_footer {
   grid-column: 1 / 3;
   grid-row: 2;
-  background: rgba(6, 15, 9, 0.7);
-  border: 1px solid rgba(15, 125, 63, 0.12);
-  border-radius: 1.2rem;
-  padding: 0.95rem 1.6rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.1rem;
+  padding: 0.9rem 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
-  color: rgba(74, 222, 128, 0.35);
+  color: #9aa39d;
   font-size: 0.78rem;
-  font-family: 'Courier New', monospace;
 }
 
 .aud_footer_brand {
-  color: var(--aud-lime);
+  color: #0a4f2b;
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: -0.01em;
-  margin-right: 0.4rem;
-  text-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
+  margin-right: 0.3rem;
 }
 
 .aud_footer_links {
@@ -703,17 +565,14 @@
 .aud_footer_link {
   border: 0;
   background: none;
-  color: rgba(74, 222, 128, 0.3);
+  color: #9aa39d;
   font-size: 0.78rem;
-  font-family: 'Courier New', monospace;
   cursor: pointer;
   padding: 0;
   transition: color 0.14s;
 }
 
-.aud_footer_link:hover {
-  color: var(--aud-lime);
-}
+.aud_footer_link:hover { color: var(--green); }
 
 /* ── Responsive ── */
 
@@ -741,15 +600,11 @@
     gap: 1.2rem;
   }
 
-  .aud_status_chips {
-    justify-content: center;
-  }
+  .aud_status_chips { justify-content: center; }
 }
 
 @media (max-width: 600px) {
-  .aud_header { padding: 0.75rem 1rem; }
-
+  .aud_header  { padding: 0.75rem 1rem; }
   .aud_hero_card { padding: 1.2rem; }
-
   .aud_term_body { max-height: 200px; }
 }

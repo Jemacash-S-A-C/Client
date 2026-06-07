@@ -354,11 +354,11 @@ export function AuditorTecnicoView({
           <div className={styles.aud_hero_card}>
             <div className={styles.aud_ring_wrap} aria-label={`Progreso: ${progress}%`}>
               <svg className={styles.aud_ring_svg} viewBox="0 0 128 128">
-                <circle cx="64" cy="64" r="54" fill="none" stroke="#1a3020" strokeWidth="10" />
+                <circle cx="64" cy="64" r="54" fill="none" stroke="#e8f0e9" strokeWidth="10" />
                 <circle
                   cx="64" cy="64" r="54"
                   fill="none"
-                  stroke="#4ade80"
+                  stroke="#0f7d3f"
                   strokeWidth="10"
                   strokeLinecap="round"
                   strokeDasharray={`${dash} ${circumference}`}
