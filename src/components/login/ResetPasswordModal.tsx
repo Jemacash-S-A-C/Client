@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { IconEye, IconEyeOff } from './LoginIcons'
 import { resetPasswordWithToken } from '../../services/auth.service'
+import { socialAvatars } from './socialAvatars'
 import styles from './LoginModal.module.css'
 
 type Props = {
@@ -63,9 +64,9 @@ export function ResetPasswordModal({ token, onClose, onSuccess }: Props) {
         </div>
         <div className={styles.login_social_pill}>
           <div className={styles.login_avatar_stack} aria-hidden="true">
-            <span className={styles.login_avatar} />
-            <span className={styles.login_avatar} />
-            <span className={styles.login_avatar} />
+            {socialAvatars.map((avatar, index) => (
+              <img key={index} className={styles.login_avatar} src={avatar} alt="" />
+            ))}
           </div>
           <div className={styles.login_social_text}>
             <strong>+10k Usuarios</strong>

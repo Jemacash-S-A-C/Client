@@ -71,8 +71,6 @@
 
 .hero_actions a {
   color: #ebfcef;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
   background: linear-gradient(145deg, #0f7d35 0%, #5ab86a 100%);
   box-shadow: 0 12px 26px rgba(15, 125, 53, 0.2);
 }
@@ -80,8 +78,6 @@
 .hero_actions button {
   border: 0;
   color: #e9eee7;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
   background: #cbd2c8;
 }
 

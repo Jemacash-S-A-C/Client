@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import heroImg from "../assets/hero.png";
+import heroImg from "../assets/partner_logos/principalima.png";
 import promoImg from "../assets/valuacion_img/valuacion_card.png";
 import styles from "./Home.module.css";
 
@@ -137,7 +137,7 @@ function Home({ onRegister }: HomeProps) {
 
         <div className={styles.hero_visual}>
           <div className={styles.hero_card}>
-            <img src={heroImg} alt="Cliente usando Jemacash en su celular" />
+            <img src={heroImg} alt="Visual principal de Jemacash" />
             <div className={styles.trust_card}>
               <span aria-hidden="true">✓</span>
               <div>

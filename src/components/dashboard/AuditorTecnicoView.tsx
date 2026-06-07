@@ -137,6 +137,14 @@ export function AuditorTecnicoView({
       try {
         g = await getGuarantee(app.guarantee_id)
         if (!cancelled) setGuarantee(g)
+      const auditVer = g.specs?.audit_verified
+      if (auditVer === 'discrepancy') {
+        const notes = g.specs?.audit_discrepancy_notes ?? 'Datos del dispositivo no coinciden con los declarados'
+        add({ time: nowTime(), text: `Advertencia: discrepancia detectada en auditoría — ${notes}`, type: 'active', tag: 'DISCREPANCIA' })
+      } else if (auditVer === 'true') {
+        add({ time: nowTime(), text: 'Auditoría técnica verificada correctamente.', type: 'verified', tag: 'AUDIT OK' })
+      }
+      // If no audit yet (older guarantees), continue without blocking
       } catch {
         add({ time: nowTime(), text: 'Error al cargar la garantía.', type: 'active' })
         if (!cancelled) setAiDone(true)
@@ -148,6 +156,19 @@ export function AuditorTecnicoView({
 
       await sleep(400)
       add({ time: nowTime(), text: `Especificaciones: ${g.specs?.ram ?? '?'} RAM · ${g.specs?.storage ?? '?'} · ${g.specs?.processor ?? '?'}`, type: 'normal' })
+
+      if (g.specs?.cpu_name && g.specs.cpu_name !== g.specs.processor) {
+        await sleep(300)
+        add({ time: nowTime(), text: `CPU auditado: ${g.specs.cpu_name}`, type: 'normal' })
+      }
+      if (g.specs?.gpu_name) {
+        await sleep(250)
+        add({ time: nowTime(), text: `GPU detectada: ${g.specs.gpu_name}`, type: 'normal' })
+      }
+      if (g.specs?.os_name) {
+        await sleep(250)
+        add({ time: nowTime(), text: `Sistema operativo: ${g.specs.os_name}`, type: 'normal' })
+      }
 
       if (g.specs?.battery_health) {
         await sleep(350)
@@ -470,3 +491,4 @@ export function AuditorTecnicoView({
     </div>
   )
 }
+

@@ -103,8 +103,7 @@
   font-weight: 600;
   white-space: nowrap;
   padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  text-decoration: none;
 }
 
 .login_link:hover {
@@ -192,8 +191,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     padding: 0.2rem 0;
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-decoration: none;
     text-align: left;
   }
 }

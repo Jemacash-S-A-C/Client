@@ -8,7 +8,7 @@ import {
 } from './icons'
 import styles from './SolicitarPrestamoView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
-import { createApplication, submitApplication } from '../../services/application.service'
+import { createApplication, updateApplication, submitApplication, getApplication } from '../../services/application.service'
 import { getGuarantees } from '../../services/guarantee.service'
 import type { Guarantee } from '../../types/api.types'
 
@@ -44,10 +44,12 @@ export function SolicitarPrestamoView({
   onBack,
   onContinue,
   onAddGuarantee,
+  applicationId,
 }: {
   onBack: () => void
   onContinue: (applicationId: string) => void
   onAddGuarantee: () => void
+  applicationId?: string | null
 }) {
   const { t } = useTranslation()
   const { fmtMonthShort } = useLocaleFormat()
@@ -58,6 +60,30 @@ export function SolicitarPrestamoView({
   const [loadingGuarantees, setLoadingGuarantees] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // When resuming a draft, pre-fill the form with the existing application data
+  const [draftGuaranteeId, setDraftGuaranteeId] = useState<string | null>(null)
+  const isResume = !!applicationId
+
+  useEffect(() => {
+    if (!applicationId) return
+    getApplication(applicationId)
+      .then((app) => {
+        setAmount(Math.round(Number(app.amount)))
+        const months = Number(app.term_months)
+        if ([12, 24, 36, 48].includes(months)) setPlazo(months as Plazo)
+        if (app.guarantee_id) setDraftGuaranteeId(app.guarantee_id)
+      })
+      .catch(() => {})
+  }, [applicationId])
+
+  // Auto-select the draft's guarantee once the guarantees list has loaded
+  useEffect(() => {
+    if (!draftGuaranteeId) return
+    if (guarantees.some((g) => g.id === draftGuaranteeId)) {
+      setSelectedGuaranteeId(draftGuaranteeId)
+    }
+  }, [draftGuaranteeId, guarantees])
 
   useEffect(() => {
     getGuarantees()
@@ -95,15 +121,29 @@ export function SolicitarPrestamoView({
     setError(null)
     setLoading(true)
     try {
-      const app = await createApplication({
-        amount,
-        term_months: plazo,
-        ...(selectedGuaranteeId ? { guarantee_id: selectedGuaranteeId } : {}),
-      })
-      await submitApplication(app.id)
-      onContinue(app.id)
+      let appId: string
+      if (applicationId) {
+        // Resume: update the existing draft then submit it
+        await updateApplication(applicationId, {
+          amount,
+          term_months: plazo,
+          ...(selectedGuaranteeId ? { guarantee_id: selectedGuaranteeId } : {}),
+        })
+        await submitApplication(applicationId)
+        appId = applicationId
+      } else {
+        // New application: create then immediately submit
+        const app = await createApplication({
+          amount,
+          term_months: plazo,
+          ...(selectedGuaranteeId ? { guarantee_id: selectedGuaranteeId } : {}),
+        })
+        await submitApplication(app.id)
+        appId = app.id
+      }
+      onContinue(appId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo crear la solicitud.')
+      setError(err instanceof Error ? err.message : 'No se pudo procesar la solicitud.')
       setLoading(false)
     }
   }
@@ -122,8 +162,12 @@ export function SolicitarPrestamoView({
       <div className={styles.sol_main}>
         <div className={styles.sol_header}>
           <div>
-            <h1 className={styles.sol_title}>{t('solicitar.title')}</h1>
-            <p className={styles.view_sub}>{t('solicitar.subtitle')}</p>
+            <h1 className={styles.sol_title}>
+              {isResume ? t('solicitar.resumeTitle') : t('solicitar.title')}
+            </h1>
+            <p className={styles.view_sub}>
+              {isResume ? t('solicitar.resumeSubtitle') : t('solicitar.subtitle')}
+            </p>
           </div>
           <button type="button" className={styles.sol_back_btn} onClick={onBack} disabled={loading}>
             {t('solicitar.back')}
@@ -359,7 +403,9 @@ export function SolicitarPrestamoView({
             onClick={handleSubmit}
             disabled={loading || !selectedGuaranteeId}
           >
-            {loading ? t('solicitar.submitting') : t('solicitar.submit')}
+            {loading
+              ? t('solicitar.submitting')
+              : isResume ? t('solicitar.resumeSubmit') : t('solicitar.submit')}
           </button>
 
           <p className={styles.sol_terms}>
