@@ -364,9 +364,10 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           )}
           {activeView === 'solicitar' && (
             <SolicitarPrestamoView
-              onBack={() => setActiveView('resumen')}
-              onContinue={(applicationId) => {
-                setActiveApplicationId(applicationId)
+              applicationId={activeApplicationId}
+              onBack={() => { setActiveApplicationId(null); setActiveView('resumen') }}
+              onContinue={(appId) => {
+                setActiveApplicationId(appId)
                 setActiveView('auditoria')
               }}
               onAddGuarantee={() => {

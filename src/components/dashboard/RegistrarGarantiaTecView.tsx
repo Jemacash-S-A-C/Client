@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { createGuarantee, valuateDevice, updateGuaranteeAi } from '../../services/guarantee.service'
-import type { AiValuationResult } from '../../types/api.types'
+import { createGuarantee, valuateDevice, updateGuaranteeAi, getGuarantee } from '../../services/guarantee.service'
+import type { AiValuationResult, GuaranteeSpecs } from '../../types/api.types'
+import { getAccessToken } from '../../utils/api'
 import { IconShield, IconCheck } from './icons'
 import {
   DEVICE_CATALOG, getYearRange, buildYearOptions,
@@ -134,7 +135,6 @@ const CONDITION_OPTIONS = [
 const PHOTO_SLOTS = [
   { id: 'frontal', labelKey: 'regGar.photo.frontal.label', descKey: 'regGar.photo.frontal.desc' },
   { id: 'trasero', labelKey: 'regGar.photo.trasero.label', descKey: 'regGar.photo.trasero.desc' },
-  { id: 'serial',  labelKey: 'regGar.photo.serial.label',  descKey: 'regGar.photo.serial.desc'  },
   { id: 'general', labelKey: 'regGar.photo.general.label', descKey: 'regGar.photo.general.desc' },
 ]
 
@@ -251,6 +251,16 @@ export function RegistrarGarantiaTecView({
   const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
   const aiRef = useRef<{ cancelled: boolean; started: boolean }>({ cancelled: false, started: false })
 
+  // ── Draft guarantee state (pre-created on step 3) ───────────────────────────
+
+  type DraftState = 'idle' | 'creating' | 'ready' | 'error'
+  const [draftState, setDraftState]           = useState<DraftState>('idle')
+  const [draftGuaranteeId, setDraftGuaranteeId] = useState<string | null>(null)
+  const [auditVerified, setAuditVerified]     = useState<'none' | 'verified' | 'discrepancy'>('none')
+  const [checkingAudit, setCheckingAudit]     = useState(false)
+  const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(null)
+  const aiSavedRef = useRef(false)
+
   async function runValuation() {
     try {
       const cat       = s1.device_category as DeviceCategory
@@ -293,21 +303,138 @@ export function RegistrarGarantiaTecView({
     runValuation()
   }
 
-  // Auto-run AI when user reaches step 3; reset on back-navigation
+  // Auto-run AI when reaching step 3; reset all draft/audit state on back-navigation
   useEffect(() => {
     if (step !== 3) {
       aiRef.current.cancelled = true
       aiRef.current.started   = false
       setAiState('idle')
       setAiResult(null)
+      aiSavedRef.current = false
+      setDraftState('idle')
+      setDraftGuaranteeId(null)
+      setAuditVerified('none')
+      setDiscrepancyNotes(null)
       return
     }
-    if (aiRef.current.started) return
-    aiRef.current = { cancelled: false, started: true }
-    setAiState('running')
-    runValuation()
+    if (!aiRef.current.started) {
+      aiRef.current = { cancelled: false, started: true }
+      setAiState('running')
+      runValuation()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
+
+  // Auto-save AI result to pre-created guarantee as soon as both are ready
+  useEffect(() => {
+    if (!draftGuaranteeId || !aiResult || aiSavedRef.current) return
+    aiSavedRef.current = true
+    updateGuaranteeAi(draftGuaranteeId, {
+      ai_market_value:         aiResult.market_value_pen,
+      ai_resale_value:         aiResult.resale_value_pen,
+      ai_max_loan:             aiResult.max_loan_pen,
+      ai_condition_score:      aiResult.condition_score,
+      ai_depreciation_factors: aiResult.depreciation_factors,
+      ai_confidence:           aiResult.confidence,
+      ai_reasoning:            aiResult.reasoning,
+      ai_visual_condition:     aiResult.visual_condition,
+    }).catch(() => { /* non-critical */ })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftGuaranteeId, aiResult])
+
+  // ── Draft guarantee helpers ─────────────────────────────────────────────────
+
+  function buildGuaranteePayload() {
+    const brand = effectiveBrand(s1)
+    const model = effectiveModel(s1)
+    const name  = `${brand} ${model}`.trim()
+    const cat   = s1.device_category as DeviceCategory
+    const specs: Record<string, string> = {
+      processor: s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom.trim() : s2.processor,
+      ram:       s2.ram,
+      storage:   s2.storage,
+    }
+    if (CATEGORY_HAS_BATTERY[cat])                specs.battery_health    = s2.battery_health
+    if (CATEGORY_HAS_SCREEN[cat] && s2.screen_size) specs.screen_size     = s2.screen_size
+    if (s1.imei)                                  specs.imei              = s1.imei
+    if (s1.is_reconditioned)                      specs.is_reconditioned  = 'true'
+    if (isUnknownModel(s1))                       specs.needs_verification = 'true'
+    return {
+      type:             'tecnologia',
+      name,
+      description:      `Condición: ${s2.condition}. ${s1.device_category} ${s1.manufacture_year}.`,
+      device_category:  s1.device_category,
+      brand,
+      model,
+      manufacture_year: s1.manufacture_year,
+      serial_number:    s1.serial_number,
+      condition:        s2.condition,
+      specs:            specs as GuaranteeSpecs,
+      // photo_urls are NOT included here: raw base64 images are large (up to 2 MB each) and
+      // are already used by the AI valuation. They are saved via handleSubmit on final confirm.
+    }
+  }
+
+  async function handleDownloadAuditorSingle() {
+    const token = getAccessToken()
+    if (!token) return
+
+    // Lazy guarantee creation — only happens here, not on step entry
+    let gId = draftGuaranteeId
+    if (!gId) {
+      setDraftState('creating')
+      try {
+        const created = await createGuarantee(buildGuaranteePayload())
+        gId = created.id
+        setDraftGuaranteeId(gId)
+        setDraftState('ready')
+      } catch {
+        setDraftState('error')
+        return
+      }
+    }
+
+    try {
+      const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
+      const exeRes = await fetch('/downloads/Jemacash-Auditor.exe')
+      if (!exeRes.ok) throw new Error('No se pudo descargar el auditor')
+      const exeBuffer = await exeRes.arrayBuffer()
+
+      const config      = { ApiUrl: apiUrl, GuaranteeId: gId, AccessToken: token }
+      const sentinel    = '###JEMACASH_CONFIG###'
+      const configBytes = new TextEncoder().encode(sentinel + JSON.stringify(config))
+
+      const combined = new Uint8Array(exeBuffer.byteLength + configBytes.byteLength)
+      combined.set(new Uint8Array(exeBuffer), 0)
+      combined.set(configBytes, exeBuffer.byteLength)
+
+      const blob = new Blob([combined], { type: 'application/octet-stream' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = 'Jemacash-Auditor.exe'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error descargando auditor:', err)
+    }
+  }
+
+  async function handleCheckAudit() {
+    if (!draftGuaranteeId) return
+    setCheckingAudit(true)
+    try {
+      const fresh  = await getGuarantee(draftGuaranteeId)
+      const audVer = fresh.specs?.audit_verified
+      if (audVer === 'true') {
+        setAuditVerified('verified')
+      } else if (audVer === 'discrepancy') {
+        setAuditVerified('discrepancy')
+        setDiscrepancyNotes(fresh.specs?.audit_discrepancy_notes ?? 'Los datos del dispositivo no coinciden con los declarados.')
+      }
+    } catch { /* ignore */ }
+    finally { setCheckingAudit(false) }
+  }
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -332,8 +459,20 @@ export function RegistrarGarantiaTecView({
         : s2.processor !== ''
       return s2.condition !== '' && processorOk && s2.ram !== '' && s2.storage !== ''
     }
-    if (step === 2) return s3.photos.size >= 4
-    if (step === 3) return aiState === 'done' || aiState === 'failed'
+    if (step === 2) return s3.photos.size >= 3
+    if (step === 3) {
+      const baseOk = aiState === 'done' || aiState === 'failed'
+      if (!baseOk) return false
+      // Block if AI says photos don't match the declared model
+      if (aiState === 'done' && aiResult && !aiResult.device_match_valid) return false
+      // For laptops and desktops: require Windows audit (no discrepancy)
+      const requiresAudit = s1.device_category === 'laptop' || s1.device_category === 'desktop'
+      if (requiresAudit) {
+        if (auditVerified === 'discrepancy') return false
+        if (auditVerified !== 'verified') return false
+      }
+      return true
+    }
     return false
   }
 
@@ -368,36 +507,16 @@ export function RegistrarGarantiaTecView({
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const brand = effectiveBrand(s1)
-      const model = effectiveModel(s1)
-      const name  = `${brand} ${model}`.trim()
-      const cat   = s1.device_category as DeviceCategory
-      const specs: Record<string, string> = {
-        processor: s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom.trim() : s2.processor,
-        ram:       s2.ram,
-        storage:   s2.storage,
+      if (draftGuaranteeId) {
+        // Guarantee was pre-created in step 3; AI result auto-saved via useEffect.
+        // Just navigate to success.
+        onSuccess()
+        return
       }
-      if (CATEGORY_HAS_BATTERY[cat])               specs.battery_health = s2.battery_health
-      if (CATEGORY_HAS_SCREEN[cat] && s2.screen_size) specs.screen_size = s2.screen_size
-      if (s1.imei)                   specs.imei              = s1.imei
-      if (s1.is_reconditioned)       specs.is_reconditioned  = 'true'
-      if (isUnknownModel(s1))        specs.needs_verification = 'true'
 
-      const created = await createGuarantee({
-        type:             'tecnologia',
-        name,
-        description:      `Condición: ${s2.condition}. ${s1.device_category} ${s1.manufacture_year}.`,
-        device_category:  s1.device_category,
-        brand,
-        model,
-        manufacture_year: s1.manufacture_year,
-        serial_number:    s1.serial_number,
-        condition:        s2.condition,
-        specs,
-        photo_urls:       PHOTO_SLOTS.filter((p) => s3.photos.has(p.id)).map((p) => s3.photos.get(p.id)!),
-      })
+      // Fallback: guarantee wasn't pre-created, create it now
+      const created = await createGuarantee(buildGuaranteePayload())
 
-      // Persist AI valuation → auto-promotes guarantee pending_evaluation → active
       if (aiResult) {
         try {
           await updateGuaranteeAi(created.id, {
@@ -410,7 +529,7 @@ export function RegistrarGarantiaTecView({
             ai_reasoning:            aiResult.reasoning,
             ai_visual_condition:     aiResult.visual_condition,
           })
-        } catch { /* non-critical — guarantee stays pending_evaluation for manual review */ }
+        } catch { /* non-critical */ }
       }
 
       onSuccess()
@@ -822,7 +941,7 @@ export function RegistrarGarantiaTecView({
         </div>
 
         <div className={styles.reg_photos_count}>
-          <span className={s3.photos.size >= 4 ? styles.reg_photos_ok : styles.reg_photos_warn}>
+          <span className={s3.photos.size >= 3 ? styles.reg_photos_ok : styles.reg_photos_warn}>
             {t('regGar.step2.photoCount', { count: s3.photos.size })}
           </span>
         </div>
@@ -846,13 +965,6 @@ export function RegistrarGarantiaTecView({
     const procLabel    = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom : s2.processor
     const hasBattery   = !cat || CATEGORY_HAS_BATTERY[cat]
     const hasScreen    = !cat || CATEGORY_HAS_SCREEN[cat]
-
-    const PLATFORMS = [
-      { id: 'windows', label: 'Windows', icon: '⊞' },
-      { id: 'mac',     label: 'macOS',   icon: '' },
-      { id: 'android', label: 'Android', icon: '🤖' },
-      { id: 'ios',     label: 'iOS',     icon: '' },
-    ]
 
     return (
       <div className={styles.reg_step_body}>
@@ -880,6 +992,26 @@ export function RegistrarGarantiaTecView({
                 {t('regGar.step3.ai.retryBtn')}
               </button>
             </div>
+
+            {/* Device identity validation */}
+            {aiResult.device_match_valid ? (
+              <div className={styles.reg_info_box} style={{ borderColor: '#0f7d3f', background: '#f0fdf4', marginBottom: '0.75rem' }}>
+                <IconShield />
+                <p style={{ color: '#0f7d3f', margin: 0 }}>
+                  ✓ Dispositivo verificado — las fotos corresponden al {effectiveBrand(s1)} {effectiveModel(s1)} declarado.
+                </p>
+              </div>
+            ) : (
+              <div className={styles.reg_warn_box} style={{ marginBottom: '0.75rem' }}>
+                <IconAlert />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', marginBottom: '0.3rem' }}>Dispositivo no verificado</strong>
+                  <p style={{ margin: 0 }}>
+                    {aiResult.match_rejection_reason ?? 'Las fotos no corresponden al modelo declarado. Sube fotos claras y nítidas del dispositivo correcto.'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className={styles.reg_ai_values}>
               <div className={`${styles.reg_ai_value_card} ${styles.reg_ai_value_main}`}>
@@ -957,16 +1089,67 @@ export function RegistrarGarantiaTecView({
           </div>
         )}
 
-        {/* ── Platform verification tiles (future hardware check) ── */}
+        {/* ── Platform verification tiles ── */}
         <div className={styles.reg_verify_grid}>
-          {PLATFORMS.map((p) => (
+          {/* Windows — functional for laptops and desktops */}
+          <div className={styles.reg_verify_tile}>
+            <span className={styles.reg_verify_tile_icon}>⊞</span>
+            <strong>Windows</strong>
+            {(s1.device_category === 'laptop' || s1.device_category === 'desktop') ? (
+              <>
+                {auditVerified === 'verified' ? (
+                  <span className={styles.reg_verify_coming} style={{ color: '#0f7d3f' }}>✓ Auditoría completada</span>
+                ) : auditVerified === 'discrepancy' ? (
+                  <span className={styles.reg_verify_coming} style={{ color: '#dc2626' }}>✗ Discrepancia detectada</span>
+                ) : (
+                  <span className={styles.reg_verify_coming} style={{ color: '#d97706' }}>Requerido</span>
+                )}
+                {auditVerified === 'discrepancy' && discrepancyNotes && (
+                  <p style={{ fontSize: '0.7rem', color: '#dc2626', textAlign: 'center', margin: '0.25rem 0 0', lineHeight: 1.3 }}>
+                    {discrepancyNotes}
+                  </p>
+                )}
+                {auditVerified === 'none' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+                    <button
+                      type="button"
+                      className={styles.reg_verify_download_btn}
+                      onClick={handleDownloadAuditorSingle}
+                      disabled={draftState === 'creating'}
+                    >
+                      {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.reg_verify_download_btn}
+                      onClick={handleCheckAudit}
+                      disabled={draftState !== 'ready' || checkingAudit}
+                      style={{ fontSize: '0.75rem', opacity: 0.85 }}
+                    >
+                      {checkingAudit ? 'Verificando...' : 'Ya ejecuté el auditor'}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <span className={styles.reg_verify_coming}>Próximamente</span>
+                <button type="button" className={styles.reg_verify_download_btn} disabled>Descargar</button>
+              </>
+            )}
+          </div>
+
+          {/* Other platforms — coming soon */}
+          {[
+            { id: 'mac',     label: 'macOS',   icon: '' },
+            { id: 'android', label: 'Android', icon: '🤖' },
+            { id: 'ios',     label: 'iOS',     icon: '' },
+          ].map((p) => (
             <div key={p.id} className={styles.reg_verify_tile}>
               <span className={styles.reg_verify_tile_icon}>{p.icon}</span>
               <strong>{p.label}</strong>
               <span className={styles.reg_verify_coming}>Próximamente</span>
-              <button type="button" className={styles.reg_verify_download_btn} disabled>
-                Descargar
-              </button>
+              <button type="button" className={styles.reg_verify_download_btn} disabled>Descargar</button>
             </div>
           ))}
         </div>
@@ -991,7 +1174,7 @@ export function RegistrarGarantiaTecView({
             <div><span>{t('regGar.step3.summary.ram')}</span><strong>{s2.ram}</strong></div>
             <div><span>{t('regGar.step3.summary.storage')}</span><strong>{s2.storage}</strong></div>
             {hasBattery && <div><span>{t('regGar.step3.summary.battery')}</span><strong>{s2.battery_health}%</strong></div>}
-            <div><span>{t('regGar.step3.summary.photos')}</span><strong>{s3.photos.size} / 4</strong></div>
+            <div><span>{t('regGar.step3.summary.photos')}</span><strong>{s3.photos.size} / 3</strong></div>
             {hasScreen && s2.screen_size && (
               <div><span>{t('regGar.step3.summary.screen')}</span><strong>{s2.screen_size}</strong></div>
             )}

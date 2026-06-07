@@ -61,6 +61,8 @@ export type GuaranteeSpecs = {
   audit_verified?: string
   audit_source?: string
   audit_completed_at?: string
+  audit_discrepancy?: string
+  audit_discrepancy_notes?: string
 }
 
 export type AiValuationResult = {
@@ -72,6 +74,8 @@ export type AiValuationResult = {
   confidence: number
   reasoning: string
   visual_condition: string
+  device_match_valid: boolean
+  match_rejection_reason?: string
 }
 
 export type Guarantee = {

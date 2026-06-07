@@ -6,7 +6,6 @@ import { getApplication, cancelApplication } from '../../services/application.se
 import { getGuarantee, valuateDevice, updateGuaranteeAi } from '../../services/guarantee.service'
 import { updateEvaluation } from '../../services/evaluation.service'
 import type { AiValuationResult, Guarantee } from '../../types/api.types'
-import { getAccessToken } from '../../utils/api'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -21,23 +20,6 @@ function nowTime() {
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms))
-}
-
-function downloadTextFile(filename: string, content: string) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function downloadUrl(filename: string, url: string) {
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
 }
 
 function compressImage(dataUrl: string, maxSide = 512, quality = 0.55): Promise<string> {
@@ -78,7 +60,6 @@ export function AuditorTecnicoView({
   const [guarantee, setGuarantee] = useState<Guarantee | null>(null)
   const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
   const [approving, setApproving] = useState(false)
-  const [refreshingAudit, setRefreshingAudit] = useState(false)
 
   const terminalRef = useRef<HTMLDivElement>(null)
   // Ref so the async run() closure always has the latest setter
@@ -156,12 +137,14 @@ export function AuditorTecnicoView({
       try {
         g = await getGuarantee(app.guarantee_id)
         if (!cancelled) setGuarantee(g)
-      if (g.specs?.audit_verified !== 'true') {
-        add({ time: nowTime(), text: 'Auditoria real pendiente. Descargue y ejecute el auditor local.', type: 'active', tag: 'PENDIENTE' })
-        add({ time: nowTime(), text: 'Luego pulse "Ya ejecute la auditoria" para continuar.', type: 'normal' })
-        if (!cancelled) setAiDone(true)
-        return
+      const auditVer = g.specs?.audit_verified
+      if (auditVer === 'discrepancy') {
+        const notes = g.specs?.audit_discrepancy_notes ?? 'Datos del dispositivo no coinciden con los declarados'
+        add({ time: nowTime(), text: `Advertencia: discrepancia detectada en auditoría — ${notes}`, type: 'active', tag: 'DISCREPANCIA' })
+      } else if (auditVer === 'true') {
+        add({ time: nowTime(), text: 'Auditoría técnica verificada correctamente.', type: 'verified', tag: 'AUDIT OK' })
       }
+      // If no audit yet (older guarantees), continue without blocking
       } catch {
         add({ time: nowTime(), text: 'Error al cargar la garantía.', type: 'active' })
         if (!cancelled) setAiDone(true)
@@ -173,6 +156,19 @@ export function AuditorTecnicoView({
 
       await sleep(400)
       add({ time: nowTime(), text: `Especificaciones: ${g.specs?.ram ?? '?'} RAM · ${g.specs?.storage ?? '?'} · ${g.specs?.processor ?? '?'}`, type: 'normal' })
+
+      if (g.specs?.cpu_name && g.specs.cpu_name !== g.specs.processor) {
+        await sleep(300)
+        add({ time: nowTime(), text: `CPU auditado: ${g.specs.cpu_name}`, type: 'normal' })
+      }
+      if (g.specs?.gpu_name) {
+        await sleep(250)
+        add({ time: nowTime(), text: `GPU detectada: ${g.specs.gpu_name}`, type: 'normal' })
+      }
+      if (g.specs?.os_name) {
+        await sleep(250)
+        add({ time: nowTime(), text: `Sistema operativo: ${g.specs.os_name}`, type: 'normal' })
+      }
 
       if (g.specs?.battery_health) {
         await sleep(350)
@@ -312,37 +308,6 @@ export function AuditorTecnicoView({
     onComplete()
   }
 
-  function handleDownloadAuditor() {
-    if (!guarantee?.id) return
-    const token = getAccessToken()
-    if (!token) return
-
-    const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
-    const config = {
-      ApiUrl: apiUrl,
-      GuaranteeId: guarantee.id,
-      AccessToken: token,
-    }
-
-    downloadUrl('Jemacash-Auditor.exe', '/downloads/Jemacash-Auditor.exe')
-    downloadTextFile('Jemacash-Auditor.config.json', JSON.stringify(config, null, 2))
-    appendLine.current({ time: nowTime(), text: 'Descarga completa. Ejecute Jemacash-Auditor.exe (junto al .config) para enviar la auditoria real.', type: 'normal' })
-  }
-
-  async function handleRefreshAudit() {
-    if (!guarantee?.id) return
-    setRefreshingAudit(true)
-    try {
-      const fresh = await getGuarantee(guarantee.id)
-      setGuarantee(fresh)
-      if (fresh.specs?.audit_verified === 'true') {
-        appendLine.current({ time: nowTime(), text: 'Auditoria real recibida. Puedes continuar.', type: 'verified', tag: 'AUDIT OK' })
-      }
-    } finally {
-      setRefreshingAudit(false)
-    }
-  }
-
   // ── Derived display values ──────────────────────────────────────────────────
 
   const displayValue = aiResult
@@ -356,7 +321,6 @@ export function AuditorTecnicoView({
     : (guarantee?.ai_condition_score ? Number(guarantee.ai_condition_score).toFixed(1) : null)
 
   const allLinesDone = aiDone && visibleLines >= logLines.length
-  const auditVerified = guarantee?.specs?.audit_verified === 'true'
 
   const circumference = 2 * Math.PI * 54
   const dash = (progress / 100) * circumference
@@ -441,23 +405,9 @@ export function AuditorTecnicoView({
                 <span className={styles.aud_cursor}>█</span>
               )}
               {allLinesDone && (
-                <>
-                  {!auditVerified && (
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <button type="button" className={styles.aud_results_btn} onClick={handleDownloadAuditor}>
-                        Descargar auditor real
-                      </button>
-                      <button type="button" className={styles.aud_results_btn} onClick={handleRefreshAudit} disabled={refreshingAudit}>
-                        {refreshingAudit ? 'Verificando...' : 'Ya ejecuté la auditoría'}
-                      </button>
-                    </div>
-                  )}
-                  {auditVerified && (
-                    <button type="button" className={styles.aud_results_btn} onClick={handleViewResults} disabled={approving}>
-                      {approving ? t('auditor.processing') : t('auditor.viewResults')}
-                    </button>
-                  )}
-                </>
+                <button type="button" className={styles.aud_results_btn} onClick={handleViewResults} disabled={approving}>
+                  {approving ? t('auditor.processing') : t('auditor.viewResults')}
+                </button>
               )}
             </div>
           </div>

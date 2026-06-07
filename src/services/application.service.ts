@@ -21,6 +21,15 @@ export async function submitApplication(id: string): Promise<LoanApplication> {
   return api.post<LoanApplication>(`/applications/${id}/submit`)
 }
 
+/** Update amount / term / guarantee on a draft application (used in resume flow). */
+export async function updateApplication(id: string, data: {
+  amount?: number
+  term_months?: number
+  guarantee_id?: string
+}): Promise<LoanApplication> {
+  return api.patch<LoanApplication>(`/applications/${id}`, data)
+}
+
 /** User-initiated cancellation (only draft/submitted applications). */
 export async function cancelApplication(id: string): Promise<LoanApplication> {
   return api.patch<LoanApplication>(`/applications/${id}/cancel`)
