@@ -1180,7 +1180,7 @@
 }
 
 .twofa_secret {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+
   font-size: 0.82rem;
   background: #f1f5f9;
   border-radius: 0.4rem;
@@ -1524,7 +1524,7 @@
   padding: 0.55rem 0.75rem;
   background: #f4f7f4;
   border-radius: 0.65rem;
-  font-family: 'Courier New', monospace;
+
   font-size: 0.82rem;
   color: #5c675e;
   letter-spacing: 0.04em;

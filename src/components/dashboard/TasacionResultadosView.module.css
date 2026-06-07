@@ -1,4 +1,6 @@
-/* ─── TasacionResultadosView styles ─────────────────────────────────────── */
+/* ─── TasacionResultadosView ─────────────────────────────────────────────── */
+
+/* ── Page ── */
 
 .tas_page {
   min-height: 100vh;
@@ -7,6 +9,8 @@
   flex-direction: column;
   color: var(--ink);
 }
+
+/* ── Header ── */
 
 .tas_header {
   background: rgba(255, 255, 255, 0.9);
@@ -37,11 +41,12 @@
   cursor: pointer;
   white-space: nowrap;
   padding: 0.4rem 0;
+  transition: color 0.14s;
 }
 
-.tas_back_btn:hover {
-  color: var(--green);
-}
+.tas_back_btn:hover { color: var(--green); }
+
+/* ── Main ── */
 
 .tas_main {
   flex: 1;
@@ -51,45 +56,227 @@
   padding: 2rem 2rem 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: 1.2rem;
+}
+
+/* ── Title row (title left, chips right) ── */
+
+.tas_title_row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .tas_scan_badge {
   display: inline-flex;
-  align-self: flex-start;
+  margin-bottom: 0.65rem;
   border-radius: 999px;
-  padding: 0.35rem 0.9rem;
+  padding: 0.32rem 0.85rem;
   background: var(--green-soft);
   color: #0d5732;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
 .tas_title {
   color: #1a221c;
-  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1.1;
+  margin-bottom: 0.4rem;
 }
 
-.tas_title_green {
-  color: var(--green);
-}
+.tas_title_green { color: var(--green); }
 
 .tas_subtitle {
   color: #5c675e;
-  font-size: 0.94rem;
-  line-height: 1.55;
-  max-width: 480px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 440px;
 }
 
-/* Content grid */
+/* ── Status chips ── */
+
+.tas_status_chips {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-bottom: 0.15rem;
+}
+
+.tas_chip {
+  background: #fff;
+  border: 1px solid rgba(15, 125, 63, 0.16);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  display: grid;
+  gap: 0.05rem;
+  box-shadow: 0 2px 8px rgba(46, 63, 49, 0.06);
+}
+
+.tas_chip small {
+  display: block;
+  color: #9aa39d;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.tas_chip strong {
+  display: block;
+  color: #1a221c;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tas_chip_ok strong { color: var(--green); }
+
+/* ── Device hero ── */
+
+.tas_device_hero {
+  background: #fff;
+  border-radius: 1.35rem;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 8px 24px rgba(46, 63, 49, 0.08);
+  border: 1px solid rgba(68, 84, 72, 0.07);
+  min-height: 160px;
+}
+
+.tas_device_hero_img {
+  width: 38%;
+  flex-shrink: 0;
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.38) saturate(0.3);
+}
+
+.tas_device_hero_body {
+  flex: 1;
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.tas_device_hero_tag {
+  color: #9aa39d;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.tas_device_hero_name {
+  color: #1a221c;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.tas_device_hero_condition {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.22rem 0.7rem;
+  border-radius: 999px;
+}
+
+.tas_device_hero_score {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 320px;
+}
+
+.tas_device_hero_bar {
+  flex: 1;
+  height: 7px;
+  background: #e8f0e9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tas_device_hero_bar_fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.7s ease;
+}
+
+/* ── Specs row ── */
+
+.tas_specs_row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.tas_spec_item {
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.07);
+  border-radius: 1.1rem;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 14px rgba(46, 63, 49, 0.06);
+}
+
+.tas_spec_item_icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: var(--surface-soft);
+  color: #5c675e;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tas_spec_item_icon svg { width: 1rem; height: 1rem; }
+
+.tas_spec_item_body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+  min-width: 0;
+}
+
+.tas_spec_item_body small {
+  color: #9aa39d;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tas_spec_item_body strong {
+  color: #1a221c;
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tas_spec_item_check { flex-shrink: 0; }
+.tas_spec_item_check svg { width: 1.15rem; height: 1.15rem; }
+
+/* ── Content grid ── */
 
 .tas_content_grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
-  gap: 1.2rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 1.1rem;
   align-items: start;
 }
 
@@ -99,390 +286,60 @@
   gap: 1rem;
 }
 
-/* Specs grid */
-
-.tas_specs_grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.tas_spec_card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 1.1rem;
-  padding: 1rem 1.1rem;
-  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.tas_spec_top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.3rem;
-}
-
-.tas_spec_icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  background: var(--surface-soft);
-  color: #5c675e;
-  display: inline-grid;
-  place-items: center;
-}
-
-.tas_spec_icon svg {
-  width: 1rem;
-  height: 1rem;
-}
-
-.tas_spec_check svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-.tas_spec_label {
-  color: #9aa39d;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.tas_spec_value {
-  color: #1a221c;
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-/* Device card */
-
-.tas_device_card {
-  position: relative;
-  border-radius: 1.2rem;
-  overflow: hidden;
-  aspect-ratio: 1.9;
-}
-
-.tas_device_img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: brightness(0.35) saturate(0.4);
-}
-
-.tas_device_overlay {
-  position: absolute;
-  bottom: 1.2rem;
-  left: 1.3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.tas_device_overlay span {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.tas_device_overlay strong {
-  color: #fff;
-  font-size: 1.15rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
-/* Right column */
-
 .tas_right {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-}
-
-/* Value card — dark futuristic */
-
-@keyframes tas_live_pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-
-.tas_value_card {
-  background: #0d1f13;
-  background-image: radial-gradient(rgba(15, 125, 63, 0.11) 1px, transparent 1px);
-  background-size: 22px 22px;
-  border: 1px solid rgba(74, 222, 128, 0.22);
-  border-radius: 1.35rem;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  color: #f0fdf4;
-  position: relative;
-  box-shadow:
-    0 0 40px rgba(15, 125, 63, 0.1),
-    0 24px 50px rgba(0, 0, 0, 0.45);
-}
-
-/* ── Terminal header strip ── */
-
-.tas_value_term_header {
-  background: rgba(6, 15, 9, 0.65);
-  border-bottom: 1px solid rgba(74, 222, 128, 0.1);
-  padding: 0.52rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-}
-
-.tas_value_dots {
-  display: flex;
-  gap: 0.32rem;
-}
-
-.tas_value_dots span {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 50%;
-}
-
-.dot_red    { background: #ff5f57; }
-.dot_yellow { background: #ffbd2e; }
-.dot_green  { background: #28c840; }
-
-.tas_value_term_title {
-  flex: 1;
-  color: rgba(74, 222, 128, 0.35);
-  font-size: 0.59rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  font-family: 'Courier New', monospace;
-}
-
-.tas_value_live {
-  color: #4ade80;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  font-family: 'Courier New', monospace;
-  animation: tas_live_pulse 1.6s ease-in-out infinite;
-}
-
-/* ── Body ── */
-
-.tas_value_body {
-  padding: 1.2rem 1.4rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  flex: 1;
-  position: relative;
-}
-
-.tas_value_bg_icon {
-  position: absolute;
-  right: -0.8rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 9rem;
-  color: rgba(74, 222, 128, 0.04);
-  line-height: 1;
-  pointer-events: none;
-  text-shadow: 0 0 60px rgba(74, 222, 128, 0.08);
-}
-
-.tas_value_label {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  color: rgba(74, 222, 128, 0.45);
-  text-transform: uppercase;
-  font-family: 'Courier New', monospace;
-  position: relative;
-}
-
-.tas_value_amount {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #4ade80;
-  text-shadow: 0 0 24px rgba(74, 222, 128, 0.45);
-  position: relative;
-  line-height: 1;
-}
-
-.tas_value_amount span {
-  font-size: 2.6rem;
-  letter-spacing: -0.04em;
-}
-
-.tas_value_body > p {
-  color: rgba(134, 239, 172, 0.55);
-  font-size: 0.78rem;
-  line-height: 1.45;
-  position: relative;
-}
-
-.tas_accept_btn {
-  border: 1px solid rgba(74, 222, 128, 0.45);
-  border-radius: 0.8rem;
-  background: linear-gradient(135deg, #138a41 0%, #0f7d3f 100%);
-  color: #fff;
-  font-size: 0.92rem;
-  font-weight: 800;
-  padding: 0.9rem 1rem;
-  cursor: pointer;
-  width: 100%;
-  box-shadow:
-    0 0 22px rgba(74, 222, 128, 0.18),
-    0 8px 22px rgba(0, 0, 0, 0.3);
-  position: relative;
-  transition: transform 0.12s ease, box-shadow 0.14s ease;
-  letter-spacing: 0.01em;
-  margin-top: 0.2rem;
-}
-
-.tas_accept_btn:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 0 35px rgba(74, 222, 128, 0.28),
-    0 12px 28px rgba(0, 0, 0, 0.3);
-}
-
-/* Seals card */
-
-.tas_seals_card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 1.2rem;
-  padding: 1.1rem 1.2rem;
-  box-shadow: 0 10px 22px rgba(46, 63, 49, 0.07);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tas_seals_card h3 {
-  color: #1a221c;
-  font-size: 0.92rem;
-  font-weight: 800;
-}
-
-.tas_seals_grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.tas_seal {
-  background: var(--surface-soft);
-  border-radius: 0.75rem;
-  padding: 0.55rem 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.tas_seal_icon {
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  background: var(--green-soft);
-  color: var(--green);
-  display: inline-grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.tas_seal_icon svg {
-  width: 0.8rem;
-  height: 0.8rem;
-}
-
-.tas_seal div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.04rem;
-}
-
-.tas_seal div strong {
-  color: #1a221c;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.tas_seal div span {
-  color: #7a857e;
-  font-size: 0.7rem;
-}
-
-.tas_seals_card > p {
-  color: #7a857e;
-  font-size: 0.76rem;
-  line-height: 1.45;
-  padding-top: 0.4rem;
-  border-top: 1px solid rgba(68, 84, 72, 0.08);
-}
-
-/* AI Analysis card */
-
-.tas_ai_card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 1.1rem;
-  padding: 1.1rem 1.2rem;
-  box-shadow: 0 8px 20px rgba(46, 63, 49, 0.07);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
+/* ── AI Analysis card ── */
+
+.tas_ai_card {
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.2rem;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 8px 22px rgba(46, 63, 49, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .tas_ai_header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
 }
 
 .tas_ai_badge {
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--green-soft);
+  color: #0d5732;
   border-radius: 999px;
-  padding: 3px 10px;
-}
-
-.tas_ai_confidence {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #6b7280;
+  padding: 0.22rem 0.75rem;
 }
 
 .tas_ai_values {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
 }
 
 .tas_ai_value_item {
   background: #f8faf8;
-  border-radius: 0.65rem;
-  padding: 0.55rem 0.7rem;
+  border: 1px solid rgba(68, 84, 72, 0.07);
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .tas_ai_value_item span {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: #9aa39d;
   font-weight: 700;
   text-transform: uppercase;
@@ -490,62 +347,23 @@
 }
 
 .tas_ai_value_item strong {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #1a221c;
-}
-
-.tas_ai_score_row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.tas_ai_score_row > span {
-  font-size: 0.78rem;
-  color: #5c675e;
-  white-space: nowrap;
-  min-width: 90px;
-}
-
-.tas_ai_score_bar_wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex: 1;
-}
-
-.tas_ai_score_bar_bg {
-  flex: 1;
-  height: 7px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.tas_ai_score_bar_fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.6s ease;
-}
-
-.tas_ai_score_bar_wrap > strong {
-  font-size: 0.82rem;
-  min-width: 38px;
 }
 
 .tas_ai_factors {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .tas_ai_factors_label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: #5c675e;
+  color: #7a857e;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
 }
 
 .tas_ai_factors_list {
@@ -555,85 +373,205 @@
 }
 
 .tas_ai_factor_tag {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   background: #fef9c3;
   color: #854d0e;
   border: 1px solid #fde68a;
   border-radius: 20px;
-  padding: 2px 10px;
-}
-
-.tas_ai_condition_row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.tas_ai_condition_badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  white-space: nowrap;
+  padding: 0.18rem 0.65rem;
 }
 
 .tas_ai_source {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
   background: #f8faf8;
-  border: 1px solid #e2e8e4;
-  border-radius: 8px;
-  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.9rem;
 }
 
 .tas_ai_source_label {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #5c675e;
+  letter-spacing: 0.08em;
+  color: #9aa39d;
 }
 
 .tas_ai_source_desc {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: #374151;
   line-height: 1.5;
 }
 
 .tas_ai_source_markets {
-  font-size: 0.72rem;
-  color: #5c675e;
+  font-size: 0.74rem;
+  color: #7a857e;
   font-weight: 600;
 }
 
 .tas_ai_reasoning_wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.35rem;
 }
 
 .tas_ai_reasoning_label {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #5c675e;
+  letter-spacing: 0.08em;
+  color: #9aa39d;
 }
 
 .tas_ai_reasoning {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: #374151;
   background: #f8faf8;
-  border-left: 3px solid #0f7d3f;
-  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--green);
+  padding: 0.55rem 0.85rem;
   border-radius: 0 6px 6px 0;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
-/* Footer */
+/* ── Value card ── */
+
+.tas_value_card {
+  background: #fff;
+  border: 1px solid rgba(15, 125, 63, 0.14);
+  border-radius: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  color: #1a221c;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(46, 63, 49, 0.1);
+}
+
+.tas_value_badge {
+  display: inline-flex;
+  align-self: flex-start;
+  background: var(--green-soft);
+  color: #0d5732;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+
+.tas_value_body {
+  padding: 1.4rem 1.5rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.tas_value_label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #9aa39d;
+  text-transform: uppercase;
+}
+
+.tas_value_amount {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a221c;
+  line-height: 1;
+}
+
+.tas_value_amount span {
+  font-size: 2.8rem;
+  letter-spacing: -0.04em;
+  color: var(--green);
+}
+
+.tas_value_body > p {
+  color: #7a857e;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding-bottom: 0.2rem;
+}
+
+.tas_accept_btn {
+  border: 0;
+  border-radius: 0.85rem;
+  background: var(--green);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  padding: 0.9rem 1rem;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 14px rgba(15, 125, 63, 0.25);
+  transition: background 0.14s, box-shadow 0.14s, transform 0.1s;
+  letter-spacing: 0.01em;
+  margin-top: 0.3rem;
+}
+
+.tas_accept_btn:hover {
+  background: #0d6e36;
+  box-shadow: 0 6px 20px rgba(15, 125, 63, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Seals card ── */
+
+.tas_seals_card {
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.08);
+  border-radius: 1.2rem;
+  padding: 0.85rem 1rem;
+  box-shadow: 0 6px 18px rgba(46, 63, 49, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tas_seal {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.3rem;
+}
+
+.tas_seal + .tas_seal {
+  border-top: 1px solid rgba(68, 84, 72, 0.07);
+}
+
+.tas_seal_icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tas_seal_icon svg { width: 0.85rem; height: 0.85rem; }
+
+.tas_seal div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+}
+
+.tas_seal div strong {
+  color: #1a221c;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.tas_seal div span {
+  color: #9aa39d;
+  font-size: 0.72rem;
+}
+
+/* ── Footer ── */
 
 .tas_footer {
   background: #2a3060;
@@ -657,9 +595,7 @@
   font-weight: 800;
 }
 
-.tas_footer_left span {
-  font-size: 0.74rem;
-}
+.tas_footer_left span { font-size: 0.74rem; }
 
 .tas_footer_links {
   display: flex;
@@ -674,17 +610,12 @@
   font-size: 0.82rem;
   cursor: pointer;
   padding: 0;
-  transition: color 0.14s ease;
+  transition: color 0.14s;
 }
 
-.tas_footer_link:hover {
-  color: #fff;
-}
+.tas_footer_link:hover { color: #fff; }
 
-.tas_footer_icons {
-  display: flex;
-  gap: 0.5rem;
-}
+.tas_footer_icons { display: flex; gap: 0.5rem; }
 
 .tas_footer_icon {
   width: 2rem;
@@ -695,4 +626,27 @@
   place-items: center;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.8rem;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+  .tas_specs_row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tas_content_grid {
+    grid-template-columns: 1fr;
+  }
+  .tas_ai_values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .tas_header    { padding: 0.75rem 1rem; }
+  .tas_main      { padding: 1.2rem 1rem 2rem; }
+  .tas_title_row { flex-direction: column; align-items: flex-start; }
+  .tas_specs_row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tas_device_hero_img { width: 44%; }
+  .tas_device_hero_name { font-size: 1.1rem; }
 }

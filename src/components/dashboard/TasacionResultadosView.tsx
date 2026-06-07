@@ -163,92 +163,97 @@ export function TasacionResultadosView({
 
       {/* ── Main ───────────────────────────────────────── */}
       <main className={styles.tas_main}>
-        <span className={styles.tas_scan_badge}>{t('tasacion.scanBadge')}</span>
 
-        <h1 className={styles.tas_title}>
-          {t('tasacion.title')} <span className={styles.tas_title_green}>{t('tasacion.titleGreen')}</span>.
-        </h1>
-        <p className={styles.tas_subtitle}>{t('tasacion.subtitle')}</p>
+        {/* Title */}
+        <div className={styles.tas_title_row}>
+          <div>
+            <span className={styles.tas_scan_badge}>{t('tasacion.scanBadge')}</span>
+            <h1 className={styles.tas_title}>
+              {t('tasacion.title')} <span className={styles.tas_title_green}>{t('tasacion.titleGreen')}</span>.
+            </h1>
+            <p className={styles.tas_subtitle}>{t('tasacion.subtitle')}</p>
+          </div>
+          <div className={styles.tas_status_chips}>
+            <div className={styles.tas_chip}>
+              <small>Motor IA</small>
+              <strong>Groq Llama-4</strong>
+            </div>
+            <div className={styles.tas_chip}>
+              <small>Confianza</small>
+              <strong>{aiConfidence !== null ? `${aiConfidence}%` : '—'}</strong>
+            </div>
+            <div className={`${styles.tas_chip} ${styles.tas_chip_ok}`}>
+              <small>Estado</small>
+              <strong>Aprobado</strong>
+            </div>
+          </div>
+        </div>
 
+        {/* ── Device hero ── */}
+        <div className={styles.tas_device_hero}>
+          <img src={deviceImage} alt={deviceName} className={styles.tas_device_hero_img} />
+          <div className={styles.tas_device_hero_body}>
+            <span className={styles.tas_device_hero_tag}>{t('tasacion.device.label')}</span>
+            <strong className={styles.tas_device_hero_name}>{deviceName}</strong>
+            {aiVisualCondition && (
+              <span
+                className={styles.tas_device_hero_condition}
+                style={{
+                  color: visualConditionColor[aiVisualCondition] ?? '#0f7d3f',
+                  background: visualConditionBg[aiVisualCondition] ?? '#f0fdf4',
+                }}
+              >
+                Estado físico: {visualConditionLabel[aiVisualCondition] ?? aiVisualCondition}
+              </span>
+            )}
+            {aiScore !== null && (
+              <div className={styles.tas_device_hero_score}>
+                <div className={styles.tas_device_hero_bar}>
+                  <div
+                    className={styles.tas_device_hero_bar_fill}
+                    style={{
+                      width: `${(aiScore / 10) * 100}%`,
+                      background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
+                    }}
+                  />
+                </div>
+                <span style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b', fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                  {aiScore.toFixed(1)} / 10
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Specs row ── */}
+        <div className={styles.tas_specs_row}>
+          {specs.map((spec) => {
+            const SpecIcon = spec.icon
+            return (
+              <div key={spec.labelKey} className={styles.tas_spec_item}>
+                <span className={styles.tas_spec_item_icon}><SpecIcon /></span>
+                <div className={styles.tas_spec_item_body}>
+                  <small>{t(`tasacion.spec.${spec.labelKey}`)}</small>
+                  <strong>{spec.value}</strong>
+                </div>
+                <span className={styles.tas_spec_item_check}><IconCheckCircle /></span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* ── Content grid ── */}
         <div className={styles.tas_content_grid}>
 
-          {/* Left */}
+          {/* Left: AI analysis */}
           <div className={styles.tas_left}>
-
-            <div className={styles.tas_specs_grid}>
-              {specs.map((spec) => {
-                const SpecIcon = spec.icon
-                return (
-                  <div key={spec.labelKey} className={styles.tas_spec_card}>
-                    <div className={styles.tas_spec_top}>
-                      <span className={styles.tas_spec_icon}><SpecIcon /></span>
-                      <span className={styles.tas_spec_check}><IconCheckCircle /></span>
-                    </div>
-                    <span className={styles.tas_spec_label}>{t(`tasacion.spec.${spec.labelKey}`)}</span>
-                    <strong className={styles.tas_spec_value}>{spec.value}</strong>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className={styles.tas_device_card}>
-              <img
-                src={deviceImage}
-                alt={deviceName}
-                className={styles.tas_device_img}
-              />
-              <div className={styles.tas_device_overlay}>
-                <span>{t('tasacion.device.label')}</span>
-                <strong>{deviceName}</strong>
-              </div>
-            </div>
-
-            {/* AI Analysis card */}
-            {(aiScore !== null || aiFactors.length > 0 || aiReasoning || aiResale !== null) && (
+            {(aiMarket !== null || aiResale !== null || aiMaxLoan !== null || aiFactors.length > 0 || aiReasoning) && (
               <div className={styles.tas_ai_card}>
 
-                {/* Header */}
                 <div className={styles.tas_ai_header}>
-                  <span className={styles.tas_ai_badge}>VALUACIÓN TÉCNICA</span>
-                  {aiConfidence !== null && (
-                    <span className={styles.tas_ai_confidence}>{aiConfidence}% precisión</span>
-                  )}
+                  <span className={styles.tas_ai_badge}>Análisis de mercado</span>
                 </div>
 
-                {/* Estado físico + score */}
-                {(aiVisualCondition || aiScore !== null) && (
-                  <div className={styles.tas_ai_condition_row}>
-                    {aiVisualCondition && (
-                      <span
-                        className={styles.tas_ai_condition_badge}
-                        style={{
-                          color: visualConditionColor[aiVisualCondition] ?? '#0f7d3f',
-                          background: visualConditionBg[aiVisualCondition] ?? '#f0fdf4',
-                        }}
-                      >
-                        Estado físico: {visualConditionLabel[aiVisualCondition] ?? aiVisualCondition}
-                      </span>
-                    )}
-                    {aiScore !== null && (
-                      <div className={styles.tas_ai_score_bar_wrap}>
-                        <div className={styles.tas_ai_score_bar_bg}>
-                          <div
-                            className={styles.tas_ai_score_bar_fill}
-                            style={{
-                              width: `${(aiScore / 10) * 100}%`,
-                              background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
-                            }}
-                          />
-                        </div>
-                        <strong style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b', fontSize: '0.8rem' }}>
-                          {aiScore.toFixed(1)}/10
-                        </strong>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Valores */}
                 {(aiMarket !== null || aiResale !== null || aiMaxLoan !== null) && (
                   <div className={styles.tas_ai_values}>
                     {aiMarket !== null && (
@@ -272,7 +277,6 @@ export function TasacionResultadosView({
                   </div>
                 )}
 
-                {/* Fuente de análisis */}
                 <div className={styles.tas_ai_source}>
                   <span className={styles.tas_ai_source_label}>Base del análisis</span>
                   <span className={styles.tas_ai_source_desc}>
@@ -281,7 +285,6 @@ export function TasacionResultadosView({
                   </span>
                 </div>
 
-                {/* Observaciones */}
                 {aiFactors.length > 0 && (
                   <div className={styles.tas_ai_factors}>
                     <span className={styles.tas_ai_factors_label}>Observaciones del dispositivo</span>
@@ -293,7 +296,6 @@ export function TasacionResultadosView({
                   </div>
                 )}
 
-                {/* Conclusión */}
                 {aiReasoning && (
                   <div className={styles.tas_ai_reasoning_wrap}>
                     <span className={styles.tas_ai_reasoning_label}>Conclusión del análisis</span>
@@ -304,22 +306,12 @@ export function TasacionResultadosView({
             )}
           </div>
 
-          {/* Right */}
+          {/* Right: value + seals */}
           <div className={styles.tas_right}>
 
-            {/* Value card */}
             <div className={styles.tas_value_card}>
-              <div className={styles.tas_value_term_header}>
-                <div className={styles.tas_value_dots}>
-                  <span className={styles.dot_red} />
-                  <span className={styles.dot_yellow} />
-                  <span className={styles.dot_green} />
-                </div>
-                <span className={styles.tas_value_term_title}>OFERTA APROBADA</span>
-                <span className={styles.tas_value_live}>● LIVE</span>
-              </div>
               <div className={styles.tas_value_body}>
-                <div className={styles.tas_value_bg_icon} aria-hidden="true">⊙</div>
+                <span className={styles.tas_value_badge}>Oferta aprobada</span>
                 <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
                 <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
                 <p>{t('tasacion.offer.desc')}</p>
@@ -329,26 +321,21 @@ export function TasacionResultadosView({
               </div>
             </div>
 
-            {/* Security seals */}
             <div className={styles.tas_seals_card}>
-              <h3>{t('tasacion.seals.title')}</h3>
-              <div className={styles.tas_seals_grid}>
-                <div className={styles.tas_seal}>
-                  <span className={styles.tas_seal_icon}><IconShield /></span>
-                  <div>
-                    <strong>{t('tasacion.seal.regulated')}</strong>
-                    <span>{t('tasacion.seal.regulatedSub')}</span>
-                  </div>
-                </div>
-                <div className={styles.tas_seal}>
-                  <span className={styles.tas_seal_icon}><IconShield /></span>
-                  <div>
-                    <strong>{t('tasacion.seal.protection')}</strong>
-                    <span>{t('tasacion.seal.protectionSub')}</span>
-                  </div>
+              <div className={styles.tas_seal}>
+                <span className={styles.tas_seal_icon}><IconShield /></span>
+                <div>
+                  <strong>{t('tasacion.seal.regulated')}</strong>
+                  <span>{t('tasacion.seal.regulatedSub')}</span>
                 </div>
               </div>
-              <p>{t('tasacion.seal.desc')}</p>
+              <div className={styles.tas_seal}>
+                <span className={styles.tas_seal_icon}><IconShield /></span>
+                <div>
+                  <strong>{t('tasacion.seal.protection')}</strong>
+                  <span>{t('tasacion.seal.protectionSub')}</span>
+                </div>
+              </div>
             </div>
 
           </div>
