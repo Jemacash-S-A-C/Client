@@ -1,20 +1,15 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
+import { CardPayment } from '@mercadopago/sdk-react'
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type'
 import styles from './PagarCuotaView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
 import { createPayment, mpCharge } from '../../services/payment.service'
 import type { PaymentMethod } from '../../types/api.types'
 
-// ── Mercado Pago init ──────────────────────────────────────────────────────────
-
-const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? ''
-const IS_MP_MOCK = !MP_PUBLIC_KEY || MP_PUBLIC_KEY.includes('REEMPLAZAR')
-
-if (!IS_MP_MOCK) {
-  initMercadoPago(MP_PUBLIC_KEY, { locale: 'es-PE' })
-}
+// initMercadoPago is called once in main.tsx — not here
+const IS_MP_MOCK = !import.meta.env.VITE_MP_PUBLIC_KEY ||
+  (import.meta.env.VITE_MP_PUBLIC_KEY as string).includes('REEMPLAZAR')
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
