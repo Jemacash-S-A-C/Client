@@ -458,7 +458,13 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
             />
           ) : (
             <CardPayment
-              initialization={{ amount: info.cuota, payer: { email: userEmail } }}
+              initialization={{
+                amount: info.cuota,
+                payer: {
+                  email: userEmail,
+                  identification: { type: 'CE', number: '123456789' },
+                },
+              }}
               onSubmit={handleMpBrickSubmit}
               onError={(err) => setError(err.message ?? 'Error en el formulario de pago.')}
               customization={{
