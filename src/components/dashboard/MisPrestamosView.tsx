@@ -6,7 +6,6 @@ import {
   IconFilter,
   IconDownload,
   IconCheck,
-  IconWarning,
 } from './icons'
 import styles from './MisPrestamosView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
@@ -47,14 +46,6 @@ function IconCreditCard() {
   )
 }
 
-function IconClock() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 // ── Derived data helpers ───────────────────────────────────────────────────────
 
@@ -144,16 +135,6 @@ function buildLoanData(
   return { app, evaluation, loanAmount, cuota, totalCost, monthsElapsed, paidCount, paidAmount, remainingAmount, pct, nextPaymentDate, movements }
 }
 
-// ── Status display ─────────────────────────────────────────────────────────────
-
-const STATUS_KEYS: Record<string, { labelKey: string; color: string; bg: string; icon: typeof IconClock }> = {
-  submitted:  { labelKey: 'prestamos.status.inReview',   color: '#2563eb', bg: '#dbeafe', icon: IconClock   },
-  signed:     { labelKey: 'prestamos.status.inReview2',  color: '#b45309', bg: '#fef3c7', icon: IconClock   },
-  approved:   { labelKey: 'prestamos.status.pickup',     color: '#0a6b34', bg: '#d9f0da', icon: IconClock   },
-  rejected:   { labelKey: 'prestamos.status.rejected',   color: '#dc2626', bg: '#fef2f2', icon: IconWarning },
-  defaulted:  { labelKey: 'prestamos.status.defaulted',  color: '#7f1d1d', bg: '#fee2e2', icon: IconWarning },
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -163,11 +144,9 @@ interface Props {
 export function MisPrestamosView({ onPay }: Props) {
   const { t } = useTranslation()
   const { fmtLong, fmtShort } = useLocaleFormat()
-  const [apps, setApps] = useState<LoanApplication[]>([])
   const [loans, setLoans] = useState<LoanData[]>([])
   const [loading, setLoading] = useState(true)
-  const [procesPage, setProcesPage] = useState(0)
-  const [movPage,    setMovPage]    = useState(0)
+  const [movPage, setMovPage] = useState(0)
   const [movementFilter, setMovementFilter] = useState<MovementFilter>('all')
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
 
@@ -178,7 +157,6 @@ export function MisPrestamosView({ onPay }: Props) {
       try {
         const all = await getApplications()
         if (cancelled) return
-        setApps(all)
 
         const approvedApps = all.filter((a) => a.status === 'disbursed')
 
@@ -213,18 +191,12 @@ export function MisPrestamosView({ onPay }: Props) {
   }, [])
 
   const activeLoans = loans
-  const inProcess   = apps.filter((a) => ['submitted', 'signed', 'approved', 'defaulted'].includes(a.status))
 
   // Pagination
   const LOANS_PER_PAGE = 4
   const [loanPage, setLoanPage] = useState(0)
   const totalLoanPages = Math.ceil(activeLoans.length / LOANS_PER_PAGE)
   const pagedLoans = activeLoans.slice(loanPage * LOANS_PER_PAGE, (loanPage + 1) * LOANS_PER_PAGE)
-
-  // Solicitudes en proceso — paginación de 4
-  const PROCES_PER_PAGE  = 4
-  const procesTotal      = Math.ceil(inProcess.length / PROCES_PER_PAGE)
-  const visibleInProcess = inProcess.slice(procesPage * PROCES_PER_PAGE, (procesPage + 1) * PROCES_PER_PAGE)
 
   // Aggregate all movements from all loans, most recent first
   // Payments first, then disbursements — preserves per-loan ordering
@@ -318,7 +290,7 @@ export function MisPrestamosView({ onPay }: Props) {
       </div>
 
       {/* ── Empty loans notice ── */}
-      {activeLoans.length === 0 && inProcess.length === 0 && (
+      {activeLoans.length === 0 && (
         <div className={styles.prest_empty}>
           <span className={styles.prest_empty_icon}><IconCreditCard /></span>
           <strong>{t('prestamos.empty.title')}</strong>
@@ -416,34 +388,6 @@ export function MisPrestamosView({ onPay }: Props) {
             {t('prestamos.next')}
           </button>
         </div>
-      )}
-
-      {/* ── In-process applications ── */}
-      {inProcess.length > 0 && (
-        <section className={styles.prest_process_section}>
-          <h2 className={styles.section_title}>{t('prestamos.inProcess.title')}</h2>
-          <div className={styles.prest_process_list}>
-            {visibleInProcess.map((app) => {
-              const info = STATUS_KEYS[app.status]
-              const StatusIcon = info?.icon ?? IconClock
-              return (
-                <div key={app.id} className={styles.prest_process_card}>
-                  <span className={styles.prest_process_icon} style={{ background: info?.bg, color: info?.color }}>
-                    <StatusIcon />
-                  </span>
-                  <div className={styles.prest_process_body}>
-                    <strong>{shortId(app.id)}</strong>
-                    <span>S/ {fmt(Number(app.amount))} · {app.term_months} meses</span>
-                  </div>
-                  <span className={styles.prest_process_badge} style={{ background: info?.bg, color: info?.color }}>
-                    {info ? t(info.labelKey) : app.status}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <Pagination page={procesPage} total={procesTotal} onChange={setProcesPage} />
-        </section>
       )}
 
       {/* ── Movement history ── */}
