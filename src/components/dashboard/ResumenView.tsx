@@ -340,10 +340,10 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResu
   const activeLoans = useMemo(() => apps.filter(a => a.status === 'disbursed'), [apps])
   const pendingApps = useMemo(() => apps.filter(a => ['submitted', 'signed', 'approved'].includes(a.status)), [apps])
 
-  // Most recent app that the user hasn't finished processing (can resume).
-  // Save points: draft → solicitar | submitted → auditoria/tasacion | signed → firma
+  // Most recent app the user hasn't finished processing (can resume).
+  // signed/approved/disbursed are terminal — no resume button shown.
   const resumableApp = useMemo(
-    () => apps.find(a => a.status === 'draft' || a.status === 'submitted' || a.status === 'signed') ?? null,
+    () => apps.find(a => a.status === 'draft' || a.status === 'submitted') ?? null,
     [apps],
   )
 
