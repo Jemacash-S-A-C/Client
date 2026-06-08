@@ -5,7 +5,7 @@ import styles from './AuditorTecnicoView.module.css'
 import { getApplication, cancelApplication } from '../../services/application.service'
 import { getGuarantee, valuateDevice, updateGuaranteeAi } from '../../services/guarantee.service'
 import { updateEvaluation } from '../../services/evaluation.service'
-import type { AiValuationResult, Guarantee } from '../../types/api.types'
+import type { AiValuationResult, Guarantee, LoanApplication } from '../../types/api.types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -57,6 +57,7 @@ export function AuditorTecnicoView({
   const [visibleLines, setVisibleLines] = useState(0)
   const [aiDone, setAiDone] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [application, setApplication] = useState<LoanApplication | null>(null)
   const [guarantee, setGuarantee] = useState<Guarantee | null>(null)
   const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
   const [approving, setApproving] = useState(false)
@@ -119,6 +120,7 @@ export function AuditorTecnicoView({
       let app
       try {
         app = await getApplication(applicationId)
+        if (!cancelled) setApplication(app)
       } catch {
         add({ time: nowTime(), text: 'Error al cargar la solicitud.', type: 'active' })
         if (!cancelled) setAiDone(true)
@@ -293,18 +295,18 @@ export function AuditorTecnicoView({
   }
 
   // ── Save approved_amount and navigate to tasacion ────────────────────────────
-  // NOTE: we do NOT set status:'approved' here — the evaluation is only approved
-  // after the user signs the contract in FirmaVerificacionView.  Setting it here
-  // would prematurely mark the loan application as approved on the backend.
+  // approved_amount is set to the user's requested loan amount (app.amount), NOT
+  // the AI max loan.  ai_max_loan is a device-capability metric; the actual loan is
+  // what the user originally specified.  approved_amount != null also serves as the
+  // server-side signal that the user has viewed their tasacion results.
 
   async function handleViewResults() {
     if (!applicationId) { onComplete(); return }
     setApproving(true)
     try {
-      const approvedAmount = aiResult?.max_loan_pen
-        ?? (guarantee?.ai_max_loan ? Number(guarantee.ai_max_loan) : null)
-      if (approvedAmount != null) {
-        await updateEvaluation(applicationId, { approved_amount: approvedAmount })
+      const requestedAmount = application?.amount != null ? Number(application.amount) : null
+      if (requestedAmount != null) {
+        await updateEvaluation(applicationId, { approved_amount: requestedAmount })
       }
     } catch { /* proceed regardless — tasacion view has its own fallback */ }
     finally { setApproving(false) }

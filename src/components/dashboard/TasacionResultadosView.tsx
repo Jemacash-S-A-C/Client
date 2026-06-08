@@ -5,7 +5,7 @@ import styles from './TasacionResultadosView.module.css'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getGuarantee } from '../../services/guarantee.service'
 import { getApplication, cancelApplication } from '../../services/application.service'
-import type { Evaluation, Guarantee } from '../../types/api.types'
+import type { Evaluation, Guarantee, LoanApplication } from '../../types/api.types'
 
 // ── Inline icons ──────────────────────────────────────────────────────────────
 
@@ -82,6 +82,7 @@ export function TasacionResultadosView({
   applicationId?: string | null
 }) {
   const { t } = useTranslation()
+  const [application, setApplication] = useState<LoanApplication | null>(null)
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
   const [guarantee, setGuarantee] = useState<Guarantee | null>(null)
   const [cancelling, setCancelling] = useState(false)
@@ -100,6 +101,7 @@ export function TasacionResultadosView({
     if (!applicationId) return
     getEvaluation(applicationId).then(setEvaluation).catch(() => {})
     getApplication(applicationId).then(async (app) => {
+      setApplication(app)
       if (app.guarantee_id) {
         try {
           const g = await getGuarantee(app.guarantee_id)
@@ -111,12 +113,18 @@ export function TasacionResultadosView({
 
   // ── Derived values ────────────────────────────────────────────────────────
 
-  const approvedAmount = evaluation?.approved_amount != null
+  // The loan offer is always the amount the user originally requested — not the AI max.
+  // ai_max_loan is the device-backing ceiling and shown separately as an informational metric.
+  // evaluation.approved_amount (set to app.amount in AuditorTecnicoView) is the source of
+  // truth once the AI has run; app.amount is the direct fallback while it's still loading.
+  const loanOffer = application?.amount != null
+    ? Number(application.amount)
+    : evaluation?.approved_amount != null
     ? Number(evaluation.approved_amount)
-    : (guarantee?.ai_max_loan ? Number(guarantee.ai_max_loan) : null)
+    : null
 
-  const displayAmount = approvedAmount != null
-    ? approvedAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })
+  const displayAmount = loanOffer != null
+    ? loanOffer.toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
 
   const deviceName = guarantee
@@ -347,7 +355,7 @@ export function TasacionResultadosView({
                   <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
                   <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
                   <p>{t('tasacion.offer.desc')}</p>
-                  <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
+                  <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(loanOffer)}>
                     {t('tasacion.accept')}
                   </button>
                 </div>
