@@ -22,6 +22,28 @@ export async function updateGuaranteeAi(id: string, data: {
   return api.patch<Guarantee>(`/guarantees/${id}/ai`, data)
 }
 
+export async function createDraftGuarantee(data: {
+  type: string
+  name: string
+  description?: string
+  estimated_value?: number
+  device_category?: string
+  brand?: string
+  model?: string
+  manufacture_year?: string
+  serial_number?: string
+  condition?: string
+  specs?: GuaranteeSpecs
+  photo_urls?: string[]
+}): Promise<Guarantee> {
+  return api.post<Guarantee>('/guarantees/draft', data)
+}
+
+/** Promotes a draft guarantee to ACTIVE so it appears in the user's dashboard. */
+export async function confirmGuarantee(id: string): Promise<Guarantee> {
+  return api.patch<Guarantee>(`/guarantees/${id}/confirm`, {})
+}
+
 export async function createGuarantee(data: {
   type: string
   name: string
