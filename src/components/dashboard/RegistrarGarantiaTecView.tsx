@@ -420,6 +420,46 @@ export function RegistrarGarantiaTecView({
     }
   }
 
+  async function handleDownloadAuditorMac() {
+    const token = getAccessToken()
+    if (!token) return
+
+    let gId = draftGuaranteeId
+    if (!gId) {
+      setDraftState('creating')
+      try {
+        const created = await createGuarantee(buildGuaranteePayload())
+        gId = created.id
+        setDraftGuaranteeId(gId)
+        setDraftState('ready')
+      } catch {
+        setDraftState('error')
+        return
+      }
+    }
+
+    try {
+      const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
+      const shRes = await fetch('/downloads/Jemacash-Auditor.sh')
+      if (!shRes.ok) throw new Error('No se pudo descargar el auditor')
+      const scriptText = await shRes.text()
+
+      const config     = { ApiUrl: apiUrl, GuaranteeId: gId, AccessToken: token }
+      const sentinel   = '###JEMACASH_CONFIG###'
+      const withConfig = scriptText + '\n' + sentinel + JSON.stringify(config) + '\n'
+
+      const blob = new Blob([withConfig], { type: 'text/plain' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = 'Jemacash-Auditor.sh'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error descargando auditor macOS:', err)
+    }
+  }
+
   async function handleCheckAudit() {
     if (!draftGuaranteeId) return
     setCheckingAudit(true)
@@ -1139,9 +1179,62 @@ export function RegistrarGarantiaTecView({
             )}
           </div>
 
-          {/* Other platforms — coming soon */}
+          {/* macOS — functional for laptops and desktops */}
+          <div className={styles.reg_verify_tile}>
+            <span className={styles.reg_verify_tile_icon}></span>
+            <strong>macOS</strong>
+            {(s1.device_category === 'laptop' || s1.device_category === 'desktop') ? (
+              <>
+                {auditVerified === 'verified' ? (
+                  <span className={styles.reg_verify_coming} style={{ color: '#0f7d3f' }}>✓ Auditoría completada</span>
+                ) : auditVerified === 'discrepancy' ? (
+                  <span className={styles.reg_verify_coming} style={{ color: '#dc2626' }}>✗ Discrepancia detectada</span>
+                ) : (
+                  <span className={styles.reg_verify_coming} style={{ color: '#d97706' }}>Requerido</span>
+                )}
+                {auditVerified === 'discrepancy' && discrepancyNotes && (
+                  <p style={{ fontSize: '0.7rem', color: '#dc2626', textAlign: 'center', margin: '0.25rem 0 0', lineHeight: 1.3 }}>
+                    {discrepancyNotes}
+                  </p>
+                )}
+                {auditVerified === 'none' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
+                    <button
+                      type="button"
+                      className={styles.reg_verify_download_btn}
+                      onClick={handleDownloadAuditorMac}
+                      disabled={draftState === 'creating'}
+                    >
+                      {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
+                    </button>
+                    <p style={{ fontSize: '0.65rem', color: '#6b7280', textAlign: 'center', margin: 0, lineHeight: 1.4 }}>
+                      En Terminal:{' '}
+                      <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3, fontFamily: 'monospace' }}>
+                        bash ~/Downloads/Jemacash-Auditor.sh
+                      </code>
+                    </p>
+                    <button
+                      type="button"
+                      className={styles.reg_verify_download_btn}
+                      onClick={handleCheckAudit}
+                      disabled={draftState !== 'ready' || checkingAudit}
+                      style={{ fontSize: '0.75rem', opacity: 0.85 }}
+                    >
+                      {checkingAudit ? 'Verificando...' : 'Ya ejecuté el auditor'}
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <span className={styles.reg_verify_coming}>Próximamente</span>
+                <button type="button" className={styles.reg_verify_download_btn} disabled>Descargar</button>
+              </>
+            )}
+          </div>
+
+          {/* Android / iOS — coming soon */}
           {[
-            { id: 'mac',     label: 'macOS',   icon: '' },
             { id: 'android', label: 'Android', icon: '🤖' },
             { id: 'ios',     label: 'iOS',     icon: '' },
           ].map((p) => (
