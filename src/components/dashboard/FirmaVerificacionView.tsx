@@ -5,7 +5,6 @@ import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
 import { getApplication, cancelApplication } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
-import { clearFirmaStep } from '../../utils/flowSession'
 import {
   IconDocument,
   IconShield,
@@ -130,7 +129,6 @@ function SignaturePad({
 export function FirmaVerificacionView({
   onFinalize,
   onGoToDocuments,
-  onSaveAndExit,
   onCancelApp,
   user,
   applicationId,
@@ -138,8 +136,6 @@ export function FirmaVerificacionView({
 }: {
   onFinalize: () => void
   onGoToDocuments: () => void
-  /** Go back to the main dashboard without cancelling — firma flag stays set */
-  onSaveAndExit?: () => void
   /** Cancel the entire loan application */
   onCancelApp?: () => void
   user: UserSession
@@ -262,8 +258,6 @@ export function FirmaVerificacionView({
         signature_base64: capturedSignature,
         document_urls: [],
       })
-      // Signature submitted → status becomes signed → clear the firma save-point flag
-      clearFirmaStep(applicationId)
       // Both approved and signed paths lead to pickup coordination — always show that card
       setAutoApproved(true)
       setSubmitDone(true)
@@ -283,16 +277,6 @@ export function FirmaVerificacionView({
       <header className={styles.frm_header}>
         <span className={styles.frm_brand}>Jemacash</span>
         <div className={styles.frm_header_right}>
-          {!submitDone && onSaveAndExit && (
-            <button
-              type="button"
-              className={styles.frm_cancel_btn}
-              onClick={onSaveAndExit}
-              style={{ marginRight: '0.5rem' }}
-            >
-              Guardar y salir
-            </button>
-          )}
           {!submitDone && onCancelApp && (
             <button
               type="button"

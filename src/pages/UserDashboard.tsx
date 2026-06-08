@@ -38,15 +38,6 @@ import { DetalleSolicitudView } from '../components/dashboard/DetalleSolicitudVi
 import { SubirDocumentosView } from '../components/dashboard/SubirDocumentosView'
 import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
-import {
-  FLOW_VIEWS,
-  saveFlowSession,
-  clearFlowSession,
-  loadFlowSession,
-  markFirmaStep,
-  clearFirmaStep,
-  hasFirmaStep,
-} from '../utils/flowSession'
 
 type ActiveView =
   | 'resumen'
@@ -95,22 +86,11 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     { view: 'configuracion', label: t('nav.settings'),         icon: IconSettings },
     { view: 'calendario',    label: t('nav.calendar'),         icon: IconCalendar },
   ]
-  // Lazy initializers read from localStorage so F5 restores the active flow step
-  // without flashing the resumen view first.
-  const [activeView, setActiveView] = useState<ActiveView>(() => {
-    const s = loadFlowSession()
-    return (s?.view as ActiveView | undefined) ?? 'resumen'
-  })
+  const [activeView, setActiveView] = useState<ActiveView>('resumen')
   const skipNextHistoryPushRef = useRef(false)
-  /** Set to true by "Guardar y salir" so the session useEffect skips clearing on the next run */
-  const skipSessionClearRef = useRef(false)
-  const [activeApplicationId, setActiveApplicationId] = useState<string | null>(() => {
-    return loadFlowSession()?.appId ?? null
-  })
+  const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null)
   const [activeApprovedAmount, setActiveApprovedAmount] = useState<number | null>(null)
-  const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>(() => {
-    return (loadFlowSession()?.postGuaranteeView) ?? 'garantias'
-  })
+  const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>('garantias')
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
   const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
@@ -141,51 +121,19 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
-  // Persist / clear the flow session whenever the active view or application changes.
-  // "Guardar y salir" sets skipSessionClearRef to prevent clearing when navigating to resumen.
-  useEffect(() => {
-    if (FLOW_VIEWS.has(activeView)) {
-      saveFlowSession({ view: activeView, appId: activeApplicationId, postGuaranteeView })
-    } else if (!skipSessionClearRef.current) {
-      clearFlowSession()
-    }
-    skipSessionClearRef.current = false
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, activeApplicationId, postGuaranteeView])
-
-  // ── Mark firma save-point as soon as the view becomes active ─────────────────
-  // Belt-and-suspenders: markFirmaStep is also called in onAccept from tasacion,
-  // but doing it here ensures the flag is always set regardless of how the user
-  // reached firma (resume, direct navigation, etc.).
-  useEffect(() => {
-    if (activeView === 'firma') markFirmaStep(activeApplicationId)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView])
-
   /** Navigate to the correct save-point for a resumable application.
    *
-   *  Save points:
-   *  1. draft          → solicitar   (still filling out the form)
-   *  2. submitted      → auditoria   (hardware scan + full audit-report)
-   *     • Routes to auditoria even when AI data exists so the user can read
-   *       the complete report before accepting the offer.
-   *  3. submitted + firma flag → firma  (user accepted tasación; restore them
-   *       directly in FirmaVerificacionView instead of making them click through
-   *       auditoria → tasacion → accept again)
+   *  Routing is derived purely from server-side application state:
+   *  1. draft      → solicitar  (still filling out the form)
+   *  2. submitted  → auditoria  (audit + AI results; if AI already ran the view
+   *                              shows "Ver Resultados" so they can proceed to
+   *                              tasacion/firma from there)
    *
-   *  signed / approved / disbursed are terminal — they are not resumable.
+   *  signed / approved / disbursed are terminal — not resumable.
    */
   function handleResume(app: LoanApplication) {
     setActiveApplicationId(app.id)
-    if (app.status === 'draft') {
-      setActiveView('solicitar')
-    } else if (hasFirmaStep(app.id)) {
-      // User already accepted the tasación offer in a previous session
-      setActiveView('firma')
-    } else {
-      // submitted (with or without AI) → start at auditoria
-      setActiveView('auditoria')
-    }
+    setActiveView(app.status === 'draft' ? 'solicitar' : 'auditoria')
   }
 
   // ── Full-screen flow views ────────────────────────────────────────────────
@@ -237,10 +185,9 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <TasacionResultadosView
         applicationId={activeApplicationId}
         onCancel={() => {
-          clearFlowSession()
           setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
         }}
-        onAccept={(amount) => { setActiveApprovedAmount(amount); markFirmaStep(activeApplicationId); setActiveView('firma') }}
+        onAccept={(amount) => { setActiveApprovedAmount(amount); setActiveView('firma') }}
       />
     )
   }
@@ -251,20 +198,13 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         applicationId={activeApplicationId}
         approvedAmount={activeApprovedAmount}
         onFinalize={() => {
-          clearFlowSession(); clearFirmaStep(activeApplicationId)
           setResumableApp(null); setActiveView('solicitudes')
         }}
         onGoToDocuments={() => {
           setReturnFromDocsTo('firma')
           setActiveView('documentos')
         }}
-        onSaveAndExit={() => {
-          // Preserve session → F5 and "Reanudar" will route back to firma
-          skipSessionClearRef.current = true
-          setActiveView('resumen')
-        }}
         onCancelApp={() => {
-          clearFlowSession(); clearFirmaStep(activeApplicationId)
           setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
         }}
         user={user}
@@ -277,7 +217,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <AuditorTecnicoView
         applicationId={activeApplicationId}
         onCancel={() => {
-          clearFlowSession()
           setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
         }}
         onComplete={() => setActiveView('tasacion')}
@@ -437,7 +376,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           {activeView === 'solicitar' && (
             <SolicitarPrestamoView
               applicationId={activeApplicationId}
-              onBack={() => { clearFlowSession(); setActiveApplicationId(null); setActiveView('resumen') }}
+              onBack={() => { setActiveApplicationId(null); setActiveView('resumen') }}
               onContinue={(appId) => {
                 setActiveApplicationId(appId)
                 setActiveView('auditoria')
@@ -454,4 +393,3 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   )
 }
 
-// All flow-session and firma-step helpers are defined in ../utils/flowSession.ts
