@@ -121,15 +121,25 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
-  /** Navigate to the correct step for a resumable application. */
+  /** Navigate to the correct save-point for a resumable application.
+   *
+   *  Save points:
+   *  1. draft          → solicitar   (filling out the form)
+   *  2. submitted      → auditoria   (hardware scan + full audit summary)
+   *     • Even when the AI result already exists we route back to auditoria so the
+   *       user can read the full report before accepting the tasación offer.
+   *  3. signed         → firma       (signature done; shows the success/processing panel)
+   */
   function handleResume(app: LoanApplication) {
     setActiveApplicationId(app.id)
     if (app.status === 'draft') {
       setActiveView('solicitar')
-    } else if (app.guarantee?.ai_resale_value) {
-      // AI auditor already ran — skip it and go straight to tasacion
-      setActiveView('tasacion')
+    } else if (app.status === 'signed') {
+      // Firma save point — FirmaVerificacionView will detect alreadySigned and show success
+      setActiveView('firma')
     } else {
+      // submitted (with or without AI) → always start at auditoria so the user
+      // can review the complete audit report before proceeding
       setActiveView('auditoria')
     }
   }

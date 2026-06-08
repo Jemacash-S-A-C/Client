@@ -4,6 +4,7 @@ import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
 import { getApplication } from '../../services/application.service'
+import { getEvaluation } from '../../services/evaluation.service'
 import {
   IconDocument,
   IconShield,
@@ -151,7 +152,10 @@ export function FirmaVerificacionView({
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   /** Base64 of the drawn signature — set after "Confirmar Firma", before actual submission */
   const [capturedSignature, setCapturedSignature] = useState<string | null>(null)
+  /** Locally resolved amount — used when resuming directly to firma without passing through tasacion */
+  const [resolvedAmount, setResolvedAmount] = useState<number | null>(approvedAmount ?? null)
 
+  // Detect already-signed applications (resume save point: firma)
   useEffect(() => {
     if (!applicationId) return
     getSignature(applicationId)
@@ -161,6 +165,26 @@ export function FirmaVerificacionView({
         setSubmitDone(true)
       })
       .catch(() => { /* no signature yet */ })
+  }, [applicationId])
+
+  // When resuming directly to this view (approvedAmount prop is absent), fetch the
+  // approved amount from the evaluation or, as a fallback, the guarantee's ai_max_loan.
+  useEffect(() => {
+    if (approvedAmount != null || !applicationId) return
+    getEvaluation(applicationId)
+      .then(ev => {
+        if (ev.approved_amount != null) setResolvedAmount(Number(ev.approved_amount))
+      })
+      .catch(() => {
+        // Fallback: read from the application's guarantee
+        getApplication(applicationId)
+          .then(app => {
+            const v = app.guarantee?.ai_max_loan
+            if (v != null) setResolvedAmount(Number(v))
+          })
+          .catch(() => { /* display '—' */ })
+      })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationId])
 
   useEffect(() => {
@@ -181,8 +205,8 @@ export function FirmaVerificacionView({
   const isSignedOrDone = alreadySigned || submitDone || !!capturedSignature
   const docsBlocking = docsStatus !== 'ok'
 
-  const displayAmount = approvedAmount != null
-    ? Number(approvedAmount).toLocaleString('es-PE', { minimumFractionDigits: 2 })
+  const displayAmount = resolvedAmount != null
+    ? resolvedAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
 
   /** Step 1 — user confirmed their drawing; store locally, don't hit API yet */

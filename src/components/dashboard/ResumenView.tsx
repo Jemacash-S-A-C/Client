@@ -182,8 +182,9 @@ const ARTICLES = [
 
 const RESUME_CFG: Record<string, { pct: number; stepKey: string }> = {
   draft:     { pct: 20, stepKey: 'resumen.resume.stepDraft'     },
-  submitted: { pct: 45, stepKey: 'resumen.resume.stepSubmitted' },
-  tasacion:  { pct: 75, stepKey: 'resumen.resume.stepTasacion'  },
+  submitted: { pct: 40, stepKey: 'resumen.resume.stepSubmitted' },
+  tasacion:  { pct: 65, stepKey: 'resumen.resume.stepTasacion'  },
+  signed:    { pct: 90, stepKey: 'resumen.resume.stepSigned'    },
 }
 
 function CircleRing({ pct }: { pct: number }) {
@@ -223,9 +224,13 @@ function ResumeCard({
   onResume?: (app: LoanApplication) => void
 }) {
   const { t } = useTranslation()
-  // If the AI auditor has already run, show the tasacion step instead of the auditor step
+  // Pick the right progress config for each save point
   const aiDone = app.status === 'submitted' && !!app.guarantee?.ai_resale_value
-  const cfg = aiDone ? RESUME_CFG.tasacion : (RESUME_CFG[app.status] ?? RESUME_CFG.submitted)
+  const cfg = app.status === 'signed'
+    ? RESUME_CFG.signed
+    : aiDone
+    ? RESUME_CFG.tasacion
+    : (RESUME_CFG[app.status] ?? RESUME_CFG.submitted)
   const shortAmt = `S/ ${Number(app.amount).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`
 
   return (
@@ -335,9 +340,10 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResu
   const activeLoans = useMemo(() => apps.filter(a => a.status === 'disbursed'), [apps])
   const pendingApps = useMemo(() => apps.filter(a => ['submitted', 'signed', 'approved'].includes(a.status)), [apps])
 
-  // Most recent app that the user hasn't finished processing (can resume)
+  // Most recent app that the user hasn't finished processing (can resume).
+  // Save points: draft → solicitar | submitted → auditoria/tasacion | signed → firma
   const resumableApp = useMemo(
-    () => apps.find(a => a.status === 'submitted' || a.status === 'draft') ?? null,
+    () => apps.find(a => a.status === 'draft' || a.status === 'submitted' || a.status === 'signed') ?? null,
     [apps],
   )
 
