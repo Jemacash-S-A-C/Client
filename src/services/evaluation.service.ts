@@ -7,7 +7,7 @@ export async function getEvaluation(applicationId: string): Promise<Evaluation> 
 
 export async function updateEvaluation(
   applicationId: string,
-  data: { status: string; approved_amount?: number; risk_score?: number; notes?: string },
+  data: { status?: string; approved_amount?: number; risk_score?: number; notes?: string },
 ): Promise<Evaluation> {
   return api.patch<Evaluation>(`/applications/${applicationId}/evaluation`, data)
 }

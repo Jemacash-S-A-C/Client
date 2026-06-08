@@ -292,18 +292,21 @@ export function AuditorTecnicoView({
     onCancel()
   }
 
-  // ── Approve & navigate ──────────────────────────────────────────────────────
+  // ── Save approved_amount and navigate to tasacion ────────────────────────────
+  // NOTE: we do NOT set status:'approved' here — the evaluation is only approved
+  // after the user signs the contract in FirmaVerificacionView.  Setting it here
+  // would prematurely mark the loan application as approved on the backend.
 
   async function handleViewResults() {
     if (!applicationId) { onComplete(); return }
     setApproving(true)
     try {
-      const app = await getApplication(applicationId)
       const approvedAmount = aiResult?.max_loan_pen
         ?? (guarantee?.ai_max_loan ? Number(guarantee.ai_max_loan) : null)
-        ?? app.amount
-      await updateEvaluation(applicationId, { status: 'approved', approved_amount: approvedAmount })
-    } catch { /* proceed regardless */ }
+      if (approvedAmount != null) {
+        await updateEvaluation(applicationId, { approved_amount: approvedAmount })
+      }
+    } catch { /* proceed regardless — tasacion view has its own fallback */ }
     finally { setApproving(false) }
     onComplete()
   }
