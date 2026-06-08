@@ -37,6 +37,16 @@ export function mpConfirm(payload: MpConfirmPayload): Promise<Payment> {
   return api.post<Payment>('/payments/mp-confirm', payload)
 }
 
+export interface MpCheckPayload {
+  application_id: string
+  cuota_number: number
+}
+
+/** Step 2 (alt) — verify & confirm by querying MP API directly */
+export function mpCheck(payload: MpCheckPayload): Promise<Payment> {
+  return api.post<Payment>('/payments/mp-check', payload)
+}
+
 export function createPayment(payload: CreatePaymentPayload): Promise<Payment> {
   return api.post<Payment>('/payments', payload)
 }
