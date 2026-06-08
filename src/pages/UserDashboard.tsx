@@ -38,6 +38,7 @@ import { DetalleSolicitudView } from '../components/dashboard/DetalleSolicitudVi
 import { SubirDocumentosView } from '../components/dashboard/SubirDocumentosView'
 import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
+import { getEvaluation } from '../services/evaluation.service'
 
 type ActiveView =
   | 'resumen'
@@ -123,17 +124,35 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
 
   /** Navigate to the correct save-point for a resumable application.
    *
-   *  Routing is derived purely from server-side application state:
-   *  1. draft      → solicitar  (still filling out the form)
-   *  2. submitted  → auditoria  (audit + AI results; if AI already ran the view
-   *                              shows "Ver Resultados" so they can proceed to
-   *                              tasacion/firma from there)
+   *  Routing is derived entirely from server-side state — no localStorage.
+   *
+   *  1. draft      → solicitar
+   *  2. submitted  → check evaluation.approved_amount:
+   *       • set   → firma  (user already accepted the tasacion offer; the
+   *                          approved_amount was persisted by handleViewResults
+   *                          in AuditorTecnicoView when they clicked
+   *                          "Ver Resultados del Diagnóstico")
+   *       • null  → auditoria  (AI hasn't run yet or user hasn't viewed results)
    *
    *  signed / approved / disbursed are terminal — not resumable.
    */
-  function handleResume(app: LoanApplication) {
+  async function handleResume(app: LoanApplication) {
     setActiveApplicationId(app.id)
-    setActiveView(app.status === 'draft' ? 'solicitar' : 'auditoria')
+    if (app.status === 'draft') {
+      setActiveView('solicitar')
+      return
+    }
+    // For submitted apps, check if approved_amount is already stored — that
+    // means the user went through auditoria and saw the tasacion results, so
+    // send them directly to firma (skipping the auditoria re-run).
+    try {
+      const ev = await getEvaluation(app.id)
+      if (ev.approved_amount != null) {
+        setActiveView('firma')
+        return
+      }
+    } catch { /* evaluation not found or network error — fall through */ }
+    setActiveView('auditoria')
   }
 
   // ── Full-screen flow views ────────────────────────────────────────────────
