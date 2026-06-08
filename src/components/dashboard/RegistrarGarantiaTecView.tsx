@@ -209,6 +209,23 @@ function detectOS(): ClientOS {
   return 'other'
 }
 
+// ── Form draft persistence ────────────────────────────────────────────────────
+// Saves all non-photo state to localStorage so the user can leave mid-form and
+// resume later. Photos are also persisted (compressed, typically < 200 KB each).
+
+const DRAFT_KEY = 'jemacash_reg_tec_draft_v1'
+
+function loadFormDraft(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null
+  } catch { return null }
+}
+
+function clearFormDraft() {
+  try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RegistrarGarantiaTecView({
@@ -219,7 +236,15 @@ export function RegistrarGarantiaTecView({
   onSuccess: () => void
 }) {
   const { t } = useTranslation()
-  const [step, setStep] = useState(0)
+
+  // ── Restore persisted draft (evaluated once on mount) ──────────────────────
+  // We store the parsed draft in a ref so it's read from localStorage only once,
+  // not on every render.
+  const _initDraftRef = useRef<Record<string, unknown> | null | undefined>(undefined)
+  if (_initDraftRef.current === undefined) _initDraftRef.current = loadFormDraft()
+  const _d = _initDraftRef.current
+
+  const [step, setStep] = useState<number>(typeof _d?.step === 'number' ? _d.step as number : 0)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -230,7 +255,7 @@ export function RegistrarGarantiaTecView({
     t('regGar.step.valuation'),
   ]
 
-  const [s1, setS1] = useState<Step1>({
+  const [s1, setS1] = useState<Step1>((_d?.s1 as Step1 | undefined) ?? {
     device_category: '',
     brand: '',
     custom_brand: '',
@@ -242,7 +267,7 @@ export function RegistrarGarantiaTecView({
     is_reconditioned: false,
   })
 
-  const [s2, setS2] = useState<Step2>({
+  const [s2, setS2] = useState<Step2>((_d?.s2 as Step2 | undefined) ?? {
     condition: '',
     processor: '',
     processor_custom: '',
@@ -252,7 +277,9 @@ export function RegistrarGarantiaTecView({
     screen_size: '',
   })
 
-  const [s3, setS3] = useState<Step3>({ photos: new Map() })
+  const [s3, setS3] = useState<Step3>({
+    photos: new Map(Array.isArray(_d?.photos) ? _d.photos as [string, string][] : []),
+  })
   const [pendingSlot, setPendingSlot] = useState<string | null>(null)
   const [imageSizeError, setImageSizeError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -260,20 +287,34 @@ export function RegistrarGarantiaTecView({
   // ── AI Valuation state ──────────────────────────────────────────────────────
 
   type AiState = 'idle' | 'running' | 'done' | 'failed'
-  const [aiState, setAiState]   = useState<AiState>('idle')
-  const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
+  // Restore AI result from draft; never restore 'running' (user must re-trigger)
+  const _restoredAiResult = (_d?.aiResult as AiValuationResult | undefined) ?? null
+  const [aiState, setAiState]   = useState<AiState>(_restoredAiResult ? 'done' : 'idle')
+  const [aiResult, setAiResult] = useState<AiValuationResult | null>(_restoredAiResult)
   const aiRef = useRef<{ cancelled: boolean; started: boolean }>({ cancelled: false, started: false })
+  /** true when AI result came from localStorage → skip re-running on step 3 entry */
+  const aiRestoredRef = useRef(_restoredAiResult !== null)
 
-  // ── Guarantee + audit state ───────────────────────────────────────────────────
+  // ── Guarantee + audit state ────────────────────────────────────────────────
 
-  const [draftGuaranteeId, setDraftGuaranteeId] = useState<string | null>(null)
-  const [auditVerified, setAuditVerified]     = useState<'none' | 'verified' | 'discrepancy'>('none')
+  const _auditValues = ['none', 'verified', 'discrepancy'] as const
+  const [draftGuaranteeId, setDraftGuaranteeId] = useState<string | null>(
+    typeof _d?.draftGuaranteeId === 'string' ? _d.draftGuaranteeId : null
+  )
+  const [auditVerified, setAuditVerified] = useState<'none' | 'verified' | 'discrepancy'>(
+    _auditValues.includes(_d?.auditVerified as typeof _auditValues[number])
+      ? _d!.auditVerified as typeof _auditValues[number]
+      : 'none'
+  )
   const [checkingAudit, setCheckingAudit]     = useState(false)
-  const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(null)
-  const [macDownloaded, setMacDownloaded]     = useState(false)
-  const [macCopied, setMacCopied]             = useState(false)
+  const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(
+    typeof _d?.discrepancyNotes === 'string' ? _d.discrepancyNotes : null
+  )
+  const [macDownloaded, setMacDownloaded] = useState<boolean>(_d?.macDownloaded === true)
+  const [macCopied, setMacCopied]         = useState(false)
   const clientOS = useMemo(() => detectOS(), [])
-  const aiSavedRef = useRef(false)
+  /** true when AI data was already saved to the draft guarantee during a previous visit */
+  const aiSavedRef = useRef(_restoredAiResult !== null && typeof _d?.draftGuaranteeId === 'string')
 
   async function runValuation() {
     try {
@@ -334,8 +375,13 @@ export function RegistrarGarantiaTecView({
     }
     if (!aiRef.current.started) {
       aiRef.current = { cancelled: false, started: true }
-      setAiState('running')
-      runValuation()
+      if (aiRestoredRef.current) {
+        // AI result was restored from localStorage — no need to re-run the analysis
+        aiRestoredRef.current = false // allow normal re-run if user navigates away and returns
+      } else {
+        setAiState('running')
+        runValuation()
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
@@ -356,6 +402,29 @@ export function RegistrarGarantiaTecView({
     }).catch(() => { /* non-critical */ })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftGuaranteeId, aiResult])
+
+  // Persist form draft to localStorage on every relevant state change so the
+  // user can leave mid-form and resume exactly where they left off.
+  useEffect(() => {
+    // Don't save an empty form — at least a device category must be selected
+    if (step === 0 && !s1.device_category) return
+    try {
+      const data: Record<string, unknown> = {
+        step,
+        s1,
+        s2,
+        // Map → serializable array of [slotId, dataUrl] pairs
+        photos: [...s3.photos.entries()],
+        auditVerified,
+        macDownloaded,
+      }
+      if (aiResult)           data.aiResult           = aiResult
+      if (draftGuaranteeId)   data.draftGuaranteeId   = draftGuaranteeId
+      if (discrepancyNotes)   data.discrepancyNotes   = discrepancyNotes
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data))
+    } catch { /* quota exceeded or private browsing — ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, s1, s2, s3, aiResult, draftGuaranteeId, auditVerified, discrepancyNotes, macDownloaded])
 
   // ── Guarantee helpers ──────────────────────────────────────────────────────
 
@@ -572,6 +641,7 @@ export function RegistrarGarantiaTecView({
           }).catch(() => { /* non-critical */ })
         }
       }
+      clearFormDraft()
       onSuccess()
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar la garantía.')
@@ -1418,7 +1488,7 @@ export function RegistrarGarantiaTecView({
         <button
           type="button"
           className={styles.reg_nav_back}
-          onClick={() => step === 0 ? onBack() : setStep((s) => s - 1)}
+          onClick={() => { if (step === 0) { clearFormDraft(); onBack() } else { setStep((s) => s - 1) } }}
         >
           {step === 0 ? t('regGar.cancel') : t('regGar.prev')}
         </button>
