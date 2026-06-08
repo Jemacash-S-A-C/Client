@@ -39,7 +39,7 @@ import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 import { getEvaluation } from '../services/evaluation.service'
 import { getDocumentsByApplication } from '../services/document.service'
-import { mpConfirm, mpCheck } from '../services/payment.service'
+import { mpConfirm, mpSync } from '../services/payment.service'
 
 type ActiveView =
   | 'resumen'
@@ -98,11 +98,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [resumableApp, setResumableApp] = useState<LoanApplication | null>(null)
   const hasResumable = resumableApp !== null
   const [mpReturnMsg, setMpReturnMsg] = useState<{ ok: boolean; text: string } | null>(null)
-  const [mpPending, setMpPending] = useState<{ applicationId: string; amount: number; cuotaNumber: number } | null>(() => {
-    const raw = localStorage.getItem('mp_pending')
-    return raw ? JSON.parse(raw) : null
-  })
-  const [mpCheckLoading, setMpCheckLoading] = useState(false)
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
 
@@ -127,89 +122,54 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
-  // ── Handle Mercado Pago Checkout Pro return ───────────────────────────────
+  // ── Handle Mercado Pago Checkout Pro return + auto-sync ──────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const mpStatus = params.get('mp_status')
-    if (!mpStatus) return
 
-    // Clean the URL immediately so a refresh doesn't re-trigger
-    window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
+    if (mpStatus) {
+      // Clean the URL so a refresh doesn't re-trigger
+      window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
 
-    if (!mpStatus) {
-      // No redirect params — auto-confirm any pending MP payment silently
-      const raw = localStorage.getItem('mp_pending')
-      if (raw) {
-        const pending: { applicationId: string; amount: number; cuotaNumber: number } = JSON.parse(raw)
-        mpCheck({ application_id: pending.applicationId, cuota_number: pending.cuotaNumber })
-          .then(() => {
-            localStorage.removeItem('mp_pending')
-            setMpPending(null)
-            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
-            setActiveView('prestamos')
-          })
-          .catch(() => {
-            // Payment not approved yet — yellow banner stays visible
-          })
-      }
-      return
-    }
-
-    if (mpStatus === 'success') {
-      const collectionId = params.get('collection_id') ?? params.get('payment_id') ?? 'mp-checkout'
-      const raw = localStorage.getItem('mp_pending')
-      localStorage.removeItem('mp_pending')
-      setMpPending(null)
-
-      if (raw) {
-        const pending: { applicationId: string; amount: number; cuotaNumber: number } = JSON.parse(raw)
-        mpConfirm({
-          application_id: pending.applicationId,
-          amount: pending.amount,
-          cuota_number: pending.cuotaNumber,
-          mp_payment_id: collectionId,
-        })
-          .then(() => {
-            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
-            setActiveView('prestamos')
-          })
-          .catch((err: unknown) => {
-            const msg = err instanceof Error ? err.message : 'No se pudo confirmar el pago.'
-            setMpReturnMsg({ ok: false, text: msg })
-            setActiveView('prestamos')
-          })
-      } else {
-        setMpReturnMsg({ ok: true, text: '¡Pago realizado! Actualizando tu historial…' })
+      if (mpStatus === 'success') {
+        const collectionId = params.get('collection_id') ?? params.get('payment_id') ?? ''
+        // Try fast-path confirm via redirect params, then fall through to mpSync
+        if (collectionId) {
+          // We no longer have amount in URL — use mpSync to confirm from DB
+          mpSync()
+            .then((confirmed) => {
+              if (confirmed.length > 0) {
+                setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
+              } else {
+                // mpConfirm needs amount — fall back to mpSync which queries MP API
+                setMpReturnMsg({ ok: true, text: '¡Pago realizado! Actualizando tu historial…' })
+              }
+              setActiveView('prestamos')
+            })
+            .catch(() => setActiveView('prestamos'))
+        } else {
+          mpSync().then(() => setActiveView('prestamos')).catch(() => setActiveView('prestamos'))
+        }
+      } else if (mpStatus === 'failure') {
+        setMpReturnMsg({ ok: false, text: 'El pago fue rechazado. Puedes intentarlo de nuevo.' })
+        setActiveView('prestamos')
+      } else if (mpStatus === 'pending') {
+        setMpReturnMsg({ ok: false, text: 'Tu pago está pendiente de acreditación.' })
         setActiveView('prestamos')
       }
-    } else if (mpStatus === 'failure') {
-      localStorage.removeItem('mp_pending')
-      setMpPending(null)
-      setMpReturnMsg({ ok: false, text: 'El pago fue rechazado. Puedes intentarlo de nuevo.' })
-      setActiveView('prestamos')
-    } else if (mpStatus === 'pending') {
-      setMpReturnMsg({ ok: false, text: 'Tu pago está pendiente de acreditación. Te avisaremos cuando se confirme.' })
-      setActiveView('prestamos')
+    } else {
+      // Normal load — silently sync any pending MP payments in the background
+      mpSync()
+        .then((confirmed) => {
+          if (confirmed.length > 0) {
+            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
+            setActiveView('prestamos')
+          }
+        })
+        .catch(() => { /* silent — no pending payments or network error */ })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  async function handleMpCheck() {
-    if (!mpPending) return
-    setMpCheckLoading(true)
-    try {
-      await mpCheck({ application_id: mpPending.applicationId, cuota_number: mpPending.cuotaNumber })
-      localStorage.removeItem('mp_pending')
-      setMpPending(null)
-      setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
-      setActiveView('prestamos')
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'No se pudo verificar el pago.'
-      setMpReturnMsg({ ok: false, text: msg })
-    } finally {
-      setMpCheckLoading(false)
-    }
-  }
 
   /** Navigate to the correct save-point for a resumable application.
    *
@@ -432,53 +392,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         </header>
 
         <main className={styles.main}>
-          {mpPending && !mpReturnMsg && (
-            <div
-              role="alert"
-              style={{
-                margin: '0 0 1.25rem',
-                padding: '0.85rem 1.1rem',
-                borderRadius: '0.85rem',
-                background: '#fef9c3',
-                color: '#854d0e',
-                fontWeight: 600,
-                fontSize: '0.92rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                flexWrap: 'wrap',
-              }}
-            >
-              <span>⏳ Tienes un pago con Mercado Pago pendiente de confirmar.</span>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  disabled={mpCheckLoading}
-                  onClick={handleMpCheck}
-                  style={{
-                    background: '#854d0e',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '0.55rem',
-                    padding: '0.45rem 1rem',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    cursor: mpCheckLoading ? 'not-allowed' : 'pointer',
-                    opacity: mpCheckLoading ? 0.7 : 1,
-                  }}
-                >
-                  {mpCheckLoading ? 'Verificando…' : 'Verificar pago'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { localStorage.removeItem('mp_pending'); setMpPending(null) }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'inherit', padding: 0 }}
-                  aria-label="Descartar"
-                >✕</button>
-              </div>
-            </div>
-          )}
           {mpReturnMsg && (
             <div
               role="alert"

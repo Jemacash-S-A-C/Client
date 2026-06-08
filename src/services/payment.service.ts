@@ -47,6 +47,11 @@ export function mpCheck(payload: MpCheckPayload): Promise<Payment> {
   return api.post<Payment>('/payments/mp-check', payload)
 }
 
+/** Auto-sync — confirm all pending MP payments for this user (no localStorage needed) */
+export function mpSync(): Promise<Payment[]> {
+  return api.get<Payment[]>('/payments/mp-sync')
+}
+
 export function createPayment(payload: CreatePaymentPayload): Promise<Payment> {
   return api.post<Payment>('/payments', payload)
 }

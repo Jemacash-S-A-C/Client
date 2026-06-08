@@ -341,12 +341,6 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
         handleMpSuccess(payment.reference_number)
         return
       }
-      // Save pending info so we can confirm when MP redirects back
-      localStorage.setItem('mp_pending', JSON.stringify({
-        applicationId: info.applicationId,
-        amount: info.cuota,
-        cuotaNumber: info.cuotaNumber,
-      }))
       window.location.href = checkoutUrl
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudo crear el link de pago.'
