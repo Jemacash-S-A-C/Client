@@ -4,7 +4,6 @@ import { Pagination } from './Pagination'
 import { getApplications } from '../../services/application.service'
 import type { LoanApplication } from '../../types/api.types'
 import {
-  IconCheck,
   IconDocument,
   IconWarning,
   IconArrowRight,
@@ -29,21 +28,21 @@ const STATUS_TONES: Record<LoanApplication['status'], 'green' | 'red' | 'purple'
   submitted:  'blue',
   signed:     'amber',
   approved:   'green',
-  disbursed:  'green',
+  disbursed:  'blue',      // teal — distinct from approved green
   defaulted:  'red',
   rejected:   'red',
-  cancelled:  'red',
+  cancelled:  'purple',
 }
 
 const STATUS_CFG = {
-  draft:      { color: '#7c3aed', bg: '#ede9fe' },
-  submitted:  { color: '#2563eb', bg: '#dbeafe' },
-  signed:     { color: '#b45309', bg: '#fef3c7' },
-  approved:   { color: '#0a6b34', bg: '#d9f0da' },
-  disbursed:  { color: '#0f7d3f', bg: '#d9f0da' },
-  defaulted:  { color: '#7f1d1d', bg: '#fee2e2' },
-  rejected:   { color: '#dc2626', bg: '#fef2f2' },
-  cancelled:  { color: '#6b7280', bg: '#f3f4f6' },
+  draft:      { color: '#6d28d9', bg: '#ede9fe' },   // violet
+  submitted:  { color: '#1d4ed8', bg: '#dbeafe' },   // blue
+  signed:     { color: '#92400e', bg: '#fde68a' },   // amber
+  approved:   { color: '#166534', bg: '#bbf7d0' },   // emerald green
+  disbursed:  { color: '#0e7490', bg: '#cffafe' },   // teal/cyan — clearly ≠ approved
+  defaulted:  { color: '#7f1d1d', bg: '#fecaca' },   // red
+  rejected:   { color: '#991b1b', bg: '#fee2e2' },   // rose
+  cancelled:  { color: '#4b5563', bg: '#f3f4f6' },   // slate gray
 } as const
 
 function fmtAmount(n: number) {
@@ -74,13 +73,13 @@ export function MisSolicitudesView({ onDetalle }: Props) {
   const active   = applications.filter(a => ['submitted','signed','approved','disbursed'].includes(a.status))
   const others   = applications.filter(a => ['draft','rejected','defaulted'].includes(a.status))
 
-  const ACTIVE_PER_PAGE  = 4
+  const ACTIVE_PER_PAGE  = 6
   const activeTotal      = Math.ceil(active.length / ACTIVE_PER_PAGE)
   const visibleActive    = active.slice(activePage * ACTIVE_PER_PAGE, (activePage + 1) * ACTIVE_PER_PAGE)
 
   // Historial: todos (others primero, luego activos al fondo)
   const histAll          = [...others, ...active]
-  const HIST_PER_PAGE    = 6
+  const HIST_PER_PAGE    = 10
   const histTotal        = Math.ceil(histAll.length / HIST_PER_PAGE)
   const visibleHist      = histAll.slice(histPage * HIST_PER_PAGE, (histPage + 1) * HIST_PER_PAGE)
 
@@ -100,16 +99,16 @@ export function MisSolicitudesView({ onDetalle }: Props) {
           <span>{t('solicitudes.stat.total')}</span>
         </div>
         <div className={styles.sol_stat}>
-          <strong>{active.length}</strong>
+          <strong>{applications.filter(a => ['submitted','signed'].includes(a.status)).length}</strong>
           <span>{t('solicitudes.stat.active')}</span>
         </div>
         <div className={styles.sol_stat}>
-          <strong>{applications.filter(a => a.status === 'disbursed').length}</strong>
+          <strong>{applications.filter(a => a.status === 'approved').length}</strong>
           <span>{t('solicitudes.stat.approved')}</span>
         </div>
         <div className={styles.sol_stat}>
-          <strong>{applications.filter(a => a.status === 'signed').length}</strong>
-          <span>{t('solicitudes.stat.signed')}</span>
+          <strong>{applications.filter(a => a.status === 'disbursed').length}</strong>
+          <span>{t('solicitudes.stat.disbursed')}</span>
         </div>
       </div>
 
@@ -122,30 +121,42 @@ export function MisSolicitudesView({ onDetalle }: Props) {
       ) : active.length > 0 && (
         <section className={styles.sol_section}>
           <h2 className={styles.section_title}>{t('solicitudes.active.title')}</h2>
-          <div className={styles.sol_list}>
+          <div className={styles.historial_grid}>
             {visibleActive.map(app => {
-              const cfg = STATUS_CFG[app.status]
+              const tone = STATUS_TONES[app.status]
+              const cfg  = STATUS_CFG[app.status]
+              const dateLabel = fmtMonthShort(app.created_at).toUpperCase()
               return (
-                <div key={app.id} className={styles.sol_row} onClick={() => onDetalle(app)}>
-                  <span className={styles.sol_row_icon_wrap}>
-                    <IconDocument />
-                  </span>
-                  <div className={styles.sol_row_info}>
-                    <strong>{t('solicitudes.loan.personal')}</strong>
-                    <span>S/ {fmtAmount(Number(app.amount))} · {app.term_months} meses · {shortId(app.id)}</span>
+                <article
+                  key={app.id}
+                  className={styles.historial_card}
+                  onClick={() => onDetalle(app)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
+                >
+                  <div className={styles.historial_card_top}>
+                    <span className={styles.historial_month}>{dateLabel}</span>
+                    <span
+                      className={`${styles.historial_status} ${
+                        tone === 'green'  ? styles.hs_green  :
+                        tone === 'red'    ? styles.hs_red    :
+                        tone === 'blue'   ? styles.hs_blue   :
+                        tone === 'amber'  ? styles.hs_amber  :
+                                           styles.hs_purple
+                      }`}
+                      style={{ color: cfg.color, background: cfg.bg }}
+                    >
+                      {t(STATUS_LABEL_KEYS[app.status])}
+                    </span>
                   </div>
-                  <span className={styles.sol_status_badge} style={{ color: cfg.color, background: cfg.bg }}>
-                    {t(STATUS_LABEL_KEYS[app.status])}
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.sol_arrow}
-                    aria-label={t('solicitudes.viewDetailAria')}
-                    onClick={(e) => { e.stopPropagation(); onDetalle(app) }}
-                  >
-                    <IconArrowRight />
-                  </button>
-                </div>
+                  <strong className={styles.historial_name}>{t('solicitudes.loan.personal')}</strong>
+                  <span className={styles.historial_amount}>S/ {fmtAmount(Number(app.amount))}</span>
+                  <span className={styles.historial_note}>{app.term_months} meses · {shortId(app.id)}</span>
+                  <div className={styles.historial_card_footer}>
+                    <span>{t('solicitudes.viewDetail')}</span>
+                  </div>
+                </article>
               )
             })}
           </div>
@@ -167,46 +178,33 @@ export function MisSolicitudesView({ onDetalle }: Props) {
           </div>
         ) : (
           <>
-            <div className={styles.historial_grid}>
+            <div className={styles.sol_list}>
               {visibleHist.map(app => {
-                const tone = STATUS_TONES[app.status]
-                const cfg  = STATUS_CFG[app.status]
-                const dateLabel = fmtMonthShort(app.created_at).toUpperCase()
+                const cfg = STATUS_CFG[app.status]
                 return (
-                  <article
-                    key={app.id}
-                    className={styles.historial_card}
-                    onClick={() => onDetalle(app)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={e => e.key === 'Enter' && onDetalle(app)}
-                  >
-                    <div className={styles.historial_card_top}>
-                      <span className={styles.historial_month}>{dateLabel}</span>
-                      <span
-                        className={`${styles.historial_status} ${
-                          tone === 'green' ? styles.hs_green :
-                          tone === 'red'   ? styles.hs_red   :
-                          tone === 'blue'  ? styles.hs_blue  :
-                          tone === 'amber' ? styles.hs_amber :
-                                            styles.hs_purple
-                        }`}
-                        style={{ color: cfg.color, background: cfg.bg }}
-                      >
-                        {t(STATUS_LABEL_KEYS[app.status])}
-                      </span>
-                    </div>
-                    <strong className={styles.historial_name}>{t('solicitudes.loan.personal')}</strong>
-                    <span className={styles.historial_amount}>
-                      S/ {fmtAmount(Number(app.amount))}
+                  <div key={app.id} className={styles.sol_row} onClick={() => onDetalle(app)}>
+                    <span className={styles.sol_row_icon_wrap}>
+                      <IconDocument />
                     </span>
-                    <span className={styles.historial_note}>
-                      {app.term_months} meses · {shortId(app.id)}
-                    </span>
-                    <div className={styles.historial_card_footer}>
-                      <span>{t('solicitudes.viewDetail')}</span>
+                    <div className={styles.sol_row_info}>
+                      <strong>{t('solicitudes.loan.personal')}</strong>
+                      <span>S/ {fmtAmount(Number(app.amount))} · {app.term_months} meses · {shortId(app.id)}</span>
                     </div>
-                  </article>
+                    <span
+                      className={styles.sol_status_badge}
+                      style={{ color: cfg.color, background: cfg.bg }}
+                    >
+                      {t(STATUS_LABEL_KEYS[app.status])}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.sol_arrow}
+                      aria-label={t('solicitudes.viewDetailAria')}
+                      onClick={e => { e.stopPropagation(); onDetalle(app) }}
+                    >
+                      <IconArrowRight />
+                    </button>
+                  </div>
                 )
               })}
             </div>
