@@ -86,11 +86,20 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     { view: 'configuracion', label: t('nav.settings'),         icon: IconSettings },
     { view: 'calendario',    label: t('nav.calendar'),         icon: IconCalendar },
   ]
-  const [activeView, setActiveView] = useState<ActiveView>('resumen')
+  // Lazy initializers read from localStorage so F5 restores the active flow step
+  // without flashing the resumen view first.
+  const [activeView, setActiveView] = useState<ActiveView>(() => {
+    const s = loadFlowSession()
+    return (s?.view as ActiveView | undefined) ?? 'resumen'
+  })
   const skipNextHistoryPushRef = useRef(false)
-  const [activeApplicationId, setActiveApplicationId] = useState<string | null>(null)
+  const [activeApplicationId, setActiveApplicationId] = useState<string | null>(() => {
+    return loadFlowSession()?.appId ?? null
+  })
   const [activeApprovedAmount, setActiveApprovedAmount] = useState<number | null>(null)
-  const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>('garantias')
+  const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>(() => {
+    return (loadFlowSession()?.postGuaranteeView) ?? 'garantias'
+  })
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
   const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
@@ -120,6 +129,16 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     }
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
+
+  // Persist / clear the flow session whenever the active view or application changes
+  useEffect(() => {
+    if (FLOW_VIEWS.has(activeView)) {
+      saveFlowSession({ view: activeView, appId: activeApplicationId, postGuaranteeView })
+    } else {
+      clearFlowSession()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, activeApplicationId, postGuaranteeView])
 
   // ── Mark firma save-point as soon as the view becomes active ─────────────────
   // Belt-and-suspenders: markFirmaStep is also called in onAccept from tasacion,
@@ -204,7 +223,10 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     return (
       <TasacionResultadosView
         applicationId={activeApplicationId}
-        onCancel={() => { setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes') }}
+        onCancel={() => {
+          clearFlowSession()
+          setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
+        }}
         onAccept={(amount) => { setActiveApprovedAmount(amount); markFirmaStep(activeApplicationId); setActiveView('firma') }}
       />
     )
@@ -215,20 +237,21 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <FirmaVerificacionView
         applicationId={activeApplicationId}
         approvedAmount={activeApprovedAmount}
-        onFinalize={() => { clearFirmaStep(activeApplicationId); setResumableApp(null); setActiveView('solicitudes') }}
+        onFinalize={() => {
+          clearFlowSession(); clearFirmaStep(activeApplicationId)
+          setResumableApp(null); setActiveView('solicitudes')
+        }}
         onGoToDocuments={() => {
           setReturnFromDocsTo('firma')
           setActiveView('documentos')
         }}
         onSaveAndExit={() => {
-          // Firma flag stays → "Reanudar" will route back here
+          // Flow session + firma flag stay → F5 or "Reanudar" will come back here
           setActiveView('resumen')
         }}
         onCancelApp={() => {
-          clearFirmaStep(activeApplicationId)
-          setActiveApplicationId(null)
-          setResumableApp(null)
-          setActiveView('solicitudes')
+          clearFlowSession(); clearFirmaStep(activeApplicationId)
+          setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
         }}
         user={user}
       />
@@ -239,7 +262,10 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     return (
       <AuditorTecnicoView
         applicationId={activeApplicationId}
-        onCancel={() => { setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes') }}
+        onCancel={() => {
+          clearFlowSession()
+          setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
+        }}
         onComplete={() => setActiveView('tasacion')}
       />
     )
@@ -397,7 +423,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           {activeView === 'solicitar' && (
             <SolicitarPrestamoView
               applicationId={activeApplicationId}
-              onBack={() => { setActiveApplicationId(null); setActiveView('resumen') }}
+              onBack={() => { clearFlowSession(); setActiveApplicationId(null); setActiveView('resumen') }}
               onContinue={(appId) => {
                 setActiveApplicationId(appId)
                 setActiveView('auditoria')
@@ -414,20 +440,49 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   )
 }
 
-// ── Firma save-point helpers (module-level so they're stable references) ──────
-// A lightweight localStorage flag remembers that the user reached the firma
-// step for a given application. It is set as soon as the firma view mounts
-// and cleared when the signature is submitted (status → signed) or the user
-// finalizes / cancels from the firma view.
+// ── Firma save-point helpers ──────────────────────────────────────────────────
 function _firmaKey(appId: string) { return `jemacash_firma_${appId}` }
 export function markFirmaStep(appId: string | null) {
   if (!appId) return
-  try { localStorage.setItem(_firmaKey(appId), '1') } catch { /* quota / private */ }
+  try { localStorage.setItem(_firmaKey(appId), '1') } catch {}
 }
 export function clearFirmaStep(appId: string | null) {
   if (!appId) return
-  try { localStorage.removeItem(_firmaKey(appId)) } catch { /* ignore */ }
+  try { localStorage.removeItem(_firmaKey(appId)) } catch {}
 }
 export function hasFirmaStep(appId: string): boolean {
   try { return localStorage.getItem(_firmaKey(appId)) === '1' } catch { return false }
+}
+
+// ── Flow session persistence ──────────────────────────────────────────────────
+// Saves the active flow view + application ID to localStorage so that F5
+// (hard refresh) restores the user to the exact step they were on.
+//
+// Covered views: solicitar · auditoria · tasacion · firma · registrar-garantia-tec
+// Non-flow views (resumen, prestamos, …) CLEAR the session so stale data
+// doesn't leak across unrelated visits.
+
+const FLOW_SESSION_KEY = 'jemacash_flow_session_v1'
+
+const FLOW_VIEWS = new Set([
+  'solicitar', 'auditoria', 'tasacion', 'firma', 'registrar-garantia-tec',
+])
+
+type FlowSession = {
+  view: string
+  appId: string | null
+  postGuaranteeView?: 'garantias' | 'solicitar'
+}
+
+function saveFlowSession(session: FlowSession) {
+  try { localStorage.setItem(FLOW_SESSION_KEY, JSON.stringify(session)) } catch {}
+}
+function clearFlowSession() {
+  try { localStorage.removeItem(FLOW_SESSION_KEY) } catch {}
+}
+function loadFlowSession(): FlowSession | null {
+  try {
+    const raw = localStorage.getItem(FLOW_SESSION_KEY)
+    return raw ? (JSON.parse(raw) as FlowSession) : null
+  } catch { return null }
 }
