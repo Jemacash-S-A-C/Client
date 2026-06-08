@@ -136,6 +136,25 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     // Clean the URL immediately so a refresh doesn't re-trigger
     window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
 
+    if (!mpStatus) {
+      // No redirect params — auto-confirm any pending MP payment silently
+      const raw = localStorage.getItem('mp_pending')
+      if (raw) {
+        const pending: { applicationId: string; amount: number; cuotaNumber: number } = JSON.parse(raw)
+        mpCheck({ application_id: pending.applicationId, cuota_number: pending.cuotaNumber })
+          .then(() => {
+            localStorage.removeItem('mp_pending')
+            setMpPending(null)
+            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
+            setActiveView('prestamos')
+          })
+          .catch(() => {
+            // Payment not approved yet — yellow banner stays visible
+          })
+      }
+      return
+    }
+
     if (mpStatus === 'success') {
       const collectionId = params.get('collection_id') ?? params.get('payment_id') ?? 'mp-checkout'
       const raw = localStorage.getItem('mp_pending')
