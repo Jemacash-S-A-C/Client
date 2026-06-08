@@ -4,7 +4,7 @@ import type { LoanApplication, Evaluation, Payment, LoanDocument } from '../../t
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
 import { getDocumentsByApplication } from '../../services/document.service'
-import { approveBypass, disburseApplication } from '../../services/application.service'
+import { disburseApplication } from '../../services/application.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
@@ -75,15 +75,15 @@ function buildTimeline(
   const created = fmtLong(app.created_at)
   const updated = fmtLong(app.updated_at ?? app.created_at)
 
-  // 6-step timeline
-  // 0 Enviada       → active: draft/submitted
-  // 1 Documentos    → active: submitted without docs
-  // 2 Valuación y firma → active: submitted with docs
-  // 3 Revisión      → active: signed
-  // 4 Aprobada      → active: approved (waiting for pickup)
-  // 5 Desembolso    → done: disbursed
-  const terminalSigned: LoanApplication['status'][] = ['signed','approved','disbursed','defaulted','rejected']
-  const docsDone = docsUploaded || terminalSigned.includes(app.status)
+  // 5-step timeline — "Revisión" removed; signing auto-approves immediately
+  // 0 Enviada            → done once submitted/beyond
+  // 1 Documentos         → done once docs uploaded or beyond
+  // 2 Valuación y firma  → done once signed/approved/disbursed/defaulted/rejected
+  // 3 Aprobada           → active on approved; done on disbursed/defaulted
+  // 4 Recogida y desembolso → done on disbursed/defaulted
+
+  const postSign = (['signed','approved','disbursed','defaulted','rejected'] as LoanApplication['status'][])
+  const docsDone = docsUploaded || postSign.includes(app.status)
 
   return [
     {
@@ -95,8 +95,10 @@ function buildTimeline(
     },
     {
       labelKey: 'detalle.timeline.documentos',
-      date:  docsDone ? (terminalSigned.includes(app.status) ? updated : created) : (app.status === 'submitted' ? tInProgress : tPending),
-      state: terminalSigned.includes(app.status)
+      date:  docsDone
+        ? (postSign.includes(app.status) ? updated : created)
+        : app.status === 'submitted' ? tInProgress : tPending,
+      state: postSign.includes(app.status)
         ? 'done'
         : docsUploaded
         ? 'done'
@@ -106,36 +108,33 @@ function buildTimeline(
     },
     {
       labelKey: 'detalle.timeline.valuacion',
-      date:  terminalSigned.includes(app.status) ? updated : (docsDone && app.status === 'submitted' ? tInProgress : tPending),
-      state: terminalSigned.includes(app.status)
+      date:  postSign.includes(app.status)
+        ? updated
+        : docsDone && app.status === 'submitted' ? tInProgress : tPending,
+      state: postSign.includes(app.status)
         ? 'done'
         : docsDone && app.status === 'submitted'
         ? 'active'
         : 'pending',
     },
     {
-      labelKey: 'detalle.timeline.revision',
-      date:  (['approved','disbursed','defaulted','rejected'] as LoanApplication['status'][]).includes(app.status)
+      labelKey: 'detalle.timeline.aprobada',
+      date:  (['signed','approved','disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
         ? updated
-        : app.status === 'signed' ? tInProgress : tPending,
+        : tPending,
       state: app.status === 'rejected'
         ? 'rejected'
-        : (['approved','disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        : (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
         ? 'done'
-        : app.status === 'signed' ? 'active' : 'pending',
-    },
-    {
-      labelKey: 'detalle.timeline.aprobada',
-      date:  (['approved','disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
-        ? updated
-        : app.status === 'approved' ? tInProgress : tPending,
-      state: (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
-        ? 'done'
-        : app.status === 'approved' ? 'active' : 'pending',
+        : (['signed','approved'] as LoanApplication['status'][]).includes(app.status)
+        ? 'active'
+        : 'pending',
     },
     {
       labelKey: 'detalle.timeline.desembolso',
-      date:  app.status === 'disbursed' ? updated : tPending,
+      date:  (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        ? updated
+        : tPending,
       state: (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
         ? 'done'
         : 'pending',
@@ -186,7 +185,7 @@ function IconLaptop() {
   )
 }
 
-type ConfirmAction = 'approve' | 'disburse'
+type ConfirmAction = 'disburse'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -205,7 +204,6 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const [payments,      setPayments]      = useState<Payment[]>([])
   const [appDocs,       setAppDocs]       = useState<LoanDocument[]>([])
   const [loading,       setLoading]       = useState(true)
-  const [bypassing,     setBypassing]     = useState(false)
   const [disbursing,    setDisbursing]    = useState(false)
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
@@ -241,18 +239,6 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const hasFinance = ['signed','approved','disbursed','defaulted'].includes(app.status)
 
   async function handleConfirmAction() {
-    if (confirmAction === 'approve') {
-      setConfirmAction(null)
-      setBypassing(true)
-      try {
-        await approveBypass(app.id)
-        onBack()
-      } catch {
-        setBypassing(false)
-      }
-      return
-    }
-
     if (confirmAction === 'disburse') {
       setConfirmAction(null)
       setDisbursing(true)
@@ -514,21 +500,9 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
             )}
             {app.status === 'signed' && (
               <>
-                <p className={styles.action_hint}>{t('detalle.action.signedHint')}</p>
-                <button type="button" className={styles.action_btn_review} disabled>
-                  {t('detalle.action.signedBtn')}
-                </button>
-                <div className={styles.bypass_divider} />
-                <p className={styles.bypass_notice}>
-                  ⚠️ Solo disponible mientras el panel de aprobación no está implementado
-                </p>
-                <button
-                  type="button"
-                  className={styles.action_btn_bypass}
-                  disabled={bypassing}
-                  onClick={() => setConfirmAction('approve')}
-                >
-                  {bypassing ? 'Aprobando…' : '⚡ Aprobar solicitud (provisional)'}
+                <p className={styles.action_hint}>{t('detalle.action.approvedHint')}</p>
+                <button type="button" className={styles.action_btn_success} disabled>
+                  <IconCheck /> {t('detalle.action.approvedBtn')}
                 </button>
               </>
             )}
@@ -614,16 +588,14 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
               Confirmar acción
             </h3>
             <p id="detalle-confirm-message" className={styles.confirm_message}>
-              {confirmAction === 'approve'
-                ? '¿Aprobar esta solicitud directamente? Esta acción provisional continuará el flujo sin pasar por el panel de aprobación.'
-                : '¿Confirmar recogida física y desembolsar? Esta acción provisional marcará la solicitud como desembolsada.'}
+              ¿Confirmar recogida física y desembolsar? Esta acción marcará la solicitud como desembolsada.
             </p>
             <div className={styles.confirm_actions}>
               <button type="button" className={styles.confirm_btn_secondary} onClick={() => setConfirmAction(null)}>
                 Cancelar
               </button>
               <button type="button" className={styles.confirm_btn_primary} onClick={handleConfirmAction}>
-                {confirmAction === 'approve' ? 'Aprobar solicitud' : 'Confirmar y desembolsar'}
+                Confirmar y desembolsar
               </button>
             </div>
           </div>
