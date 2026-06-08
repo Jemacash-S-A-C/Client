@@ -507,8 +507,12 @@ export function RegistrarGarantiaTecView({
       // AI must finish before anything else
       const aiDone = aiState === 'done' || aiState === 'failed'
       if (!aiDone) return false
-      // If AI succeeded, the photos must match the declared device
-      if (aiState === 'done' && aiResult && !aiResult.device_match_valid) return false
+      if (aiState === 'done' && aiResult) {
+        // Photos must match the declared device
+        if (!aiResult.device_match_valid) return false
+        // Resale value must meet the S/ 350 minimum
+        if (aiResult.resale_value_pen < 350) return false
+      }
       // Laptops and desktops require a passed hardware audit before registering
       const requiresAudit = s1.device_category === 'laptop' || s1.device_category === 'desktop'
       if (requiresAudit) return auditVerified === 'verified'
@@ -1066,6 +1070,24 @@ export function RegistrarGarantiaTecView({
                 <small>{t('regGar.step3.ai.loanNote')}</small>
               </div>
             </div>
+
+            {/* Minimum value guard — S/ 350 */}
+            {aiResult.resale_value_pen < 350 && (
+              <div className={styles.reg_warn_box} style={{ marginTop: '0.5rem' }}>
+                <IconAlert />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', marginBottom: '0.25rem' }}>
+                    Valor de reventa insuficiente
+                  </strong>
+                  <p style={{ margin: 0 }}>
+                    El valor de reventa estimado es{' '}
+                    <strong>S/ {aiResult.resale_value_pen.toLocaleString('es-PE')}</strong>,
+                    por debajo del mínimo requerido de <strong>S/ 350</strong>.
+                    No es posible registrar este dispositivo como garantía.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className={styles.reg_ai_score_row}>
               <span>{t('regGar.step3.ai.condScore')}</span>
