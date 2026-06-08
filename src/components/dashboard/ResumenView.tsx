@@ -354,7 +354,7 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResu
     onResumableChange?.(resumableApp)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumableApp, loading])
-  const activeGs    = useMemo(() => guarantees.filter(g => g.status !== 'released'), [guarantees])
+  const activeGs    = useMemo(() => guarantees.filter(g => g.status === 'active' || g.status === 'pledged'), [guarantees])
 
   const totalCredit = useMemo(() => {
     return activeLoans.reduce((sum, app) => {
@@ -469,13 +469,17 @@ export function ResumenView({ firstName, onSolicitar, onGarantias, onPay, onResu
                       <Icon />
                     </span>
                     <div className={styles.activity_copy}>
-                      <strong>{item.title}</strong>
+                      <div className={styles.activity_title_row}>
+                        <strong>{item.title}</strong>
+                        {item.status && (
+                          <span className={`${styles.activity_badge} ${styles[`ab_${item.tone}`]}`}>
+                            {item.status}
+                          </span>
+                        )}
+                      </div>
                       <span>{item.meta}</span>
                     </div>
-                    <div className={styles.activity_amount}>
-                      <strong>{item.amount}</strong>
-                      {item.status && <span>{item.status}</span>}
-                    </div>
+                    <strong className={styles.activity_sum}>{item.amount}</strong>
                   </div>
                 )
               })
