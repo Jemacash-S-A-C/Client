@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
+import { getDocuments } from '../../services/document.service'
 import { approveBypass, disburseApplication } from '../../services/application.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
@@ -47,6 +48,7 @@ interface TimelineStep {
 
 function buildTimeline(
   app: LoanApplication,
+  docsUploaded: boolean,
   tPending: string,
   tInProgress: string,
   fmtLong: (d: Date | string) => string,
@@ -54,45 +56,72 @@ function buildTimeline(
   const created = fmtLong(app.created_at)
   const updated = fmtLong(app.updated_at ?? app.created_at)
 
-  // 5-step timeline
-  // 0 Enviada       → active: draft
-  // 1 Valuación     → active: submitted
-  // 2 Revisión      → active: signed
-  // 3 Aprobada      → active: approved (waiting for pickup)
-  // 4 Desembolso    → done: disbursed
-  const STEPS: { labelKey: string; doneOn: LoanApplication['status'][] }[] = [
-    { labelKey: 'detalle.timeline.enviada',    doneOn: ['submitted','signed','approved','disbursed','defaulted','rejected'] },
-    { labelKey: 'detalle.timeline.valuacion',  doneOn: ['signed','approved','disbursed','defaulted','rejected']             },
-    { labelKey: 'detalle.timeline.revision',   doneOn: ['approved','disbursed','defaulted','rejected']                      },
-    { labelKey: 'detalle.timeline.aprobada',   doneOn: ['approved','disbursed','defaulted']                                 },
-    { labelKey: 'detalle.timeline.desembolso', doneOn: ['disbursed','defaulted']                                            },
+  // 6-step timeline
+  // 0 Enviada       → active: draft/submitted
+  // 1 Documentos    → active: submitted without docs
+  // 2 Valuación y firma → active: submitted with docs
+  // 3 Revisión      → active: signed
+  // 4 Aprobada      → active: approved (waiting for pickup)
+  // 5 Desembolso    → done: disbursed
+  const terminalSigned: LoanApplication['status'][] = ['signed','approved','disbursed','defaulted','rejected']
+  const docsDone = docsUploaded || terminalSigned.includes(app.status)
+
+  return [
+    {
+      labelKey: 'detalle.timeline.enviada',
+      date:  created,
+      state: (['submitted','signed','approved','disbursed','defaulted','rejected'] as LoanApplication['status'][]).includes(app.status)
+        ? 'done'
+        : 'active',
+    },
+    {
+      labelKey: 'detalle.timeline.documentos',
+      date:  docsDone ? (terminalSigned.includes(app.status) ? updated : created) : (app.status === 'submitted' ? tInProgress : tPending),
+      state: terminalSigned.includes(app.status)
+        ? 'done'
+        : docsUploaded
+        ? 'done'
+        : app.status === 'submitted'
+        ? 'active'
+        : 'pending',
+    },
+    {
+      labelKey: 'detalle.timeline.valuacion',
+      date:  terminalSigned.includes(app.status) ? updated : (docsDone && app.status === 'submitted' ? tInProgress : tPending),
+      state: terminalSigned.includes(app.status)
+        ? 'done'
+        : docsDone && app.status === 'submitted'
+        ? 'active'
+        : 'pending',
+    },
+    {
+      labelKey: 'detalle.timeline.revision',
+      date:  (['approved','disbursed','defaulted','rejected'] as LoanApplication['status'][]).includes(app.status)
+        ? updated
+        : app.status === 'signed' ? tInProgress : tPending,
+      state: app.status === 'rejected'
+        ? 'rejected'
+        : (['approved','disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        ? 'done'
+        : app.status === 'signed' ? 'active' : 'pending',
+    },
+    {
+      labelKey: 'detalle.timeline.aprobada',
+      date:  (['approved','disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        ? updated
+        : app.status === 'approved' ? tInProgress : tPending,
+      state: (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        ? 'done'
+        : app.status === 'approved' ? 'active' : 'pending',
+    },
+    {
+      labelKey: 'detalle.timeline.desembolso',
+      date:  app.status === 'disbursed' ? updated : tPending,
+      state: (['disbursed','defaulted'] as LoanApplication['status'][]).includes(app.status)
+        ? 'done'
+        : 'pending',
+    },
   ]
-
-  return STEPS.map((s, i) => {
-    const done = s.doneOn.includes(app.status)
-    const isActive = !done && (
-      (i === 0 && app.status === 'draft')     ||
-      (i === 1 && app.status === 'submitted') ||
-      (i === 2 && app.status === 'signed')    ||
-      (i === 4 && app.status === 'approved')
-    )
-    const isRejected = app.status === 'rejected' && i === 2
-
-    let date = tPending
-    if (i === 0)                                                               date = created
-    if (i === 1 && app.status !== 'draft')                                     date = created
-    if (i === 2 && ['signed','approved','disbursed','rejected'].includes(app.status)) date = updated
-    if (i === 3 && ['approved','disbursed'].includes(app.status))              date = updated
-    if (i === 4 && app.status === 'disbursed')                                 date = updated
-    if (isActive)                                                              date = tInProgress
-    if (isRejected)                                                            date = updated
-
-    return {
-      labelKey: s.labelKey,
-      date,
-      state: isRejected ? 'rejected' : done ? 'done' : isActive ? 'active' : 'pending',
-    }
-  })
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -142,28 +171,35 @@ interface Props {
 export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const { t } = useTranslation()
   const { fmtLong, fmtShort } = useLocaleFormat()
-  const [evaluation, setEvaluation] = useState<Evaluation | null>(null)
-  const [payments,   setPayments]   = useState<Payment[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [bypassing,   setBypassing]   = useState(false)
-  const [disbursing,  setDisbursing]  = useState(false)
+  const [evaluation,    setEvaluation]    = useState<Evaluation | null>(null)
+  const [payments,      setPayments]      = useState<Payment[]>([])
+  const [loading,       setLoading]       = useState(true)
+  const [docsUploaded,  setDocsUploaded]  = useState(false)
+  const [bypassing,     setBypassing]     = useState(false)
+  const [disbursing,    setDisbursing]    = useState(false)
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
+
+  const REQUIRED_DOC_TYPES = ['dni', 'pay_stub', 'utility_bill']
 
   useEffect(() => {
     let cancelled = false
     Promise.all([
       getEvaluation(app.id).catch(() => null),
       getPaymentsByApplication(app.id).catch(() => [] as Payment[]),
-    ]).then(([ev, pays]) => {
+      getDocuments().catch(() => []),
+    ]).then(([ev, pays, docs]) => {
       if (cancelled) return
       setEvaluation(ev)
       setPayments(pays)
+      const uploaded = new Set(docs.map(d => d.document_type))
+      setDocsUploaded(REQUIRED_DOC_TYPES.every(t => uploaded.has(t)))
     }).finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.id])
 
   const statusCfgKey = STATUS_CFG_KEYS[app.status] ?? STATUS_CFG_KEYS.submitted
-  const timeline     = buildTimeline(app, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
+  const timeline     = buildTimeline(app, docsUploaded, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
   const guarantee    = app.guarantee ?? null
 
   const loanAmount  = evaluation?.approved_amount != null

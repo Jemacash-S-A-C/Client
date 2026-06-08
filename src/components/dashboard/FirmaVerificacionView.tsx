@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
-import { getDocuments } from '../../services/document.service'
 import { getApplication, cancelApplication } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
 import {
@@ -10,16 +9,9 @@ import {
   IconShield,
   IconCheck,
   IconRefresh,
-  IconWarning,
 } from './icons'
 import styles from './FirmaVerificacionView.module.css'
 
-
-const REQUIRED_DOCS: { type: string; label: string }[] = [
-  { type: 'dni',          label: 'DNI / Documento de Identidad' },
-  { type: 'pay_stub',     label: 'Boleta de Pago'               },
-  { type: 'utility_bill', label: 'Recibo de Domicilio'          },
-]
 
 function SignaturePad({
   onSigned,
@@ -128,14 +120,12 @@ function SignaturePad({
 
 export function FirmaVerificacionView({
   onFinalize,
-  onGoToDocuments,
   onCancelApp,
   user,
   applicationId,
   approvedAmount,
 }: {
   onFinalize: () => void
-  onGoToDocuments: () => void
   /** Cancel the entire loan application */
   onCancelApp?: () => void
   user: UserSession
@@ -149,8 +139,6 @@ export function FirmaVerificacionView({
   const [submitDone, setSubmitDone] = useState(false)
   const [autoApproved, setAutoApproved] = useState(false)
   const [alreadySigned, setAlreadySigned] = useState(false)
-  const [docsStatus, setDocsStatus] = useState<'loading' | 'ok' | 'missing'>('loading')
-  const [missingDocs, setMissingDocs] = useState<string[]>([])
   const [pendingSignature, setPendingSignature] = useState<string | null>(null)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   /** Base64 of the drawn signature — set after "Confirmar Firma", before actual submission */
@@ -190,23 +178,8 @@ export function FirmaVerificacionView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationId])
 
-  useEffect(() => {
-    getDocuments()
-      .then(docs => {
-        const uploaded = new Set(docs.map(d => d.document_type))
-        const missing = REQUIRED_DOCS.filter(r => !uploaded.has(r.type)).map(r => r.label)
-        setMissingDocs(missing)
-        setDocsStatus(missing.length === 0 ? 'ok' : 'missing')
-      })
-      .catch(() => {
-        setMissingDocs(REQUIRED_DOCS.map(r => r.label))
-        setDocsStatus('missing')
-      })
-  }, [])
-
   // Pad is locked once signature is captured or the form is done
   const isSignedOrDone = alreadySigned || submitDone || !!capturedSignature
-  const docsBlocking = docsStatus !== 'ok'
 
   const displayAmount = resolvedAmount != null
     ? resolvedAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })
@@ -431,60 +404,9 @@ export function FirmaVerificacionView({
                   <SignaturePad
                     onSigned={setSigned}
                     onRequestConfirm={handleRequestCapture}
-                    disabled={isSignedOrDone || docsBlocking}
+                    disabled={isSignedOrDone}
                     t={t}
                   />
-                  {docsBlocking && docsStatus !== 'loading' && (
-                    <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
-                      {t('firma.pad.docsBlocking')}
-                    </p>
-                  )}
-                </div>
-
-                {/* Documentos */}
-                <div className={styles.frm_section}>
-                  <h2 className={styles.frm_section_title}>{t('firma.docs.title')}</h2>
-
-                  {docsStatus === 'loading' && (
-                    <div className={styles.frm_docs_loading}>
-                      <span className={styles.frm_docs_spinner} />
-                      <span>{t('firma.docs.loading')}</span>
-                    </div>
-                  )}
-
-                  {docsStatus === 'ok' && (
-                    <div className={styles.frm_docs_ok}>
-                      <span className={styles.frm_docs_ok_icon}><IconCheck /></span>
-                      <div>
-                        <strong>{t('firma.docs.ok.title')}</strong>
-                        <span>{t('firma.docs.ok.desc')}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {docsStatus === 'missing' && (
-                    <div className={styles.frm_docs_missing}>
-                      <div className={styles.frm_docs_missing_head}>
-                        <span className={styles.frm_docs_missing_icon}><IconWarning /></span>
-                        <div>
-                          <strong>{t('firma.docs.missing.title')}</strong>
-                          <span>{t('firma.docs.missing.desc')}</span>
-                        </div>
-                      </div>
-                      <ul className={styles.frm_docs_missing_list}>
-                        {missingDocs.map(label => (
-                          <li key={label}>{label}</li>
-                        ))}
-                      </ul>
-                      <button
-                        type="button"
-                        className={styles.frm_docs_upload_btn}
-                        onClick={onGoToDocuments}
-                      >
-                        {t('firma.docs.uploadBtn')}
-                      </button>
-                    </div>
-                  )}
                 </div>
               </>
             )}

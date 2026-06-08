@@ -505,6 +505,43 @@
   100% { background-position: -200% 0; }
 }
 
+/* ─── Flow continue row ──────────────────────────────────────────────────── */
+
+.continue_row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 0 0.25rem;
+}
+
+.continue_hint {
+  font-size: 0.82rem;
+  color: #d97706;
+  margin: 0;
+}
+
+.continue_btn {
+  padding: 0.7rem 1.8rem;
+  background: #0f7d3f;
+  color: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.continue_btn:hover:not(:disabled) {
+  background: #0a6b34;
+}
+
+.continue_btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {

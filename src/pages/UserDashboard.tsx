@@ -9,7 +9,6 @@ import {
   IconDocument,
   IconCalendar,
   IconShield,
-  IconDownload,
 } from '../components/dashboard/icons'
 
 function IconLogout() {
@@ -39,6 +38,7 @@ import { SubirDocumentosView } from '../components/dashboard/SubirDocumentosView
 import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 import { getEvaluation } from '../services/evaluation.service'
+import { getDocuments } from '../services/document.service'
 
 type ActiveView =
   | 'resumen'
@@ -83,7 +83,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     { view: 'prestamos',     label: t('nav.myLoans'),          icon: IconWallet   },
     { view: 'garantias',     label: t('nav.myGuarantees'),     icon: IconShield   },
     { view: 'solicitudes',   label: t('nav.myApplications'),   icon: IconDocument },
-    { view: 'documentos',    label: t('nav.myDocuments'),      icon: IconDownload },
     { view: 'configuracion', label: t('nav.settings'),         icon: IconSettings },
     { view: 'calendario',    label: t('nav.calendar'),         icon: IconCalendar },
   ]
@@ -94,7 +93,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [postGuaranteeView, setPostGuaranteeView] = useState<'garantias' | 'solicitar'>('garantias')
   const [activeLoanPayment, setActiveLoanPayment] = useState<LoanPaymentInfo | null>(null)
   const [activeApplication, setActiveApplication] = useState<LoanApplication | null>(null)
-  const [returnFromDocsTo, setReturnFromDocsTo] = useState<'firma' | null>(null)
   /** Resumable app surfaced by ResumenView — null when none */
   const [resumableApp, setResumableApp] = useState<LoanApplication | null>(null)
   const hasResumable = resumableApp !== null
@@ -128,11 +126,9 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
    *
    *  1. draft      → solicitar
    *  2. submitted  → check evaluation.approved_amount:
-   *       • set   → firma  (user already accepted the tasacion offer; the
-   *                          approved_amount was persisted by handleViewResults
-   *                          in AuditorTecnicoView when they clicked
-   *                          "Ver Resultados del Diagnóstico")
-   *       • null  → auditoria  (AI hasn't run yet or user hasn't viewed results)
+   *       • null        → auditoria  (AI hasn't run or user hasn't viewed results)
+   *       • set + docs missing → documentos  (tasacion accepted, docs pending)
+   *       • set + docs done    → firma        (docs uploaded, ready to sign)
    *
    *  signed / approved / disbursed are terminal — not resumable.
    */
@@ -142,13 +138,15 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       setActiveView('solicitar')
       return
     }
-    // For submitted apps, check if approved_amount is already stored — that
-    // means the user went through auditoria and saw the tasacion results, so
-    // send them directly to firma (skipping the auditoria re-run).
     try {
-      const ev = await getEvaluation(app.id)
+      const [ev, docs] = await Promise.all([
+        getEvaluation(app.id),
+        getDocuments().catch(() => [] as Awaited<ReturnType<typeof getDocuments>>),
+      ])
       if (ev.approved_amount != null) {
-        setActiveView('firma')
+        const uploaded = new Set(docs.map(d => d.document_type))
+        const allDone = ['dni', 'pay_stub', 'utility_bill'].every(t => uploaded.has(t))
+        setActiveView(allDone ? 'firma' : 'documentos')
         return
       }
     } catch { /* evaluation not found or network error — fall through */ }
@@ -206,7 +204,16 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         onCancel={() => {
           setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
         }}
-        onAccept={(amount) => { setActiveApprovedAmount(amount); setActiveView('firma') }}
+        onAccept={(amount) => { setActiveApprovedAmount(amount); setActiveView('documentos') }}
+      />
+    )
+  }
+
+  if (activeView === 'documentos') {
+    return (
+      <SubirDocumentosView
+        onBack={() => setActiveView('tasacion')}
+        onContinue={() => setActiveView('firma')}
       />
     )
   }
@@ -218,10 +225,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         approvedAmount={activeApprovedAmount}
         onFinalize={() => {
           setResumableApp(null); setActiveView('solicitudes')
-        }}
-        onGoToDocuments={() => {
-          setReturnFromDocsTo('firma')
-          setActiveView('documentos')
         }}
         onCancelApp={() => {
           setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes')
@@ -361,14 +364,6 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
                 setActiveApplication(app)
                 setActiveView('detalle-solicitud')
               }}
-            />
-          )}
-          {activeView === 'documentos' && (
-            <SubirDocumentosView
-              onBack={returnFromDocsTo === 'firma' ? () => {
-                setReturnFromDocsTo(null)
-                setActiveView('firma')
-              } : undefined}
             />
           )}
           {activeView === 'configuracion' && <ConfiguracionView user={user} onUpdate={onUserUpdate} />}

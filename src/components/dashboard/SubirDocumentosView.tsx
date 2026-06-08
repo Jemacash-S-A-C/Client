@@ -251,7 +251,10 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
+export function SubirDocumentosView({ onBack, onContinue }: {
+  onBack?: () => void
+  onContinue?: () => void
+}) {
   const { t } = useTranslation()
   const [docs, setDocs] = useState<LoanDocument[]>([])
   const [loading, setLoading] = useState(true)
@@ -308,7 +311,7 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
         </div>
         {onBack && (
           <button type="button" className={styles.back_btn} onClick={onBack}>
-            {t('docs.backToSign')}
+            {t('docs.backBtn')}
           </button>
         )}
       </div>
@@ -378,6 +381,23 @@ export function SubirDocumentosView({ onBack }: { onBack?: () => void }) {
               onDelete={handleDelete}
             />
           ))}
+        </div>
+      )}
+
+      {/* ── Flow continue button ── */}
+      {onContinue && !loading && (
+        <div className={styles.continue_row}>
+          {reqDone < required.length ? (
+            <p className={styles.continue_hint}>{t('docs.continueHint', { done: reqDone, total: required.length })}</p>
+          ) : null}
+          <button
+            type="button"
+            className={styles.continue_btn}
+            disabled={reqDone < required.length}
+            onClick={onContinue}
+          >
+            {t('docs.continueBtn')}
+          </button>
         </div>
       )}
 
