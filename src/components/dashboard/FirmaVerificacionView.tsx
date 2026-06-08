@@ -22,12 +22,12 @@ const REQUIRED_DOCS: { type: string; label: string }[] = [
 
 function SignaturePad({
   onSigned,
-  onConfirm,
+  onRequestConfirm,
   disabled,
   t,
 }: {
   onSigned: (v: boolean) => void
-  onConfirm: (base64: string) => void
+  onRequestConfirm: (base64: string) => void
   disabled?: boolean
   t: (key: string) => string
 }) {
@@ -114,9 +114,8 @@ function SignaturePad({
           className={`${styles.sig_confirm_btn} ${hasStrokes && !disabled ? styles.sig_confirm_active : ''}`}
           disabled={!hasStrokes || disabled}
           onClick={() => {
-            if (!window.confirm(t('firma.pad.confirmDialog'))) return
             const base64 = canvasRef.current?.toDataURL('image/png') ?? ''
-            onConfirm(base64)
+            onRequestConfirm(base64)
           }}
         >
           <IconCheck /> {t('firma.pad.confirm')}
@@ -148,6 +147,8 @@ export function FirmaVerificacionView({
   const [alreadySigned, setAlreadySigned] = useState(false)
   const [docsStatus, setDocsStatus] = useState<'loading' | 'ok' | 'missing'>('loading')
   const [missingDocs, setMissingDocs] = useState<string[]>([])
+  const [pendingSignature, setPendingSignature] = useState<string | null>(null)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
   /** Base64 of the drawn signature — set after "Confirmar Firma", before actual submission */
   const [capturedSignature, setCapturedSignature] = useState<string | null>(null)
 
@@ -188,6 +189,23 @@ export function FirmaVerificacionView({
   function handleCapture(base64: string) {
     setSigned(true)
     setCapturedSignature(base64)
+  }
+
+  function handleRequestCapture(base64: string) {
+    setPendingSignature(base64)
+    setShowConfirmModal(true)
+  }
+
+  function handleConfirmCapture() {
+    if (!pendingSignature) return
+    handleCapture(pendingSignature)
+    setPendingSignature(null)
+    setShowConfirmModal(false)
+  }
+
+  function handleCancelCapture() {
+    setPendingSignature(null)
+    setShowConfirmModal(false)
   }
 
   /** Step 2 — user clicked "Aceptar solicitud"; now submit to backend */
@@ -359,7 +377,12 @@ export function FirmaVerificacionView({
                 <div className={styles.frm_section}>
                   <h2 className={styles.frm_section_title}>{t('firma.pad.title')}</h2>
                   <p className={styles.frm_section_sub}>{t('firma.pad.sub')}</p>
-                  <SignaturePad onSigned={setSigned} onConfirm={handleCapture} disabled={isSignedOrDone || docsBlocking} t={t} />
+                  <SignaturePad
+                    onSigned={setSigned}
+                    onRequestConfirm={handleRequestCapture}
+                    disabled={isSignedOrDone || docsBlocking}
+                    t={t}
+                  />
                   {docsBlocking && docsStatus !== 'loading' && (
                     <p style={{ fontSize: '0.8rem', color: '#d97706', marginTop: '0.5rem' }}>
                       {t('firma.pad.docsBlocking')}
@@ -442,6 +465,44 @@ export function FirmaVerificacionView({
           )}
         </div>
       </div>
+
+      {showConfirmModal && (
+        <div className={styles.confirm_overlay} role="presentation">
+          <div
+            className={styles.confirm_modal}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="firma-confirm-title"
+            aria-describedby="firma-confirm-message"
+          >
+            <div className={styles.confirm_badge}>
+              <IconWarning />
+            </div>
+            <h3 id="firma-confirm-title" className={styles.confirm_title}>
+              {t('firma.pad.confirmTitle')}
+            </h3>
+            <p id="firma-confirm-message" className={styles.confirm_message}>
+              {t('firma.pad.confirmDialog')}
+            </p>
+            <div className={styles.confirm_actions}>
+              <button
+                type="button"
+                className={styles.confirm_btn_secondary}
+                onClick={handleCancelCapture}
+              >
+                {t('firma.cancel')}
+              </button>
+              <button
+                type="button"
+                className={styles.confirm_btn_primary}
+                onClick={handleConfirmCapture}
+              >
+                {t('firma.pad.confirmSubmit')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
