@@ -9,6 +9,7 @@ import {
   IconShield,
   IconCheck,
   IconRefresh,
+  IconWarning,
 } from './icons'
 import styles from './FirmaVerificacionView.module.css'
 
