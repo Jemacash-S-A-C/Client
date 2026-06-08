@@ -80,6 +80,8 @@ const OPTIONAL_DOCS: DocCfg[] = [
   { type: 'other', label: 'Documento adicional', desc: 'Cualquier respaldo complementario', accepts: 'image/*,.pdf,.doc,.docx' },
 ]
 
+const MAX_FILES_PER_TYPE = 3
+
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
   pending:   { label: 'Pendiente',   color: '#d97706', bg: '#fef3c7' },
   reviewing: { label: 'En revisión', color: '#2563eb', bg: '#dbeafe' },
@@ -111,6 +113,7 @@ function DocRow({ cfg, applicationId: _applicationId, uploaded, onUpload, onDele
 
   const primary = uploaded[0] ?? null
   const isDone = uploaded.length > 0
+  const atLimit = uploaded.length >= MAX_FILES_PER_TYPE
 
   const handleFile = async (file: File) => {
     setLoading(true)
@@ -169,34 +172,41 @@ function DocRow({ cfg, applicationId: _applicationId, uploaded, onUpload, onDele
         )}
       </div>
 
-      {/* Upload zone */}
-      <div
-        className={`${styles.doc_upload} ${dragging ? styles.doc_upload_over : ''} ${loading ? styles.doc_upload_loading : ''}`}
-        onClick={() => !loading && inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        role="button"
-        tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
-        aria-label={`Subir ${cfg.label}`}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept={cfg.accepts}
-          className={styles.doc_upload_input}
-          onChange={e => {
-            const file = e.target.files?.[0]
-            if (file) void handleFile(file)
-            e.target.value = ''
-          }}
-        />
-        {loading
-          ? <span className={styles.doc_upload_spinner} />
-          : <><span className={styles.doc_upload_icon}><IconUpload /></span><span>{isDone ? 'Reemplazar' : 'Subir'}</span></>
-        }
-      </div>
+      {/* Upload zone — hidden when limit reached */}
+      {atLimit ? (
+        <div className={styles.doc_upload_limit} aria-label="Límite alcanzado">
+          <span>Máx.</span>
+          <strong>3</strong>
+        </div>
+      ) : (
+        <div
+          className={`${styles.doc_upload} ${dragging ? styles.doc_upload_over : ''} ${loading ? styles.doc_upload_loading : ''}`}
+          onClick={() => !loading && inputRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
+          aria-label={`Subir ${cfg.label}`}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept={cfg.accepts}
+            className={styles.doc_upload_input}
+            onChange={e => {
+              const file = e.target.files?.[0]
+              if (file) void handleFile(file)
+              e.target.value = ''
+            }}
+          />
+          {loading
+            ? <span className={styles.doc_upload_spinner} />
+            : <><span className={styles.doc_upload_icon}><IconUpload /></span><span>{isDone ? 'Agregar' : 'Subir'}</span></>
+          }
+        </div>
+      )}
     </div>
   )
 }
