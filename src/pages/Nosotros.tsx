@@ -103,6 +103,7 @@ export default function Nosotros() {
           <article className={styles.leader_card}>
             <img src={teamPhoto} alt="Retrato de Matias Cohailla" />
             <div>
+              <span>CO-FOUNDER & CEO</span>
               <h3>Matias Cohailla</h3>
               <p>
                 "Nuestra meta es que cada peruano vea en la tecnología no una barrera, sino un

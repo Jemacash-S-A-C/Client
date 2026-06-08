@@ -48,6 +48,18 @@ function IconPaid() {
   );
 }
 
+function IconHeadset() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 11a9 9 0 0 1 18 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="2" y="11" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <rect x="18" y="11" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M22 17v1a4 4 0 0 1-4 4h-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="13" cy="22" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
 interface HomeProps {
   onRegister?: () => void
 }
@@ -151,37 +163,38 @@ function Home({ onRegister }: HomeProps) {
 
       <section className={styles.workflow} aria-labelledby="workflow-heading">
         <header>
+          <span className={styles.workflow_eyebrow}>Cómo funciona</span>
           <h2 id="workflow-heading">Precision Workflow</h2>
           <p>Tu dinero en tres pasos simples impulsados por IA</p>
         </header>
         <ol className={styles.workflow_grid}>
           <li>
             <article className={styles.step_card}>
-              <div className={styles.step_icon}>
-                <IconScan />
+              <div className={styles.step_card_top}>
+                <div className={styles.step_icon}><IconScan /></div>
+                <span className={styles.step_num}>01</span>
               </div>
-              <span className={styles.step_num}>1</span>
-              <h3>1. Scan</h3>
+              <h3>Scan</h3>
               <p>Escanea tu identificación y el artículo que deseas valuar usando nuestra app intuitiva.</p>
             </article>
           </li>
           <li>
             <article className={styles.step_card}>
-              <div className={styles.step_icon}>
-                <IconVerify />
+              <div className={styles.step_card_top}>
+                <div className={styles.step_icon}><IconVerify /></div>
+                <span className={styles.step_num}>02</span>
               </div>
-              <span className={styles.step_num}>2</span>
-              <h3>2. Verify</h3>
+              <h3>Verify</h3>
               <p>Validamos la condición de tu equipo y tu identidad en tiempo real para una oferta precisa.</p>
             </article>
           </li>
           <li>
             <article className={styles.step_card}>
-              <div className={styles.step_icon}>
-                <IconPaid />
+              <div className={styles.step_card_top}>
+                <div className={styles.step_icon}><IconPaid /></div>
+                <span className={styles.step_num}>03</span>
               </div>
-              <span className={styles.step_num}>3</span>
-              <h3>3. Get Paid</h3>
+              <h3>Get Paid</h3>
               <p>Una vez aceptada la oferta, el dinero se transfiere directo a tu cuenta o billetera digital.</p>
             </article>
           </li>
@@ -207,13 +220,30 @@ function Home({ onRegister }: HomeProps) {
 
         <aside className={styles.promo_side}>
           <article className={styles.promo_stat}>
-            <strong>+500,000</strong>
-            <span>Usuarios satisfechos en todo Perú</span>
+            <div className={styles.promo_stat_inner}>
+              <strong>+500,000</strong>
+              <span>Usuarios satisfechos en todo Perú</span>
+            </div>
+            <div className={styles.promo_stat_badge}>
+              <span>#1 en valuación</span>
+            </div>
           </article>
           <article className={styles.promo_help}>
+            <div className={styles.promo_help_header}>
+              <div className={styles.support_icon}><IconHeadset /></div>
+              <div className={styles.live_badge}>
+                <span className={styles.live_dot} />
+                Disponible ahora
+              </div>
+            </div>
             <h4>¿Necesitas ayuda?</h4>
-            <p>Nuestros asesores están disponibles 24/7 para apoyarte.</p>
-            <a href="#">Contactar soporte →</a>
+            <p>Nuestros asesores están disponibles 24/7 para apoyarte en cada paso del proceso.</p>
+            <button type="button" className={styles.promo_help_cta}>
+              Contactar soporte
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" width="15" height="15">
+                <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </article>
         </aside>
       </section>

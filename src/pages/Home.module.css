@@ -286,10 +286,24 @@
   text-align: center;
 }
 
+.workflow_eyebrow {
+  display: inline-block;
+  background: #e6f4e8;
+  color: var(--green);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  margin-bottom: 0.65rem;
+}
+
 .workflow h2 {
   margin: 0;
   color: var(--ink);
   font-size: clamp(1.8rem, 3vw, 3.4rem);
+  letter-spacing: -0.03em;
 }
 
 .workflow header p {
@@ -299,7 +313,7 @@
 }
 
 .workflow_grid {
-  margin: 1.35rem 0 0;
+  margin: 1.6rem 0 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -307,22 +321,54 @@
   gap: 1rem;
 }
 
+.workflow_grid li {
+  position: relative;
+}
+
+.workflow_grid li:not(:last-child)::after {
+  content: "›";
+  position: absolute;
+  right: -0.65rem;
+  top: calc(1.1rem + 1.225rem);
+  transform: translateY(-50%);
+  color: #b2d4b8;
+  font-size: 2.2rem;
+  line-height: 1;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .step_card {
   position: relative;
   background: #f7f8f5;
-  border-radius: 1.1rem;
-  padding: 1rem;
-  min-height: 180px;
+  border-radius: 1.2rem;
+  padding: 1.1rem;
+  min-height: 190px;
+  border: 1px solid rgba(23, 33, 27, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(23, 33, 27, 0.05);
+}
+
+.step_card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(15, 125, 53, 0.12);
+}
+
+.step_card_top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
 .step_icon {
-  width: 2.45rem;
-  height: 2.45rem;
-  border-radius: 0.7rem;
-  background: #cae5ca;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #d4edce 0%, #c0e0c0 100%);
   color: var(--green);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
 .step_icon svg {
@@ -331,26 +377,26 @@
 }
 
 .step_num {
-  position: absolute;
-  top: 0.9rem;
-  right: 1rem;
   color: #e2e7e1;
-  font-size: 2.4rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.04em;
 }
 
 .step_card h3 {
   margin: 0.9rem 0 0;
   color: #1d2620;
-  font-size: 1.28rem;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .step_card p {
-  margin: 0.6rem 0 0;
+  margin: 0.55rem 0 0;
   color: #546055;
-  font-size: 0.9rem;
-  line-height: 1.48;
+  font-size: 0.88rem;
+  line-height: 1.52;
 }
 
 .promo {
@@ -417,51 +463,158 @@
 
 .promo_stat,
 .promo_help {
-  border-radius: 1rem;
-  padding: 1rem 0.95rem;
+  border-radius: 1.2rem;
+  padding: 1.1rem 1rem;
 }
 
 .promo_stat {
-  background: #8f95ec;
-  color: #273279;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  min-height: 150px;
+  background: linear-gradient(145deg, #3730a3 0%, #6d28d9 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+  position: relative;
+  overflow: hidden;
+}
+
+.promo_stat::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.promo_stat_inner {
+  display: flex;
+  flex-direction: column;
 }
 
 .promo_stat strong {
-  font-size: clamp(1.8rem, 2.6vw, 2.2rem);
+  font-size: clamp(2rem, 2.8vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #fff;
+  line-height: 1;
 }
 
 .promo_stat span {
-  margin-top: 0.35rem;
-  font-size: clamp(0.88rem, 0.95vw, 1rem);
+  margin-top: 0.4rem;
+  font-size: clamp(0.85rem, 0.95vw, 0.95rem);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.35;
+}
+
+.promo_stat_badge {
+  margin-top: 1rem;
+  align-self: flex-start;
+}
+
+.promo_stat_badge span {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
 }
 
 .promo_help {
-  background: #e2e7df;
+  background: #edf2e9;
+  border: 1px solid #d8e4d3;
+}
+
+.promo_help_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.support_icon {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, #d4edce 0%, #c0e0c0 100%);
+  color: var(--green);
+  display: grid;
+  place-items: center;
+}
+
+.support_icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.live_badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  background: #dcfce7;
+  color: #14532d;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.live_dot {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  flex-shrink: 0;
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.75); }
 }
 
 .promo_help h4 {
   margin: 0;
   color: #1d2620;
-  font-size: clamp(1.08rem, 1.25vw, 1.25rem);
+  font-size: clamp(1.1rem, 1.25vw, 1.28rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .promo_help p {
   margin: 0.5rem 0 0;
   color: #556159;
-  font-size: clamp(0.9rem, 0.96vw, 1rem);
-  line-height: 1.42;
+  font-size: clamp(0.88rem, 0.96vw, 0.98rem);
+  line-height: 1.48;
 }
 
-.promo_help a {
+.promo_help_cta {
   display: inline-flex;
-  margin-top: 0.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.1rem;
+  width: 100%;
+  border: 1.8px solid var(--green);
+  border-radius: 999px;
+  background: transparent;
   color: var(--green);
+  padding: 0.65rem 1.1rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s;
+}
+
+.promo_help_cta:hover {
+  background: var(--green);
+  color: #fff;
 }
 
 @media (max-width: 1080px) {
@@ -498,6 +651,10 @@
 
   .workflow_grid {
     grid-template-columns: 1fr;
+  }
+
+  .workflow_grid li:not(:last-child)::after {
+    display: none;
   }
 }
 
