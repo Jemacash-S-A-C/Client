@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { UserSession } from '../../types/api.types'
 import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
-import { getApplication } from '../../services/application.service'
+import { getApplication, cancelApplication } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
 import {
   IconDocument,
@@ -129,12 +129,18 @@ function SignaturePad({
 export function FirmaVerificacionView({
   onFinalize,
   onGoToDocuments,
+  onSaveAndExit,
+  onCancelApp,
   user,
   applicationId,
   approvedAmount,
 }: {
   onFinalize: () => void
   onGoToDocuments: () => void
+  /** Go back to the main dashboard without cancelling — firma flag stays set */
+  onSaveAndExit?: () => void
+  /** Cancel the entire loan application */
+  onCancelApp?: () => void
   user: UserSession
   applicationId?: string | null
   approvedAmount?: number | null
@@ -209,6 +215,19 @@ export function FirmaVerificacionView({
     ? resolvedAmount.toLocaleString('es-PE', { minimumFractionDigits: 2 })
     : '—'
 
+  // ── Cancel application ──────────────────────────────────────────────────────
+  const [cancelling, setCancelling] = useState(false)
+
+  async function handleCancelApp() {
+    if (!window.confirm('¿Estás seguro de que quieres cancelar esta solicitud? Esta acción no se puede deshacer.')) return
+    setCancelling(true)
+    try {
+      if (applicationId) await cancelApplication(applicationId)
+    } catch { /* proceed regardless */ }
+    finally { setCancelling(false) }
+    onCancelApp?.()
+  }
+
   /** Step 1 — user confirmed their drawing; store locally, don't hit API yet */
   function handleCapture(base64: string) {
     setSigned(true)
@@ -263,6 +282,27 @@ export function FirmaVerificacionView({
       <header className={styles.frm_header}>
         <span className={styles.frm_brand}>Jemacash</span>
         <div className={styles.frm_header_right}>
+          {!submitDone && onSaveAndExit && (
+            <button
+              type="button"
+              className={styles.frm_cancel_btn}
+              onClick={onSaveAndExit}
+              style={{ marginRight: '0.5rem' }}
+            >
+              Guardar y salir
+            </button>
+          )}
+          {!submitDone && onCancelApp && (
+            <button
+              type="button"
+              className={styles.frm_cancel_btn}
+              onClick={handleCancelApp}
+              disabled={cancelling}
+              style={{ marginRight: '0.75rem', color: '#dc2626', borderColor: 'rgba(220,38,38,0.3)' }}
+            >
+              {cancelling ? '…' : 'Cancelar solicitud'}
+            </button>
+          )}
           <span className={styles.frm_avatar}>{user.initials}</span>
         </div>
       </header>

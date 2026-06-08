@@ -121,23 +121,14 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
-  // ── Firma save-point helpers ─────────────────────────────────────────────────
-  // A lightweight localStorage flag remembers that the user reached the firma
-  // step for a given application. It is set when they accept the tasación offer
-  // and cleared when they submit their signature (status → signed) or finalize.
-
-  function firmaKey(appId: string) { return `jemacash_firma_${appId}` }
-  function markFirmaStep(appId: string | null) {
-    if (!appId) return
-    try { localStorage.setItem(firmaKey(appId), '1') } catch { /* quota / private */ }
-  }
-  function clearFirmaStep(appId: string | null) {
-    if (!appId) return
-    try { localStorage.removeItem(firmaKey(appId)) } catch { /* ignore */ }
-  }
-  function hasFirmaStep(appId: string): boolean {
-    try { return localStorage.getItem(firmaKey(appId)) === '1' } catch { return false }
-  }
+  // ── Mark firma save-point as soon as the view becomes active ─────────────────
+  // Belt-and-suspenders: markFirmaStep is also called in onAccept from tasacion,
+  // but doing it here ensures the flag is always set regardless of how the user
+  // reached firma (resume, direct navigation, etc.).
+  useEffect(() => {
+    if (activeView === 'firma') markFirmaStep(activeApplicationId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView])
 
   /** Navigate to the correct save-point for a resumable application.
    *
@@ -228,6 +219,16 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         onGoToDocuments={() => {
           setReturnFromDocsTo('firma')
           setActiveView('documentos')
+        }}
+        onSaveAndExit={() => {
+          // Firma flag stays → "Reanudar" will route back here
+          setActiveView('resumen')
+        }}
+        onCancelApp={() => {
+          clearFirmaStep(activeApplicationId)
+          setActiveApplicationId(null)
+          setResumableApp(null)
+          setActiveView('solicitudes')
         }}
         user={user}
       />
@@ -411,4 +412,22 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       </div>
     </div>
   )
+}
+
+// ── Firma save-point helpers (module-level so they're stable references) ──────
+// A lightweight localStorage flag remembers that the user reached the firma
+// step for a given application. It is set as soon as the firma view mounts
+// and cleared when the signature is submitted (status → signed) or the user
+// finalizes / cancels from the firma view.
+function _firmaKey(appId: string) { return `jemacash_firma_${appId}` }
+export function markFirmaStep(appId: string | null) {
+  if (!appId) return
+  try { localStorage.setItem(_firmaKey(appId), '1') } catch { /* quota / private */ }
+}
+export function clearFirmaStep(appId: string | null) {
+  if (!appId) return
+  try { localStorage.removeItem(_firmaKey(appId)) } catch { /* ignore */ }
+}
+export function hasFirmaStep(appId: string): boolean {
+  try { return localStorage.getItem(_firmaKey(appId)) === '1' } catch { return false }
 }
