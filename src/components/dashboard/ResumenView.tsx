@@ -12,6 +12,7 @@ import {
 } from './icons'
 import styles from './ResumenView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
+import { hasFirmaStep } from '../../utils/flowSession'
 import { getApplications } from '../../services/application.service'
 import { getEvaluation }   from '../../services/evaluation.service'
 import { getGuarantees }   from '../../services/guarantee.service'
@@ -184,6 +185,7 @@ const RESUME_CFG: Record<string, { pct: number; stepKey: string }> = {
   draft:     { pct: 20, stepKey: 'resumen.resume.stepDraft'     },
   submitted: { pct: 40, stepKey: 'resumen.resume.stepSubmitted' },
   tasacion:  { pct: 65, stepKey: 'resumen.resume.stepTasacion'  },
+  firma:     { pct: 80, stepKey: 'resumen.resume.stepFirma'     },
   signed:    { pct: 90, stepKey: 'resumen.resume.stepSigned'    },
 }
 
@@ -225,9 +227,12 @@ function ResumeCard({
 }) {
   const { t } = useTranslation()
   // Pick the right progress config for each save point
-  const aiDone = app.status === 'submitted' && !!app.guarantee?.ai_resale_value
+  const aiDone  = app.status === 'submitted' && !!app.guarantee?.ai_resale_value
+  const inFirma = aiDone && hasFirmaStep(app.id)
   const cfg = app.status === 'signed'
     ? RESUME_CFG.signed
+    : inFirma
+    ? RESUME_CFG.firma
     : aiDone
     ? RESUME_CFG.tasacion
     : (RESUME_CFG[app.status] ?? RESUME_CFG.submitted)

@@ -5,6 +5,7 @@ import { createSignature, getSignature } from '../../services/signature.service'
 import { getDocuments } from '../../services/document.service'
 import { getApplication, cancelApplication } from '../../services/application.service'
 import { getEvaluation } from '../../services/evaluation.service'
+import { clearFirmaStep } from '../../utils/flowSession'
 import {
   IconDocument,
   IconShield,
@@ -262,7 +263,7 @@ export function FirmaVerificacionView({
         document_urls: [],
       })
       // Signature submitted → status becomes signed → clear the firma save-point flag
-      try { localStorage.removeItem(`jemacash_firma_${applicationId}`) } catch { /* ignore */ }
+      clearFirmaStep(applicationId)
       // Both approved and signed paths lead to pickup coordination — always show that card
       setAutoApproved(true)
       setSubmitDone(true)
