@@ -242,6 +242,8 @@ export function FirmaVerificacionView({
         signature_base64: capturedSignature,
         document_urls: [],
       })
+      // Signature submitted → status becomes signed → clear the firma save-point flag
+      try { localStorage.removeItem(`jemacash_firma_${applicationId}`) } catch { /* ignore */ }
       // Both approved and signed paths lead to pickup coordination — always show that card
       setAutoApproved(true)
       setSubmitDone(true)

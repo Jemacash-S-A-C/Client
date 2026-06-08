@@ -121,21 +121,46 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
+  // ── Firma save-point helpers ─────────────────────────────────────────────────
+  // A lightweight localStorage flag remembers that the user reached the firma
+  // step for a given application. It is set when they accept the tasación offer
+  // and cleared when they submit their signature (status → signed) or finalize.
+
+  function firmaKey(appId: string) { return `jemacash_firma_${appId}` }
+  function markFirmaStep(appId: string | null) {
+    if (!appId) return
+    try { localStorage.setItem(firmaKey(appId), '1') } catch { /* quota / private */ }
+  }
+  function clearFirmaStep(appId: string | null) {
+    if (!appId) return
+    try { localStorage.removeItem(firmaKey(appId)) } catch { /* ignore */ }
+  }
+  function hasFirmaStep(appId: string): boolean {
+    try { return localStorage.getItem(firmaKey(appId)) === '1' } catch { return false }
+  }
+
   /** Navigate to the correct save-point for a resumable application.
    *
    *  Save points:
-   *  1. draft     → solicitar  (still filling out the form)
-   *  2. submitted → auditoria  (hardware scan + full audit-report summary)
-   *     • Routes to auditoria even when AI data already exists so the user
-   *       can read the complete report before accepting the tasación offer.
+   *  1. draft          → solicitar   (still filling out the form)
+   *  2. submitted      → auditoria   (hardware scan + full audit-report)
+   *     • Routes to auditoria even when AI data exists so the user can read
+   *       the complete report before accepting the offer.
+   *  3. submitted + firma flag → firma  (user accepted tasación; restore them
+   *       directly in FirmaVerificacionView instead of making them click through
+   *       auditoria → tasacion → accept again)
+   *
    *  signed / approved / disbursed are terminal — they are not resumable.
    */
   function handleResume(app: LoanApplication) {
     setActiveApplicationId(app.id)
     if (app.status === 'draft') {
       setActiveView('solicitar')
+    } else if (hasFirmaStep(app.id)) {
+      // User already accepted the tasación offer in a previous session
+      setActiveView('firma')
     } else {
-      // submitted (with or without AI) → always start at auditoria
+      // submitted (with or without AI) → start at auditoria
       setActiveView('auditoria')
     }
   }
@@ -189,7 +214,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <TasacionResultadosView
         applicationId={activeApplicationId}
         onCancel={() => { setActiveApplicationId(null); setResumableApp(null); setActiveView('solicitudes') }}
-        onAccept={(amount) => { setActiveApprovedAmount(amount); setActiveView('firma') }}
+        onAccept={(amount) => { setActiveApprovedAmount(amount); markFirmaStep(activeApplicationId); setActiveView('firma') }}
       />
     )
   }
@@ -199,7 +224,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
       <FirmaVerificacionView
         applicationId={activeApplicationId}
         approvedAmount={activeApprovedAmount}
-        onFinalize={() => { setResumableApp(null); setActiveView('solicitudes') }}
+        onFinalize={() => { clearFirmaStep(activeApplicationId); setResumableApp(null); setActiveView('solicitudes') }}
         onGoToDocuments={() => {
           setReturnFromDocsTo('firma')
           setActiveView('documentos')
