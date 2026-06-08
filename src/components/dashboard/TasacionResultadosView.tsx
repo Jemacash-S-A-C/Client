@@ -58,6 +58,18 @@ function IconCheckCircle() {
   )
 }
 
+function IconXCircle() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="#dc2626" />
+      <path d="M15 9l-6 6M9 9l6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** Minimum condition score (0–10) required to accept a guarantee */
+const MIN_CONDITION_SCORE = 5
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function TasacionResultadosView({
@@ -312,15 +324,34 @@ export function TasacionResultadosView({
           <div className={styles.tas_right}>
 
             <div className={styles.tas_value_card}>
-              <div className={styles.tas_value_body}>
-                <span className={styles.tas_value_badge}>Oferta aprobada</span>
-                <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
-                <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
-                <p>{t('tasacion.offer.desc')}</p>
-                <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
-                  {t('tasacion.accept')}
-                </button>
-              </div>
+              {aiScore !== null && aiScore < MIN_CONDITION_SCORE ? (
+                /* ── Guarantee rejected: score too low ── */
+                <div className={styles.tas_rejected_body}>
+                  <div className={styles.tas_rejected_icon}><IconXCircle /></div>
+                  <span className={styles.tas_rejected_title}>Garantía no califica</span>
+                  <p className={styles.tas_rejected_desc}>
+                    El score de condición del dispositivo es <strong>{aiScore.toFixed(1)}/10</strong>,
+                    por debajo del mínimo requerido de <strong>{MIN_CONDITION_SCORE}.0/10</strong> para ser aceptado como garantía.
+                  </p>
+                  <p className={styles.tas_rejected_hint}>
+                    Puedes intentar con un dispositivo en mejor estado.
+                  </p>
+                  <button type="button" className={styles.tas_reject_back_btn} onClick={handleCancel}>
+                    Volver a solicitudes
+                  </button>
+                </div>
+              ) : (
+                /* ── Score OK: show approved offer ── */
+                <div className={styles.tas_value_body}>
+                  <span className={styles.tas_value_badge}>Oferta aprobada</span>
+                  <span className={styles.tas_value_label}>{t('tasacion.valueLabel')}</span>
+                  <strong className={styles.tas_value_amount}>S/<span>{displayAmount}</span></strong>
+                  <p>{t('tasacion.offer.desc')}</p>
+                  <button type="button" className={styles.tas_accept_btn} onClick={() => onAccept(approvedAmount)}>
+                    {t('tasacion.accept')}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.tas_seals_card}>

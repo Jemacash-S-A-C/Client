@@ -537,6 +537,65 @@
   transform: translateY(-1px);
 }
 
+/* ── Rejection card (score too low) ── */
+
+.tas_rejected_body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.8rem;
+  padding: 1.65rem 1.1rem 1.4rem;
+}
+
+.tas_rejected_icon {
+  width: 2.8rem;
+  height: 2.8rem;
+  display: grid;
+  place-items: center;
+}
+
+.tas_rejected_icon svg {
+  width: 2.8rem;
+  height: 2.8rem;
+}
+
+.tas_rejected_title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #991b1b;
+  letter-spacing: -0.02em;
+}
+
+.tas_rejected_desc {
+  font-size: 0.84rem;
+  color: #6b2c2c;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.tas_rejected_hint {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.tas_reject_back_btn {
+  width: 100%;
+  border: 1.5px solid #fecaca;
+  border-radius: 0.85rem;
+  padding: 0.78rem 1rem;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 0.4rem;
+}
+
+.tas_reject_back_btn:hover { background: #fecaca; }
+
 /* ── Seals card ── */
 
 .tas_seals_card {
