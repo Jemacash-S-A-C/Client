@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { LoanApplication, Evaluation, Payment } from '../../types/api.types'
+import type { LoanApplication, Evaluation, Payment, LoanDocument } from '../../types/api.types'
 import { getEvaluation } from '../../services/evaluation.service'
 import { getPaymentsByApplication } from '../../services/payment.service'
-import { getDocuments } from '../../services/document.service'
+import { getDocumentsByApplication } from '../../services/document.service'
 import { approveBypass, disburseApplication } from '../../services/application.service'
 import { IconCheck, IconWarning, IconWallet, IconDocument, IconShield } from './icons'
 import styles from './DetalleSolicitudView.module.css'
@@ -173,8 +173,8 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
   const { fmtLong, fmtShort } = useLocaleFormat()
   const [evaluation,    setEvaluation]    = useState<Evaluation | null>(null)
   const [payments,      setPayments]      = useState<Payment[]>([])
+  const [appDocs,       setAppDocs]       = useState<LoanDocument[]>([])
   const [loading,       setLoading]       = useState(true)
-  const [docsUploaded,  setDocsUploaded]  = useState(false)
   const [bypassing,     setBypassing]     = useState(false)
   const [disbursing,    setDisbursing]    = useState(false)
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
@@ -186,17 +186,17 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
     Promise.all([
       getEvaluation(app.id).catch(() => null),
       getPaymentsByApplication(app.id).catch(() => [] as Payment[]),
-      getDocuments().catch(() => []),
+      getDocumentsByApplication(app.id).catch(() => [] as LoanDocument[]),
     ]).then(([ev, pays, docs]) => {
       if (cancelled) return
       setEvaluation(ev)
       setPayments(pays)
-      const uploaded = new Set(docs.map(d => d.document_type))
-      setDocsUploaded(REQUIRED_DOC_TYPES.every(t => uploaded.has(t)))
+      setAppDocs(docs)
     }).finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.id])
+
+  const docsUploaded = REQUIRED_DOC_TYPES.every(type => appDocs.some(d => d.document_type === type))
 
   const statusCfgKey = STATUS_CFG_KEYS[app.status] ?? STATUS_CFG_KEYS.submitted
   const timeline     = buildTimeline(app, docsUploaded, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
@@ -336,6 +336,56 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
               </div>
             </div>
           )}
+
+          {/* ── Documents ── */}
+          <div className={styles.section}>
+            <h2 className={styles.section_title}>Documentos de la solicitud</h2>
+            {loading ? (
+              <div className={styles.docs_skeleton} />
+            ) : (
+              <div className={styles.docs_card}>
+                {REQUIRED_DOC_TYPES.map(type => {
+                  const uploaded = appDocs.filter(d => d.document_type === type)
+                  const isDone = uploaded.length > 0
+                  const DOC_LABELS: Record<string, string> = {
+                    dni: 'DNI / Documento de Identidad',
+                    pay_stub: 'Boleta de Pago',
+                    utility_bill: 'Recibo de Domicilio',
+                  }
+                  const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
+                    pending:   { label: 'Pendiente',   color: '#d97706', bg: '#fef3c7' },
+                    reviewing: { label: 'En revisión', color: '#2563eb', bg: '#dbeafe' },
+                    verified:  { label: 'Verificado',  color: '#0f7d3f', bg: '#d9f0da' },
+                    rejected:  { label: 'Rechazado',   color: '#dc2626', bg: '#fef2f2' },
+                  }
+                  return (
+                    <div key={type} className={styles.doc_item}>
+                      <div className={`${styles.doc_item_dot} ${isDone ? styles.doc_item_dot_done : ''}`}>
+                        {isDone && <IconCheck />}
+                      </div>
+                      <div className={styles.doc_item_info}>
+                        <strong>{DOC_LABELS[type] ?? type}</strong>
+                        {uploaded.length > 0 && (
+                          <span className={styles.doc_item_sub}>
+                            {uploaded[0].original_name} · {(uploaded[0].file_size / 1024).toFixed(0)} KB
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={styles.doc_item_status}
+                        style={isDone ? {
+                          color: STATUS_CFG[uploaded[0].status]?.color ?? '#0f7d3f',
+                          background: STATUS_CFG[uploaded[0].status]?.bg ?? '#d9f0da',
+                        } : { color: '#9ca3af', background: '#f3f4f6' }}
+                      >
+                        {isDone ? (STATUS_CFG[uploaded[0].status]?.label ?? uploaded[0].status) : 'Sin subir'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {/* ── Payment history ── */}
           {payments.length > 0 && (

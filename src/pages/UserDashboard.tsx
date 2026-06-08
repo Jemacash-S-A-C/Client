@@ -38,7 +38,7 @@ import { SubirDocumentosView } from '../components/dashboard/SubirDocumentosView
 import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 import { getEvaluation } from '../services/evaluation.service'
-import { getDocuments } from '../services/document.service'
+import { getDocumentsByApplication } from '../services/document.service'
 
 type ActiveView =
   | 'resumen'
@@ -141,7 +141,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     try {
       const [ev, docs] = await Promise.all([
         getEvaluation(app.id),
-        getDocuments().catch(() => [] as Awaited<ReturnType<typeof getDocuments>>),
+        getDocumentsByApplication(app.id).catch(() => [] as Awaited<ReturnType<typeof getDocumentsByApplication>>),
       ])
       if (ev.approved_amount != null) {
         const uploaded = new Set(docs.map(d => d.document_type))
@@ -209,9 +209,10 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     )
   }
 
-  if (activeView === 'documentos') {
+  if (activeView === 'documentos' && activeApplicationId) {
     return (
       <SubirDocumentosView
+        applicationId={activeApplicationId}
         onBack={() => setActiveView('tasacion')}
         onContinue={() => setActiveView('firma')}
       />

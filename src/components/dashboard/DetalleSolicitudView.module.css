@@ -1,5 +1,85 @@
 /* ─── DetalleSolicitudView styles ───────────────────────────────────────── */
 
+/* ── Documents section ── */
+.docs_skeleton {
+  height: 6rem;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, #eef2ee 25%, #e0e8e0 50%, #eef2ee 75%);
+  background-size: 200% 100%;
+  animation: doc_shimmer 1.4s infinite;
+}
+@keyframes doc_shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.docs_card {
+  background: #fff;
+  border: 1px solid rgba(68, 84, 72, 0.09);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.doc_item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid rgba(68, 84, 72, 0.07);
+}
+
+.doc_item:last-child { border-bottom: none; }
+
+.doc_item_dot {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.doc_item_dot_done {
+  background: #0f7d3f;
+  border-color: #0f7d3f;
+}
+
+.doc_item_dot svg {
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.doc_item_info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.doc_item_info strong {
+  font-size: 0.85rem;
+  color: #1a221c;
+  font-weight: 600;
+}
+
+.doc_item_sub {
+  font-size: 0.75rem;
+  color: #9aa39d;
+}
+
+.doc_item_status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .page {
   display: grid;
   gap: 1.5rem;

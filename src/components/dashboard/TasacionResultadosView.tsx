@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import officeImg from '../../assets/representative_images/main_page.png'
 import { IconShield } from './icons'
 import styles from './TasacionResultadosView.module.css'
 import { getEvaluation } from '../../services/evaluation.service'
@@ -112,8 +111,6 @@ export function TasacionResultadosView({
     ? `${guarantee.brand ?? ''} ${guarantee.model ?? ''} (${guarantee.manufacture_year ?? ''})`
     : 'MacBook Air M2 (2022)'
 
-  const deviceImage = guarantee?.photo_urls?.[0] ?? officeImg
-
   const specs = guarantee?.specs ? [
     { icon: IconCpu,     labelKey: 'processor', value: guarantee.specs.processor ?? '—' },
     { icon: IconMemory,  labelKey: 'ram',        value: guarantee.specs.ram ?? '—' },
@@ -189,40 +186,45 @@ export function TasacionResultadosView({
           </div>
         </div>
 
-        {/* ── Device hero ── */}
-        <div className={styles.tas_device_hero}>
-          <img src={deviceImage} alt={deviceName} className={styles.tas_device_hero_img} />
-          <div className={styles.tas_device_hero_body}>
+        {/* ── Device identity row ── */}
+        <div className={styles.tas_device_row}>
+          <div className={styles.tas_device_row_icon}>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="13" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M0 19h24" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div className={styles.tas_device_row_body}>
             <span className={styles.tas_device_hero_tag}>{t('tasacion.device.label')}</span>
             <strong className={styles.tas_device_hero_name}>{deviceName}</strong>
-            {aiVisualCondition && (
-              <span
-                className={styles.tas_device_hero_condition}
-                style={{
-                  color: visualConditionColor[aiVisualCondition] ?? '#0f7d3f',
-                  background: visualConditionBg[aiVisualCondition] ?? '#f0fdf4',
-                }}
-              >
-                Estado físico: {visualConditionLabel[aiVisualCondition] ?? aiVisualCondition}
-              </span>
-            )}
-            {aiScore !== null && (
-              <div className={styles.tas_device_hero_score}>
-                <div className={styles.tas_device_hero_bar}>
-                  <div
-                    className={styles.tas_device_hero_bar_fill}
-                    style={{
-                      width: `${(aiScore / 10) * 100}%`,
-                      background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
-                    }}
-                  />
-                </div>
-                <span style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b', fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
-                  {aiScore.toFixed(1)} / 10
-                </span>
-              </div>
-            )}
           </div>
+          {aiVisualCondition && (
+            <span
+              className={styles.tas_device_hero_condition}
+              style={{
+                color: visualConditionColor[aiVisualCondition] ?? '#0f7d3f',
+                background: visualConditionBg[aiVisualCondition] ?? '#f0fdf4',
+              }}
+            >
+              Estado físico: {visualConditionLabel[aiVisualCondition] ?? aiVisualCondition}
+            </span>
+          )}
+          {aiScore !== null && (
+            <div className={styles.tas_device_hero_score}>
+              <div className={styles.tas_device_hero_bar}>
+                <div
+                  className={styles.tas_device_hero_bar_fill}
+                  style={{
+                    width: `${(aiScore / 10) * 100}%`,
+                    background: aiScore >= 8 ? '#16a34a' : aiScore >= 5 ? '#ca8a04' : '#dc2626',
+                  }}
+                />
+              </div>
+              <span style={{ color: aiScore >= 8 ? '#15803d' : aiScore >= 5 ? '#854d0e' : '#991b1b', fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                {aiScore.toFixed(1)} / 10
+              </span>
+            </div>
+          )}
         </div>
 
         {/* ── Specs row ── */}

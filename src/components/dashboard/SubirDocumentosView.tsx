@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocaleFormat } from '../../utils/tz'
 import type { LoanDocument, DocumentType } from '../../types/api.types'
-import { getDocuments, uploadDocument, deleteDocument, fileToBase64 } from '../../services/document.service'
-import { IconCheck, IconWarning, IconPlus } from './icons'
+import {
+  getDocumentsByApplication,
+  uploadDocument,
+  deleteDocument,
+  fileToBase64,
+} from '../../services/document.service'
 import styles from './SubirDocumentosView.module.css'
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
@@ -39,166 +43,123 @@ function IconFile() {
   )
 }
 
-function IconImage() {
+function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="1.8"
+      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2"
         strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
-// ── Document category config ──────────────────────────────────────────────────
-
-interface DocSlotCfg {
-  type: DocumentType
-  labelKey: string
-  descKey: string
-  accepts: string
-  required: boolean
-  soon?: boolean
+function IconArrowLeft() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="1.8"
+        strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
 }
 
-const MAX_FILES_PER_SLOT = 3
+// ── Config ────────────────────────────────────────────────────────────────────
 
-const DOC_SLOTS: DocSlotCfg[] = [
-  {
-    type: 'dni',
-    labelKey: 'docs.slot.dni.label',
-    descKey:  'docs.slot.dni.desc',
-    accepts: 'image/*,.pdf',
-    required: true,
-  },
-  {
-    type: 'pay_stub',
-    labelKey: 'docs.slot.payStub.label',
-    descKey:  'docs.slot.payStub.desc',
-    accepts: 'image/*,.pdf',
-    required: true,
-  },
-  {
-    type: 'utility_bill',
-    labelKey: 'docs.slot.utilityBill.label',
-    descKey:  'docs.slot.utilityBill.desc',
-    accepts: 'image/*,.pdf',
-    required: true,
-  },
-  {
-    type: 'other',
-    labelKey: 'docs.slot.other.label',
-    descKey:  'docs.slot.other.desc',
-    accepts: 'image/*,.pdf,.doc,.docx',
-    required: false,
-  },
+interface DocCfg {
+  type: DocumentType
+  label: string
+  desc: string
+  accepts: string
+}
+
+const REQUIRED_DOCS: DocCfg[] = [
+  { type: 'dni',          label: 'DNI / Documento de Identidad', desc: 'Ambas caras del DNI vigente',              accepts: 'image/*,.pdf' },
+  { type: 'pay_stub',     label: 'Boleta de Pago',               desc: 'Última boleta o recibo de honorarios',     accepts: 'image/*,.pdf' },
+  { type: 'utility_bill', label: 'Recibo de Domicilio',          desc: 'Agua, luz o teléfono — máx. 3 meses',      accepts: 'image/*,.pdf' },
 ]
 
-const STATUS_COLOR_CFG: Record<string, { color: string; bg: string }> = {
-  pending:   { color: '#d97706', bg: '#fef3c7' },
-  reviewing: { color: '#2563eb', bg: '#dbeafe' },
-  verified:  { color: '#0f7d3f', bg: '#d9f0da' },
-  rejected:  { color: '#dc2626', bg: '#fef2f2' },
-}
+const OPTIONAL_DOCS: DocCfg[] = [
+  { type: 'other', label: 'Documento adicional', desc: 'Cualquier respaldo complementario', accepts: 'image/*,.pdf,.doc,.docx' },
+]
 
-const STATUS_LABEL_KEYS: Record<string, string> = {
-  pending:   'docs.status.pending',
-  reviewing: 'docs.status.reviewing',
-  verified:  'docs.status.verified',
-  rejected:  'docs.status.rejected',
+const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  pending:   { label: 'Pendiente',   color: '#d97706', bg: '#fef3c7' },
+  reviewing: { label: 'En revisión', color: '#2563eb', bg: '#dbeafe' },
+  verified:  { label: 'Verificado',  color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:  { label: 'Rechazado',   color: '#dc2626', bg: '#fef2f2' },
 }
 
 function fmtSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1048576).toFixed(1)} MB`
 }
 
-// ── Upload slot ───────────────────────────────────────────────────────────────
+// ── Single doc row ────────────────────────────────────────────────────────────
 
-interface SlotProps {
-  cfg: DocSlotCfg
+interface DocRowProps {
+  cfg: DocCfg
+  applicationId: string
   uploaded: LoanDocument[]
-  onUpload: (cfg: DocSlotCfg, file: File) => Promise<void>
+  onUpload: (cfg: DocCfg, file: File) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
-function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
-  const { t } = useTranslation()
+function DocRow({ cfg, applicationId: _applicationId, uploaded, onUpload, onDelete }: DocRowProps) {
   const { fmtShort } = useLocaleFormat()
   const inputRef = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+
+  const primary = uploaded[0] ?? null
+  const isDone = uploaded.length > 0
 
   const handleFile = async (file: File) => {
     setLoading(true)
     try { await onUpload(cfg, file) } finally { setLoading(false) }
   }
 
-  const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) { void handleFile(file) }
-    e.target.value = ''
-  }
-
   const onDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
     const file = e.dataTransfer.files[0]
-    if (file) { void handleFile(file) }
+    if (file) void handleFile(file)
   }
-
-  const isImage = (mime: string) => mime.startsWith('image/')
-  const maxReached = uploaded.length >= MAX_FILES_PER_SLOT
 
   return (
-    <div className={`${styles.slot} ${cfg.required ? styles.slot_required : ''}`}>
-      <div className={styles.slot_header}>
-        <div className={styles.slot_title_wrap}>
-          <span className={styles.slot_icon}>
-            {cfg.type === 'dni' || cfg.type === 'passport' ? <IconFile /> : <IconImage />}
-          </span>
-          <div>
-            <strong className={styles.slot_label}>{t(cfg.labelKey)}</strong>
-            <span className={styles.slot_desc}>{t(cfg.descKey)}</span>
-          </div>
-        </div>
-        <span className={`${styles.slot_badge} ${uploaded.length === 0 ? styles.slot_badge_missing : ''}`}>
-          {uploaded.length === 0 ? t('docs.status.notUploaded') : (
-            <span style={{ color: STATUS_COLOR_CFG[uploaded[0].status]?.color }}>
-              {t(STATUS_LABEL_KEYS[uploaded[0].status] ?? 'docs.status.pending')}
-            </span>
-          )}
-        </span>
+    <div className={`${styles.doc_row} ${isDone ? styles.doc_row_done : ''}`}>
+      {/* Status dot */}
+      <div className={`${styles.doc_dot} ${isDone ? styles.doc_dot_done : ''}`}>
+        {isDone && <IconCheck />}
       </div>
 
-      <>
-        {/* Uploaded files */}
+      {/* Info */}
+      <div className={styles.doc_info}>
+        <strong className={styles.doc_label}>{cfg.label}</strong>
+        <span className={styles.doc_desc}>{cfg.desc}</span>
+
+        {/* Uploaded file(s) */}
         {uploaded.length > 0 && (
-          <div className={styles.uploaded_list}>
+          <div className={styles.doc_files}>
             {uploaded.map(doc => (
-              <div key={doc.id} className={styles.uploaded_row}>
-                <span className={styles.uploaded_icon}>
-                  {isImage(doc.mime_type) ? <IconImage /> : <IconFile />}
-                </span>
-                <div className={styles.uploaded_info}>
-                  <strong>{doc.original_name}</strong>
-                  <span>{fmtSize(doc.file_size)} · {fmtShort(doc.created_at)}</span>
-                </div>
-                <span
-                  className={styles.uploaded_status}
-                  style={{
-                    color: STATUS_COLOR_CFG[doc.status]?.color,
-                    background: STATUS_COLOR_CFG[doc.status]?.bg,
-                  }}
-                >
-                  {t(STATUS_LABEL_KEYS[doc.status] ?? 'docs.status.pending')}
-                </span>
+              <div key={doc.id} className={styles.doc_file_chip}>
+                <span className={styles.doc_file_icon}><IconFile /></span>
+                <span className={styles.doc_file_name}>{doc.original_name}</span>
+                <span className={styles.doc_file_size}>{fmtSize(doc.file_size)}</span>
+                {primary && (
+                  <span
+                    className={styles.doc_file_status}
+                    style={{
+                      color: STATUS_CFG[doc.status]?.color,
+                      background: STATUS_CFG[doc.status]?.bg,
+                    }}
+                  >
+                    {STATUS_CFG[doc.status]?.label ?? doc.status}
+                  </span>
+                )}
+                <span className={styles.doc_file_date}>{fmtShort(doc.created_at)}</span>
                 <button
                   type="button"
-                  className={styles.delete_btn}
-                  onClick={() => { void onDelete(doc.id) }}
-                  aria-label={t('docs.deleteLabel')}
+                  className={styles.doc_file_delete}
+                  onClick={() => void onDelete(doc.id)}
+                  aria-label="Eliminar"
                 >
                   <IconTrash />
                 </button>
@@ -206,52 +167,48 @@ function DocSlot({ cfg, uploaded, onUpload, onDelete }: SlotProps) {
             ))}
           </div>
         )}
+      </div>
 
-        {/* Drop zone — hidden when limit reached */}
-        {maxReached ? (
-          <div className={styles.dropzone_max}>
-            {t('docs.dropzone.maxReached', { max: MAX_FILES_PER_SLOT })}
-          </div>
-        ) : (
-          <div
-            className={`${styles.dropzone} ${dragging ? styles.dropzone_over : ''} ${loading ? styles.dropzone_loading : ''}`}
-            onClick={() => !loading && inputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            role="button"
-            tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
-            aria-label={t(cfg.labelKey)}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept={cfg.accepts}
-              className={styles.file_input}
-              onChange={onInputChange}
-            />
-            {loading ? (
-              <span className={styles.dropzone_spinner} />
-            ) : (
-              <>
-                <span className={styles.dropzone_icon}><IconUpload /></span>
-                <span className={styles.dropzone_text}>{t('docs.dropzone.upload')}</span>
-                <span className={styles.dropzone_hint}>
-                  {t('docs.dropzone.hint', { current: uploaded.length, max: MAX_FILES_PER_SLOT })}
-                </span>
-              </>
-            )}
-          </div>
-        )}
-      </>
+      {/* Upload zone */}
+      <div
+        className={`${styles.doc_upload} ${dragging ? styles.doc_upload_over : ''} ${loading ? styles.doc_upload_loading : ''}`}
+        onClick={() => !loading && inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && !loading && inputRef.current?.click()}
+        aria-label={`Subir ${cfg.label}`}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={cfg.accepts}
+          className={styles.doc_upload_input}
+          onChange={e => {
+            const file = e.target.files?.[0]
+            if (file) void handleFile(file)
+            e.target.value = ''
+          }}
+        />
+        {loading
+          ? <span className={styles.doc_upload_spinner} />
+          : <><span className={styles.doc_upload_icon}><IconUpload /></span><span>{isDone ? 'Reemplazar' : 'Subir'}</span></>
+        }
+      </div>
     </div>
   )
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function SubirDocumentosView({ onBack, onContinue }: {
+export function SubirDocumentosView({
+  applicationId,
+  onBack,
+  onContinue,
+}: {
+  applicationId: string
   onBack?: () => void
   onContinue?: () => void
 }) {
@@ -261,13 +218,13 @@ export function SubirDocumentosView({ onBack, onContinue }: {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getDocuments()
+    getDocumentsByApplication(applicationId)
       .then(setDocs)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [applicationId])
 
-  const handleUpload = async (cfg: DocSlotCfg, file: File) => {
+  const handleUpload = async (cfg: DocCfg, file: File) => {
     setError(null)
     try {
       const base64 = await fileToBase64(file)
@@ -277,11 +234,11 @@ export function SubirDocumentosView({ onBack, onContinue }: {
         file_size: file.size,
         mime_type: file.type || 'application/octet-stream',
         content_base64: base64,
+        application_id: applicationId,
       })
-      setDocs(prev => [doc, ...prev])
+      setDocs(prev => [doc, ...prev.filter(d => d.id !== doc.id)])
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al subir el archivo'
-      setError(msg)
+      setError(err instanceof Error ? err.message : 'Error al subir el archivo')
     }
   }
 
@@ -295,125 +252,123 @@ export function SubirDocumentosView({ onBack, onContinue }: {
     }
   }
 
-  const verified  = docs.filter(d => d.status === 'verified').length
-  const total     = docs.length
-  const required  = DOC_SLOTS.filter(s => s.required)
-  const reqDone   = required.filter(s => docs.some(d => d.document_type === s.type)).length
+  const reqDone = REQUIRED_DOCS.filter(cfg =>
+    docs.some(d => d.document_type === cfg.type),
+  ).length
+  const allRequiredDone = reqDone === REQUIRED_DOCS.length
 
   return (
     <div className={styles.page}>
 
-      {/* ── Header ── */}
-      <div className={styles.page_header}>
-        <div>
-          <h1 className={styles.page_title}>{t('docs.title')}</h1>
-          <p className={styles.page_sub}>{t('docs.subtitle')}</p>
-        </div>
-        {onBack && (
-          <button type="button" className={styles.back_btn} onClick={onBack}>
-            {t('docs.backBtn')}
-          </button>
-        )}
-      </div>
+      {/* ── Header bar ── */}
+      <header className={styles.header}>
+        <span className={styles.header_brand}>Jemacash</span>
+        <span className={styles.header_step}>
+          Documentos requeridos · {reqDone}/{REQUIRED_DOCS.length}
+        </span>
+      </header>
 
-      {/* ── Progress bar ── */}
-      <div className={styles.progress_card}>
-        <div className={styles.progress_top}>
-          <div className={styles.progress_label}>
-            <strong>{t('docs.progress.title')}</strong>
-            <span>{t('docs.progress.completed', { done: reqDone, total: required.length })}</span>
-          </div>
-          <span className={styles.progress_pct}>{Math.round((reqDone / required.length) * 100)}%</span>
+      {/* ── Content ── */}
+      <main className={styles.main}>
+        <div className={styles.intro}>
+          <h1 className={styles.title}>{t('docs.title')}</h1>
+          <p className={styles.subtitle}>
+            Necesitamos verificar tu identidad e ingresos antes de proceder con la firma del contrato.
+            Sube los tres documentos requeridos.
+          </p>
         </div>
-        <div className={styles.progress_bar_bg}>
+
+        {/* Progress strip */}
+        <div className={styles.progress_strip}>
           <div
-            className={styles.progress_bar_fill}
-            style={{ width: `${(reqDone / required.length) * 100}%` }}
+            className={styles.progress_fill}
+            style={{ width: `${(reqDone / REQUIRED_DOCS.length) * 100}%` }}
           />
         </div>
-        <div className={styles.progress_stats}>
-          <div>
-            <strong>{total}</strong>
-            <span>{t('docs.progress.uploaded')}</span>
+
+        {/* Error */}
+        {error && (
+          <div className={styles.error_banner}>
+            ⚠ {error}
+            <button type="button" className={styles.error_close} onClick={() => setError(null)}>✕</button>
           </div>
-          <div>
-            <strong>{verified}</strong>
-            <span>{t('docs.progress.verified')}</span>
-          </div>
-          <div>
-            <strong>{total - verified}</strong>
-            <span>{t('docs.progress.inReview')}</span>
-          </div>
-        </div>
-      </div>
+        )}
 
-      {/* ── Error banner ── */}
-      {error && (
-        <div className={styles.error_banner}>
-          <IconWarning />
-          {error}
-          <button type="button" className={styles.error_close} onClick={() => setError(null)}>✕</button>
-        </div>
-      )}
+        {/* Required docs */}
+        <section>
+          <p className={styles.section_label}>DOCUMENTOS OBLIGATORIOS</p>
+          {loading ? (
+            <div className={styles.skeleton_list}>
+              {REQUIRED_DOCS.map((_, i) => <div key={i} className={styles.skeleton_item} />)}
+            </div>
+          ) : (
+            <div className={styles.doc_list}>
+              {REQUIRED_DOCS.map(cfg => (
+                <DocRow
+                  key={cfg.type}
+                  cfg={cfg}
+                  applicationId={applicationId}
+                  uploaded={docs.filter(d => d.document_type === cfg.type)}
+                  onUpload={handleUpload}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* ── Notice ── */}
-      <div className={styles.notice_banner}>
-        <span className={styles.notice_icon}><IconCheck /></span>
-        <div>
-          <strong>{t('docs.notice.title')}</strong>
-          <p>{t('docs.notice.desc')}</p>
-        </div>
-      </div>
+        {/* Optional docs */}
+        {!loading && (
+          <section>
+            <p className={styles.section_label}>DOCUMENTOS OPCIONALES</p>
+            <div className={styles.doc_list}>
+              {OPTIONAL_DOCS.map(cfg => (
+                <DocRow
+                  key={cfg.type}
+                  cfg={cfg}
+                  applicationId={applicationId}
+                  uploaded={docs.filter(d => d.document_type === cfg.type)}
+                  onUpload={handleUpload}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* ── Slots ── */}
-      {loading ? (
-        <div className={styles.skeleton_list}>
-          {[1, 2, 3].map(i => <div key={i} className={styles.skeleton_slot} />)}
-        </div>
-      ) : (
-        <div className={styles.slots_list}>
-          {DOC_SLOTS.map(cfg => (
-            <DocSlot
-              key={cfg.type}
-              cfg={cfg}
-              uploaded={docs.filter(d => d.document_type === cfg.type)}
-              onUpload={handleUpload}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+        {/* Hint when not all required */}
+        {!loading && !allRequiredDone && onContinue && (
+          <p className={styles.pending_hint}>
+            Faltan {REQUIRED_DOCS.length - reqDone} documento{REQUIRED_DOCS.length - reqDone !== 1 ? 's' : ''} para continuar.
+          </p>
+        )}
+      </main>
 
-      {/* ── Flow continue button ── */}
-      {onContinue && !loading && (
-        <div className={styles.continue_row}>
-          {reqDone < required.length ? (
-            <p className={styles.continue_hint}>{t('docs.continueHint', { done: reqDone, total: required.length })}</p>
-          ) : null}
-          <button
-            type="button"
-            className={styles.continue_btn}
-            disabled={reqDone < required.length}
-            onClick={onContinue}
-          >
-            {t('docs.continueBtn')}
-          </button>
+      {/* ── Bottom navigation bar ── */}
+      <footer className={styles.footer}>
+        <div className={styles.footer_seals}>
+          <span>🔒 Cifrado AES-256</span>
+          <span>·</span>
+          <span>Normativa SBS Perú</span>
         </div>
-      )}
-
-      {/* ── Info seal ── */}
-      <div className={styles.seal_banner}>
-        <div className={styles.seal_icon_wrap}>
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={styles.seal_svg}>
-            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"
-              stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-          </svg>
+        <div className={styles.footer_actions}>
+          {onBack && (
+            <button type="button" className={styles.back_btn} onClick={onBack}>
+              <IconArrowLeft /> Volver
+            </button>
+          )}
+          {onContinue && (
+            <button
+              type="button"
+              className={`${styles.continue_btn} ${allRequiredDone ? styles.continue_btn_active : ''}`}
+              disabled={!allRequiredDone}
+              onClick={onContinue}
+            >
+              Continuar a la Firma →
+            </button>
+          )}
         </div>
-        <div>
-          <strong>{t('docs.seal.title')}</strong>
-          <p>{t('docs.seal.desc')}</p>
-        </div>
-      </div>
+      </footer>
 
     </div>
   )
