@@ -2,8 +2,8 @@
 
 /* ── Documents section ── */
 .docs_skeleton {
-  height: 6rem;
-  border-radius: 1rem;
+  height: 9rem;
+  border-radius: 1.65rem;
   background: linear-gradient(90deg, #eef2ee 25%, #e0e8e0 50%, #eef2ee 75%);
   background-size: 200% 100%;
   animation: doc_shimmer 1.4s infinite;
@@ -14,45 +14,51 @@
 }
 
 .docs_card {
-  background: #fff;
-  border: 1px solid rgba(68, 84, 72, 0.09);
-  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 252, 248, 0.96));
+  border: 1px solid rgba(117, 145, 123, 0.12);
+  border-radius: 1.65rem;
+  box-shadow: 0 16px 36px rgba(46, 63, 49, 0.09);
   overflow: hidden;
 }
 
-.doc_item {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.85rem 1.25rem;
-  border-bottom: 1px solid rgba(68, 84, 72, 0.07);
+/* ── Per-doc-type block ── */
+.doc_block {
+  padding: 1.05rem 1.35rem;
 }
 
-.doc_item:last-child { border-bottom: none; }
+.doc_block_sep {
+  border-bottom: 1px solid rgba(88, 109, 94, 0.07);
+}
 
-.doc_item_dot {
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 50%;
-  border: 2px solid #d1d5db;
+.doc_block_head {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.85rem;
+}
+
+.doc_block_icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: #f1f5f1;
+  color: #b5c2b8;
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
-  color: #fff;
+  transition: background 0.2s, color 0.2s;
 }
 
-.doc_item_dot_done {
-  background: #0f7d3f;
-  border-color: #0f7d3f;
+.doc_block_icon svg {
+  width: 1rem;
+  height: 1rem;
 }
 
-.doc_item_dot svg {
-  width: 0.7rem;
-  height: 0.7rem;
+.doc_block_icon_done {
+  background: linear-gradient(180deg, #eef9f0, #d8eedc);
+  color: #0f7d3f;
 }
 
-.doc_item_info {
+.doc_block_info {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -60,23 +66,68 @@
   gap: 0.1rem;
 }
 
-.doc_item_info strong {
-  font-size: 0.85rem;
+.doc_block_info strong {
+  font-size: 0.88rem;
+  font-weight: 700;
   color: #1a221c;
-  font-weight: 600;
 }
 
-.doc_item_sub {
-  font-size: 0.75rem;
+.doc_block_info span {
+  font-size: 0.73rem;
   color: #9aa39d;
 }
 
-.doc_item_status {
+.doc_block_overall {
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.2rem 0.6rem;
+  padding: 0.22rem 0.65rem;
   border-radius: 999px;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── File chips (one per uploaded file) ── */
+.doc_file_chips {
+  margin-top: 0.6rem;
+  padding-left: 3.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.doc_file_chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.7rem;
+  background: rgba(247, 250, 247, 0.9);
+  border: 1px solid rgba(88, 109, 94, 0.08);
+  border-radius: 0.6rem;
+  font-size: 0.78rem;
+  flex-wrap: wrap;
+}
+
+.doc_file_chip_name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #374740;
+  font-weight: 500;
+}
+
+.doc_file_chip_size {
+  color: #9aa39d;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.doc_file_chip_status {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
   flex-shrink: 0;
 }
 

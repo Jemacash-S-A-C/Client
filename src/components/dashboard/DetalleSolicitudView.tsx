@@ -25,6 +25,25 @@ function fmt(n: number) {
 
 function shortId(id: string) { return `JM-${id.slice(0, 6).toUpperCase()}` }
 
+function fmtDocSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1_048_576) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / 1_048_576).toFixed(1)} MB`
+}
+
+const DOC_LABELS: Record<string, string> = {
+  dni:          'DNI / Documento de Identidad',
+  pay_stub:     'Boleta de Pago',
+  utility_bill: 'Recibo de Domicilio',
+}
+
+const DOC_STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  pending:   { label: 'Pendiente',   color: '#d97706', bg: '#fef3c7' },
+  reviewing: { label: 'En revisión', color: '#2563eb', bg: '#dbeafe' },
+  verified:  { label: 'Verificado',  color: '#0f7d3f', bg: '#d9f0da' },
+  rejected:  { label: 'Rechazado',   color: '#dc2626', bg: '#fef2f2' },
+}
+
 // ── Status config ─────────────────────────────────────────────────────────────
 
 const STATUS_CFG_KEYS = {
@@ -131,6 +150,17 @@ function IconArrowLeft() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="1.8"
         strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function IconFileDoc() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2v6h6M16 13H8M16 17H8" stroke="currentColor"
+        strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -344,42 +374,60 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
               <div className={styles.docs_skeleton} />
             ) : (
               <div className={styles.docs_card}>
-                {REQUIRED_DOC_TYPES.map(type => {
+                {REQUIRED_DOC_TYPES.map((type, idx) => {
                   const uploaded = appDocs.filter(d => d.document_type === type)
                   const isDone = uploaded.length > 0
-                  const DOC_LABELS: Record<string, string> = {
-                    dni: 'DNI / Documento de Identidad',
-                    pay_stub: 'Boleta de Pago',
-                    utility_bill: 'Recibo de Domicilio',
-                  }
-                  const STATUS_CFG: Record<string, { label: string; color: string; bg: string }> = {
-                    pending:   { label: 'Pendiente',   color: '#d97706', bg: '#fef3c7' },
-                    reviewing: { label: 'En revisión', color: '#2563eb', bg: '#dbeafe' },
-                    verified:  { label: 'Verificado',  color: '#0f7d3f', bg: '#d9f0da' },
-                    rejected:  { label: 'Rechazado',   color: '#dc2626', bg: '#fef2f2' },
-                  }
                   return (
-                    <div key={type} className={styles.doc_item}>
-                      <div className={`${styles.doc_item_dot} ${isDone ? styles.doc_item_dot_done : ''}`}>
-                        {isDone && <IconCheck />}
-                      </div>
-                      <div className={styles.doc_item_info}>
-                        <strong>{DOC_LABELS[type] ?? type}</strong>
-                        {uploaded.length > 0 && (
-                          <span className={styles.doc_item_sub}>
-                            {uploaded[0].original_name} · {(uploaded[0].file_size / 1024).toFixed(0)} KB
+                    <div
+                      key={type}
+                      className={`${styles.doc_block} ${idx < REQUIRED_DOC_TYPES.length - 1 ? styles.doc_block_sep : ''}`}
+                    >
+                      {/* Header row */}
+                      <div className={styles.doc_block_head}>
+                        <div className={`${styles.doc_block_icon} ${isDone ? styles.doc_block_icon_done : ''}`}>
+                          <IconFileDoc />
+                        </div>
+                        <div className={styles.doc_block_info}>
+                          <strong>{DOC_LABELS[type] ?? type}</strong>
+                          <span>
+                            {isDone
+                              ? `${uploaded.length} archivo${uploaded.length !== 1 ? 's' : ''} subido${uploaded.length !== 1 ? 's' : ''}`
+                              : 'Sin subir'}
+                          </span>
+                        </div>
+                        {isDone && (
+                          <span
+                            className={styles.doc_block_overall}
+                            style={{
+                              color:       DOC_STATUS_CFG[uploaded[0].status]?.color  ?? '#d97706',
+                              background:  DOC_STATUS_CFG[uploaded[0].status]?.bg     ?? '#fef3c7',
+                            }}
+                          >
+                            {DOC_STATUS_CFG[uploaded[0].status]?.label ?? uploaded[0].status}
                           </span>
                         )}
                       </div>
-                      <span
-                        className={styles.doc_item_status}
-                        style={isDone ? {
-                          color: STATUS_CFG[uploaded[0].status]?.color ?? '#0f7d3f',
-                          background: STATUS_CFG[uploaded[0].status]?.bg ?? '#d9f0da',
-                        } : { color: '#9ca3af', background: '#f3f4f6' }}
-                      >
-                        {isDone ? (STATUS_CFG[uploaded[0].status]?.label ?? uploaded[0].status) : 'Sin subir'}
-                      </span>
+
+                      {/* File chips — one per uploaded file */}
+                      {uploaded.length > 0 && (
+                        <div className={styles.doc_file_chips}>
+                          {uploaded.map(doc => (
+                            <div key={doc.id} className={styles.doc_file_chip}>
+                              <span className={styles.doc_file_chip_name}>{doc.original_name}</span>
+                              <span className={styles.doc_file_chip_size}>{fmtDocSize(doc.file_size)}</span>
+                              <span
+                                className={styles.doc_file_chip_status}
+                                style={{
+                                  color:      DOC_STATUS_CFG[doc.status]?.color  ?? '#d97706',
+                                  background: DOC_STATUS_CFG[doc.status]?.bg     ?? '#fef3c7',
+                                }}
+                              >
+                                {DOC_STATUS_CFG[doc.status]?.label ?? doc.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
