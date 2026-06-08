@@ -1006,6 +1006,13 @@ export function RegistrarGarantiaTecView({
     const hasBattery   = !cat || CATEGORY_HAS_BATTERY[cat]
     const hasScreen    = !cat || CATEGORY_HAS_SCREEN[cat]
 
+    // All AI checks must pass before the auditor download is allowed
+    const aiAnalysisOk =
+      aiState === 'done' &&
+      aiResult !== null &&
+      aiResult.device_match_valid === true &&
+      aiResult.resale_value_pen >= 350
+
     return (
       <div className={styles.reg_step_body}>
         <p className={styles.reg_step_desc}>{t('regGar.step3.desc')}</p>
@@ -1179,9 +1186,9 @@ export function RegistrarGarantiaTecView({
                       type="button"
                       className={styles.reg_verify_download_btn}
                       onClick={handleDownloadAuditorSingle}
-                      disabled={aiState === 'idle' || aiState === 'running'}
+                      disabled={!aiAnalysisOk}
                     >
-                      {aiState === 'running' ? 'Espera el análisis IA...' : 'Descargar'}
+                      Descargar
                     </button>
                     {draftGuaranteeId && (
                       <button
@@ -1234,9 +1241,9 @@ export function RegistrarGarantiaTecView({
                     type="button"
                     className={styles.reg_verify_download_btn}
                     onClick={handleDownloadAuditorMac}
-                    disabled={aiState === 'idle' || aiState === 'running'}
+                    disabled={!aiAnalysisOk}
                   >
-                    {aiState === 'running' ? 'Espera el análisis IA...' : 'Descargar'}
+                    Descargar
                   </button>
                 )}
                 {auditVerified === 'none' && macDownloaded && (
