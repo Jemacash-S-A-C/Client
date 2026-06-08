@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createGuarantee, valuateDevice, updateGuaranteeAi, getGuarantee } from '../../services/guarantee.service'
 import type { AiValuationResult, GuaranteeSpecs } from '../../types/api.types'
@@ -196,6 +196,19 @@ function effectiveModel(s1: Step1): string {
     : s1.model
 }
 
+// ── OS detection ─────────────────────────────────────────────────────────────
+
+type ClientOS = 'windows' | 'macos' | 'ios' | 'android' | 'other'
+
+function detectOS(): ClientOS {
+  const ua = navigator.userAgent
+  if (/iPhone|iPad|iPod/i.test(ua))          return 'ios'
+  if (/Android/i.test(ua))                   return 'android'
+  if (/Win32|Win64|WOW64|Windows/i.test(ua)) return 'windows'
+  if (/Macintosh|MacIntel/i.test(ua))        return 'macos'
+  return 'other'
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function RegistrarGarantiaTecView({
@@ -251,16 +264,15 @@ export function RegistrarGarantiaTecView({
   const [aiResult, setAiResult] = useState<AiValuationResult | null>(null)
   const aiRef = useRef<{ cancelled: boolean; started: boolean }>({ cancelled: false, started: false })
 
-  // ── Draft guarantee state (pre-created on step 3) ───────────────────────────
+  // ── Guarantee + audit state ───────────────────────────────────────────────────
 
-  type DraftState = 'idle' | 'creating' | 'ready' | 'error'
-  const [draftState, setDraftState]           = useState<DraftState>('idle')
-  const [draftGuaranteeId, setDraftGuaranteeId] = useState<string | null>(null)
+  const [registeredGuaranteeId, setRegisteredGuaranteeId] = useState<string | null>(null)
   const [auditVerified, setAuditVerified]     = useState<'none' | 'verified' | 'discrepancy'>('none')
   const [checkingAudit, setCheckingAudit]     = useState(false)
   const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(null)
   const [macDownloaded, setMacDownloaded]     = useState(false)
   const [macCopied, setMacCopied]             = useState(false)
+  const clientOS = useMemo(() => detectOS(), [])
   const aiSavedRef = useRef(false)
 
   async function runValuation() {
@@ -305,7 +317,7 @@ export function RegistrarGarantiaTecView({
     runValuation()
   }
 
-  // Auto-run AI when reaching step 3; reset all draft/audit state on back-navigation
+  // Auto-run AI when reaching step 3; reset all audit state on back-navigation
   useEffect(() => {
     if (step !== 3) {
       aiRef.current.cancelled = true
@@ -313,10 +325,10 @@ export function RegistrarGarantiaTecView({
       setAiState('idle')
       setAiResult(null)
       aiSavedRef.current = false
-      setDraftState('idle')
-      setDraftGuaranteeId(null)
+      setRegisteredGuaranteeId(null)
       setAuditVerified('none')
       setDiscrepancyNotes(null)
+      setMacDownloaded(false)
       return
     }
     if (!aiRef.current.started) {
@@ -327,11 +339,11 @@ export function RegistrarGarantiaTecView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-  // Auto-save AI result to pre-created guarantee as soon as both are ready
+  // Auto-save AI result once guarantee is registered
   useEffect(() => {
-    if (!draftGuaranteeId || !aiResult || aiSavedRef.current) return
+    if (!registeredGuaranteeId || !aiResult || aiSavedRef.current) return
     aiSavedRef.current = true
-    updateGuaranteeAi(draftGuaranteeId, {
+    updateGuaranteeAi(registeredGuaranteeId, {
       ai_market_value:         aiResult.market_value_pen,
       ai_resale_value:         aiResult.resale_value_pen,
       ai_max_loan:             aiResult.max_loan_pen,
@@ -342,7 +354,7 @@ export function RegistrarGarantiaTecView({
       ai_visual_condition:     aiResult.visual_condition,
     }).catch(() => { /* non-critical */ })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftGuaranteeId, aiResult])
+  }, [registeredGuaranteeId, aiResult])
 
   // ── Draft guarantee helpers ─────────────────────────────────────────────────
 
@@ -379,30 +391,14 @@ export function RegistrarGarantiaTecView({
 
   async function handleDownloadAuditorSingle() {
     const token = getAccessToken()
-    if (!token) return
-
-    // Lazy guarantee creation — only happens here, not on step entry
-    let gId = draftGuaranteeId
-    if (!gId) {
-      setDraftState('creating')
-      try {
-        const created = await createGuarantee(buildGuaranteePayload())
-        gId = created.id
-        setDraftGuaranteeId(gId)
-        setDraftState('ready')
-      } catch {
-        setDraftState('error')
-        return
-      }
-    }
-
+    if (!token || !registeredGuaranteeId) return
     try {
       const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
       const exeRes = await fetch('/downloads/Jemacash-Auditor.exe')
       if (!exeRes.ok) throw new Error('No se pudo descargar el auditor')
       const exeBuffer = await exeRes.arrayBuffer()
 
-      const config      = { ApiUrl: apiUrl, GuaranteeId: gId, AccessToken: token }
+      const config      = { ApiUrl: apiUrl, GuaranteeId: registeredGuaranteeId, AccessToken: token }
       const sentinel    = '###JEMACASH_CONFIG###'
       const configBytes = new TextEncoder().encode(sentinel + JSON.stringify(config))
 
@@ -424,29 +420,14 @@ export function RegistrarGarantiaTecView({
 
   async function handleDownloadAuditorMac() {
     const token = getAccessToken()
-    if (!token) return
-
-    let gId = draftGuaranteeId
-    if (!gId) {
-      setDraftState('creating')
-      try {
-        const created = await createGuarantee(buildGuaranteePayload())
-        gId = created.id
-        setDraftGuaranteeId(gId)
-        setDraftState('ready')
-      } catch {
-        setDraftState('error')
-        return
-      }
-    }
-
+    if (!token || !registeredGuaranteeId) return
     try {
       const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
       const shRes = await fetch('/downloads/Jemacash-Auditor.sh')
       if (!shRes.ok) throw new Error('No se pudo descargar el auditor')
       const scriptText = await shRes.text()
 
-      const config     = { ApiUrl: apiUrl, GuaranteeId: gId, AccessToken: token }
+      const config     = { ApiUrl: apiUrl, GuaranteeId: registeredGuaranteeId, AccessToken: token }
       const sentinel   = '###JEMACASH_CONFIG###'
       const withConfig = scriptText + '\n' + sentinel + JSON.stringify(config) + '\n'
 
@@ -464,10 +445,10 @@ export function RegistrarGarantiaTecView({
   }
 
   async function handleCheckAudit() {
-    if (!draftGuaranteeId) return
+    if (!registeredGuaranteeId) return
     setCheckingAudit(true)
     try {
-      const fresh  = await getGuarantee(draftGuaranteeId)
+      const fresh  = await getGuarantee(registeredGuaranteeId)
       const audVer = fresh.specs?.audit_verified
       if (audVer === 'true') {
         setAuditVerified('verified')
@@ -504,16 +485,16 @@ export function RegistrarGarantiaTecView({
     }
     if (step === 2) return s3.photos.size >= 3
     if (step === 3) {
+      // After registration → "Finalizar": require audit for laptops/desktops
+      if (registeredGuaranteeId) {
+        const requiresAudit = s1.device_category === 'laptop' || s1.device_category === 'desktop'
+        if (requiresAudit) return auditVerified === 'verified'
+        return true
+      }
+      // Before registration → "Registrar": AI must be done + photos must match
       const baseOk = aiState === 'done' || aiState === 'failed'
       if (!baseOk) return false
-      // Block if AI says photos don't match the declared model
       if (aiState === 'done' && aiResult && !aiResult.device_match_valid) return false
-      // For laptops and desktops: require Windows audit (no discrepancy)
-      const requiresAudit = s1.device_category === 'laptop' || s1.device_category === 'desktop'
-      if (requiresAudit) {
-        if (auditVerified === 'discrepancy') return false
-        if (auditVerified !== 'verified') return false
-      }
       return true
     }
     return false
@@ -547,35 +528,19 @@ export function RegistrarGarantiaTecView({
   // ── Submit ──────────────────────────────────────────────────────────────────
 
   async function handleSubmit() {
+    // Already registered → Finalizar
+    if (registeredGuaranteeId) {
+      onSuccess()
+      return
+    }
+
+    // First click → create guarantee
     setSubmitting(true)
     setSubmitError(null)
     try {
-      if (draftGuaranteeId) {
-        // Guarantee was pre-created in step 3; AI result auto-saved via useEffect.
-        // Just navigate to success.
-        onSuccess()
-        return
-      }
-
-      // Fallback: guarantee wasn't pre-created, create it now
       const created = await createGuarantee(buildGuaranteePayload())
-
-      if (aiResult) {
-        try {
-          await updateGuaranteeAi(created.id, {
-            ai_market_value:         aiResult.market_value_pen,
-            ai_resale_value:         aiResult.resale_value_pen,
-            ai_max_loan:             aiResult.max_loan_pen,
-            ai_condition_score:      aiResult.condition_score,
-            ai_depreciation_factors: aiResult.depreciation_factors,
-            ai_confidence:           aiResult.confidence,
-            ai_reasoning:            aiResult.reasoning,
-            ai_visual_condition:     aiResult.visual_condition,
-          })
-        } catch { /* non-critical */ }
-      }
-
-      onSuccess()
+      setRegisteredGuaranteeId(created.id)
+      // AI auto-save fires via useEffect once registeredGuaranteeId is set
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Error al registrar la garantía.')
     } finally {
@@ -1133,11 +1098,22 @@ export function RegistrarGarantiaTecView({
         )}
 
         {/* ── Platform verification tiles ── */}
+        {!registeredGuaranteeId && (s1.device_category === 'laptop' || s1.device_category === 'desktop') && (
+          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '0.6rem 0.8rem', fontSize: '0.72rem', color: '#92400e', marginBottom: '0.75rem' }}>
+            ⚠️ Primero <strong>registra tu garantía</strong> con el botón de abajo — luego podrás descargar el auditor para verificar tu dispositivo.
+          </div>
+        )}
         <div className={styles.reg_verify_grid}>
           {/* Windows — functional for laptops and desktops */}
-          <div className={styles.reg_verify_tile}>
+          <div
+            className={styles.reg_verify_tile}
+            style={clientOS !== 'windows' && (s1.device_category === 'laptop' || s1.device_category === 'desktop') ? { opacity: 0.5 } : undefined}
+          >
             <span className={styles.reg_verify_tile_icon}>⊞</span>
             <strong>Windows</strong>
+            {clientOS === 'windows' && (s1.device_category === 'laptop' || s1.device_category === 'desktop') && (
+              <span style={{ fontSize: '0.6rem', background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: 99, fontWeight: 600 }}>Tu sistema</span>
+            )}
             {(s1.device_category === 'laptop' || s1.device_category === 'desktop') ? (
               <>
                 {auditVerified === 'verified' ? (
@@ -1158,15 +1134,15 @@ export function RegistrarGarantiaTecView({
                       type="button"
                       className={styles.reg_verify_download_btn}
                       onClick={handleDownloadAuditorSingle}
-                      disabled={draftState === 'creating'}
+                      disabled={!registeredGuaranteeId}
                     >
-                      {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
+                      {registeredGuaranteeId ? 'Descargar' : 'Registra primero'}
                     </button>
                     <button
                       type="button"
                       className={styles.reg_verify_download_btn}
                       onClick={handleCheckAudit}
-                      disabled={draftState !== 'ready' || checkingAudit}
+                      disabled={!registeredGuaranteeId || checkingAudit}
                       style={{ fontSize: '0.75rem', opacity: 0.85 }}
                     >
                       {checkingAudit ? 'Verificando...' : 'Ya ejecuté el auditor'}
@@ -1183,9 +1159,15 @@ export function RegistrarGarantiaTecView({
           </div>
 
           {/* macOS — functional for laptops and desktops */}
-          <div className={styles.reg_verify_tile}>
+          <div
+            className={styles.reg_verify_tile}
+            style={clientOS !== 'macos' && (s1.device_category === 'laptop' || s1.device_category === 'desktop') ? { opacity: 0.5 } : undefined}
+          >
             <span className={styles.reg_verify_tile_icon}></span>
             <strong>macOS</strong>
+            {clientOS === 'macos' && (s1.device_category === 'laptop' || s1.device_category === 'desktop') && (
+              <span style={{ fontSize: '0.6rem', background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: 99, fontWeight: 600 }}>Tu sistema</span>
+            )}
             {(s1.device_category === 'laptop' || s1.device_category === 'desktop') ? (
               <>
                 {auditVerified === 'verified' ? (
@@ -1205,9 +1187,9 @@ export function RegistrarGarantiaTecView({
                     type="button"
                     className={styles.reg_verify_download_btn}
                     onClick={handleDownloadAuditorMac}
-                    disabled={draftState === 'creating'}
+                    disabled={!registeredGuaranteeId}
                   >
-                    {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
+                    {registeredGuaranteeId ? 'Descargar' : 'Registra primero'}
                   </button>
                 )}
                 {auditVerified === 'none' && macDownloaded && (
@@ -1250,7 +1232,7 @@ export function RegistrarGarantiaTecView({
                       type="button"
                       className={styles.reg_verify_download_btn}
                       onClick={handleCheckAudit}
-                      disabled={draftState !== 'ready' || checkingAudit}
+                      disabled={!registeredGuaranteeId || checkingAudit}
                       style={{ fontSize: '0.75rem', opacity: 0.85 }}
                     >
                       {checkingAudit ? 'Verificando...' : 'Ya lo ejecuté'}
@@ -1401,6 +1383,15 @@ export function RegistrarGarantiaTecView({
             disabled={!canAdvance()}
           >
             {t('regGar.next')} <IconChevron />
+          </button>
+        ) : registeredGuaranteeId ? (
+          <button
+            type="button"
+            className={styles.reg_nav_submit}
+            onClick={handleSubmit}
+            disabled={!canAdvance()}
+          >
+            Finalizar
           </button>
         ) : (
           <button
