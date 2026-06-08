@@ -259,6 +259,8 @@ export function RegistrarGarantiaTecView({
   const [auditVerified, setAuditVerified]     = useState<'none' | 'verified' | 'discrepancy'>('none')
   const [checkingAudit, setCheckingAudit]     = useState(false)
   const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(null)
+  const [macDownloaded, setMacDownloaded]     = useState(false)
+  const [macCopied, setMacCopied]             = useState(false)
   const aiSavedRef = useRef(false)
 
   async function runValuation() {
@@ -455,6 +457,7 @@ export function RegistrarGarantiaTecView({
       a.download = 'Jemacash-Auditor.sh'
       a.click()
       URL.revokeObjectURL(url)
+      setMacDownloaded(true)
     } catch (err) {
       console.error('Error descargando auditor macOS:', err)
     }
@@ -1197,22 +1200,52 @@ export function RegistrarGarantiaTecView({
                     {discrepancyNotes}
                   </p>
                 )}
-                {auditVerified === 'none' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
-                    <button
-                      type="button"
-                      className={styles.reg_verify_download_btn}
-                      onClick={handleDownloadAuditorMac}
-                      disabled={draftState === 'creating'}
-                    >
-                      {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
-                    </button>
-                    <p style={{ fontSize: '0.65rem', color: '#6b7280', textAlign: 'center', margin: 0, lineHeight: 1.4 }}>
-                      En Terminal:{' '}
-                      <code style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3, fontFamily: 'monospace' }}>
-                        bash ~/Downloads/Jemacash-Auditor.sh
-                      </code>
-                    </p>
+                {auditVerified === 'none' && !macDownloaded && (
+                  <button
+                    type="button"
+                    className={styles.reg_verify_download_btn}
+                    onClick={handleDownloadAuditorMac}
+                    disabled={draftState === 'creating'}
+                  >
+                    {draftState === 'creating' ? 'Preparando...' : draftState === 'error' ? 'Error — reintentar' : 'Descargar'}
+                  </button>
+                )}
+                {auditVerified === 'none' && macDownloaded && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#0f7d3f', fontWeight: 600, textAlign: 'center' }}>
+                      ✓ Archivo descargado
+                    </span>
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem', fontSize: '0.68rem', color: '#374151', lineHeight: 1.6 }}>
+                      <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>Cómo ejecutarlo:</p>
+                      <p style={{ margin: '0 0 0.25rem' }}>
+                        <strong>1.</strong> Abre <strong>Terminal</strong>
+                        <br />
+                        <span style={{ color: '#6b7280' }}>Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>⌘</kbd> + <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Espacio</kbd>, escribe <em>Terminal</em> y presiona Enter</span>
+                      </p>
+                      <p style={{ margin: '0 0 0.25rem' }}>
+                        <strong>2.</strong> Copia y pega este comando:
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#1e293b', borderRadius: 6, padding: '0.35rem 0.5rem' }}>
+                        <code style={{ color: '#86efac', fontSize: '0.63rem', flex: 1, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                          bash ~/Downloads/Jemacash-Auditor.sh
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('bash ~/Downloads/Jemacash-Auditor.sh').catch(() => {})
+                            setMacCopied(true)
+                            setTimeout(() => setMacCopied(false), 2000)
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: macCopied ? '#86efac' : '#94a3b8', fontSize: '0.75rem', padding: '0 2px', flexShrink: 0 }}
+                          title="Copiar comando"
+                        >
+                          {macCopied ? '✓' : '⧉'}
+                        </button>
+                      </div>
+                      <p style={{ margin: '0.25rem 0 0' }}>
+                        <strong>3.</strong> Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Enter</kbd> y espera el mensaje de éxito
+                      </p>
+                    </div>
                     <button
                       type="button"
                       className={styles.reg_verify_download_btn}
@@ -1220,7 +1253,7 @@ export function RegistrarGarantiaTecView({
                       disabled={draftState !== 'ready' || checkingAudit}
                       style={{ fontSize: '0.75rem', opacity: 0.85 }}
                     >
-                      {checkingAudit ? 'Verificando...' : 'Ya ejecuté el auditor'}
+                      {checkingAudit ? 'Verificando...' : 'Ya lo ejecuté'}
                     </button>
                   </div>
                 )}
