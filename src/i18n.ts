@@ -537,6 +537,10 @@ const resources = {
       'pagar.success.loan': 'Préstamo',
       'pagar.success.ref': 'Referencia',
       'pagar.success.back': 'Volver a Mis Préstamos',
+      // Checkout Pro redirect
+      'pagar.mp.redirectDesc': 'Serás redirigido a Mercado Pago para completar el pago de forma segura. Una vez pagado, regresarás automáticamente.',
+      'pagar.mp.redirectBtn': 'Pagar con Mercado Pago',
+      'pagar.mp.redirecting': 'Redirigiendo…',
       // Mock form
       'pagar.mock.cardNumber': 'Número de tarjeta',
       'pagar.mock.expiry': 'Vencimiento',
@@ -1383,6 +1387,10 @@ const resources = {
       'pagar.success.loan': 'Loan',
       'pagar.success.ref': 'Reference',
       'pagar.success.back': 'Back to My Loans',
+      // Checkout Pro redirect
+      'pagar.mp.redirectDesc': 'You will be redirected to Mercado Pago to complete the payment securely. Once paid, you will be returned automatically.',
+      'pagar.mp.redirectBtn': 'Pay with Mercado Pago',
+      'pagar.mp.redirecting': 'Redirecting…',
       'pagar.mock.cardNumber': 'Card number',
       'pagar.mock.expiry': 'Expiry',
       'pagar.mock.cvv': 'CVV',

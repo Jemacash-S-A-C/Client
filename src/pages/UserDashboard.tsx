@@ -39,6 +39,7 @@ import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 import { getEvaluation } from '../services/evaluation.service'
 import { getDocumentsByApplication } from '../services/document.service'
+import { mpConfirm } from '../services/payment.service'
 
 type ActiveView =
   | 'resumen'
@@ -96,6 +97,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   /** Resumable app surfaced by ResumenView — null when none */
   const [resumableApp, setResumableApp] = useState<LoanApplication | null>(null)
   const hasResumable = resumableApp !== null
+  const [mpReturnMsg, setMpReturnMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
 
@@ -119,6 +121,51 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     }
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
+
+  // ── Handle Mercado Pago Checkout Pro return ───────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const mpStatus = params.get('mp_status')
+    if (!mpStatus) return
+
+    // Clean the URL immediately so a refresh doesn't re-trigger
+    window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
+
+    if (mpStatus === 'success') {
+      const collectionId = params.get('collection_id') ?? params.get('payment_id') ?? 'mp-checkout'
+      const raw = localStorage.getItem('mp_pending')
+      localStorage.removeItem('mp_pending')
+
+      if (raw) {
+        const pending: { applicationId: string; amount: number; cuotaNumber: number } = JSON.parse(raw)
+        mpConfirm({
+          application_id: pending.applicationId,
+          amount: pending.amount,
+          cuota_number: pending.cuotaNumber,
+          mp_payment_id: collectionId,
+        })
+          .then(() => {
+            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
+            setActiveView('prestamos')
+          })
+          .catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : 'No se pudo confirmar el pago.'
+            setMpReturnMsg({ ok: false, text: msg })
+            setActiveView('prestamos')
+          })
+      } else {
+        setMpReturnMsg({ ok: true, text: '¡Pago realizado! Actualizando tu historial…' })
+        setActiveView('prestamos')
+      }
+    } else if (mpStatus === 'failure') {
+      setMpReturnMsg({ ok: false, text: 'El pago fue rechazado. Puedes intentarlo de nuevo.' })
+      setActiveView('prestamos')
+    } else if (mpStatus === 'pending') {
+      setMpReturnMsg({ ok: false, text: 'Tu pago está pendiente de acreditación. Te avisaremos cuando se confirme.' })
+      setActiveView('prestamos')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   /** Navigate to the correct save-point for a resumable application.
    *
@@ -341,6 +388,32 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
         </header>
 
         <main className={styles.main}>
+          {mpReturnMsg && (
+            <div
+              role="alert"
+              style={{
+                margin: '0 0 1.25rem',
+                padding: '0.85rem 1.1rem',
+                borderRadius: '0.85rem',
+                background: mpReturnMsg.ok ? '#dcfce7' : '#fee2e2',
+                color: mpReturnMsg.ok ? '#166534' : '#991b1b',
+                fontWeight: 600,
+                fontSize: '0.92rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.75rem',
+              }}
+            >
+              <span>{mpReturnMsg.text}</span>
+              <button
+                type="button"
+                onClick={() => setMpReturnMsg(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1, color: 'inherit', padding: 0 }}
+                aria-label="Cerrar"
+              >✕</button>
+            </div>
+          )}
           {activeView === 'resumen' && (
             <ResumenView
               firstName={firstName}

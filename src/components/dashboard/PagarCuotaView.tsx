@@ -1,13 +1,10 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CardPayment } from '@mercadopago/sdk-react'
-import type { ICardPaymentFormData, ICardPaymentBrickPayer } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type'
 import styles from './PagarCuotaView.module.css'
 import { useLocaleFormat } from '../../utils/tz'
-import { createPayment, mpCharge } from '../../services/payment.service'
+import { createPayment, mpPreference } from '../../services/payment.service'
 import type { PaymentMethod } from '../../types/api.types'
 
-// initMercadoPago is called once in main.tsx — not here
 const IS_MP_MOCK = !import.meta.env.VITE_MP_PUBLIC_KEY ||
   (import.meta.env.VITE_MP_PUBLIC_KEY as string).includes('REEMPLAZAR')
 
@@ -189,14 +186,11 @@ function MockCardForm({ info, userEmail, onSuccess, onError }: MockFormProps) {
     e.preventDefault()
     setLoading(true)
     try {
-      const payment = await mpCharge({
+      const payment = await createPayment({
         application_id: info.applicationId,
         amount: info.cuota,
+        payment_method: 'mercadopago' as PaymentMethod,
         cuota_number: info.cuotaNumber,
-        token: `mock-${Date.now()}`,
-        installments: 1,
-        payment_method_id: 'visa',
-        email: userEmail,
       })
       onSuccess(payment.reference_number)
     } catch (err: unknown) {
@@ -326,25 +320,38 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
     setError(msg)
   }
 
-  async function handleMpBrickSubmit(formData: ICardPaymentFormData<ICardPaymentBrickPayer>) {
+  async function handleMpRedirect() {
+    setLoading(true)
     setError(null)
     try {
-      const payment = await mpCharge({
+      const { checkoutUrl, isMock } = await mpPreference({
         application_id: info.applicationId,
         amount: info.cuota,
         cuota_number: info.cuotaNumber,
-        token: formData.token,
-        installments: formData.installments,
-        payment_method_id: formData.payment_method_id,
-        issuer_id: formData.issuer_id,
-        email: formData.payer.email ?? userEmail,
+        email: userEmail,
       })
-      setReferenceNumber(payment.reference_number)
-      setStep('exito')
+      if (isMock) {
+        // Mock mode: skip redirect, register payment directly
+        const payment = await createPayment({
+          application_id: info.applicationId,
+          amount: info.cuota,
+          payment_method: 'mercadopago' as PaymentMethod,
+          cuota_number: info.cuotaNumber,
+        })
+        handleMpSuccess(payment.reference_number)
+        return
+      }
+      // Save pending info so we can confirm when MP redirects back
+      localStorage.setItem('mp_pending', JSON.stringify({
+        applicationId: info.applicationId,
+        amount: info.cuota,
+        cuotaNumber: info.cuotaNumber,
+      }))
+      window.location.href = checkoutUrl
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'No se pudo procesar el pago. Inténtalo de nuevo.'
-      setError(msg)
-      throw err
+      const msg = err instanceof Error ? err.message : 'No se pudo crear el link de pago.'
+      handleMpError(msg)
+      setLoading(false)
     }
   }
 
@@ -457,21 +464,27 @@ export function PagarCuotaView({ info, userEmail, onBack, onSuccess }: Props) {
               onError={handleMpError}
             />
           ) : (
-            <CardPayment
-              initialization={{
-                amount: info.cuota,
-                payer: {
-                  email: userEmail,
-                  identification: { type: 'CE', number: '123456789' },
-                },
-              }}
-              onSubmit={handleMpBrickSubmit}
-              onError={(err) => setError(err.message ?? 'Error en el formulario de pago.')}
-              customization={{
-                paymentMethods: { minInstallments: 1, maxInstallments: 1 },
-                visual: { style: { theme: 'default' } },
-              }}
-            />
+            <div className={styles.mp_redirect_wrap}>
+              <div className={styles.mp_redirect_info}>
+                <svg className={styles.mp_redirect_icon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="#009ee3" strokeWidth="1.8" />
+                  <path d="M8 12h8M14 9l3 3-3 3" stroke="#009ee3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <p>{t('pagar.mp.redirectDesc')}</p>
+              </div>
+              <div className={styles.mp_amount_row}>
+                <span>{t('pagar.confirm.amount')}</span>
+                <strong>S/ {fmt(info.cuota)}</strong>
+              </div>
+              <button
+                type="button"
+                className={styles.primary_btn}
+                disabled={loading}
+                onClick={handleMpRedirect}
+              >
+                {loading ? t('pagar.mp.redirecting') : t('pagar.mp.redirectBtn')}
+              </button>
+            </div>
           )}
         </div>
       </div>
