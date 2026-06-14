@@ -1,68 +1,5 @@
 import officeHero from "../assets/representative_images/main_page.png";
-import teamPhoto from "../assets/representative_images/istockphoto-1849172463-612x612.jpg";
 import styles from "./Nosotros.module.css";
-
-function IconGroup() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M7.5 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm9 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM12 12.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-8.25 6v-1a3.25 3.25 0 0 1 3.25-3.25h1.5A3.25 3.25 0 0 1 11.75 17v1.5h-8Zm8.5 0V17c0-.72-.2-1.39-.56-1.97a3.24 3.24 0 0 1 2.81-1.62h1.5A3.25 3.25 0 0 1 19.25 17v1.5h-7Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function IconEye() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Zm10 3.25a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-    </svg>
-  );
-}
-
-function IconHead() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 3.5c-4.14 0-7.5 3.36-7.5 7.5 0 3.25 2.08 6 5 7.03V21h5v-2.97a7.5 7.5 0 0 0-2.5-14.53Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle cx="12.5" cy="11.2" r="1.2" fill="currentColor" />
-    </svg>
-  );
-}
-
-function IconLeaf() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M20 4s-10-1-14 3-2 10 2 12 8-1 10-5 2-10 2-10Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <path d="M8 16c2-2 4-4 8-6" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
-function IconShield() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 3 5 6v6.5c0 4.25 2.85 7.32 7 8.5 4.15-1.18 7-4.25 7-8.5V6l-7-3Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <path d="m9.5 12.3 1.8 1.8 3.3-3.4" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
 
 export default function Nosotros() {
   return (
@@ -70,14 +7,16 @@ export default function Nosotros() {
       <section className={styles.hero} aria-labelledby="nosotros-mision">
         <div className={styles.hero_copy}>
           <p className={styles.badge}>Nuestra misión</p>
-          <h1 id="nosotros-mision">Redefiniendo el progreso financiero en Perú.</h1>
+          <h1 id="nosotros-mision">
+            Redefiniendo el<br />progreso financiero<br /><em>en Perú.</em>
+          </h1>
           <p>
-            En Jemacash, no solo movemos capital; impulsamos sueños peruanos a través de una
-            plataforma diseñada para ser el defensor de tu libertad financiera.
+            En Jemacash impulsamos sueños peruanos a través de una plataforma
+            diseñada para ser el defensor de tu libertad financiera.
           </p>
           <div className={styles.hero_actions}>
-            <a href="#">Únete a la visión</a>
-            <button type="button">Conoce el impacto</button>
+            <button type="button" className={styles.hero_btn_primary}>Únete a la visión</button>
+            <button type="button" className={styles.hero_btn_ghost}>Conoce el impacto</button>
           </div>
         </div>
 
@@ -90,93 +29,75 @@ export default function Nosotros() {
         </div>
       </section>
 
-      <section className={styles.team} aria-labelledby="team-heading">
-        <header className={styles.team_header}>
-          <h2 id="team-heading">Las mentes detrás del cambio</h2>
+      <section className={styles.about} aria-labelledby="about-heading">
+        <div className={styles.about_intro}>
+          <span className={styles.about_eyebrow}>Quiénes somos</span>
+          <h2 id="about-heading" className={styles.about_title}>
+            Una plataforma especializada,<br />no un fondo tradicional
+          </h2>
+        </div>
+
+        <div className={styles.about_body}>
           <p>
-            Liderazgo que combina la experiencia bancaria tradicional con la innovación tecnológica
-            más disruptiva.
+            Jemacash es una plataforma especializada en soluciones de financiamiento, enfocada en
+            brindarte acceso rápido y seguro a préstamos respaldados por tus activos electrónicos.
           </p>
-        </header>
+          <p>
+            Nuestro rol es actuar como el aliado que te acompaña en cada paso: desde la valuación
+            de tu equipo hasta el desembolso en tu cuenta. No somos un banco tradicional: somos el
+            sistema que hace que el financiamiento funcione con agilidad y rigor.
+          </p>
+          <p>
+            A lo largo de los años hemos desarrollado tecnología propia para la valuación de
+            activos: modelos de inteligencia artificial entrenados con datos reales del mercado
+            peruano, que transforman información dispersa en una evaluación objetiva y justa.
+          </p>
+        </div>
 
-        <div className={styles.team_grid}>
-          <article className={styles.leader_card}>
-            <img src={teamPhoto} alt="Retrato de Matias Cohailla" />
-            <div>
-              <span>CO-FOUNDER & CEO</span>
-              <h3>Matias Cohailla</h3>
-              <p>
-                "Nuestra meta es que cada peruano vea en la tecnología no una barrera, sino un
-                aliado para su crecimiento."
-              </p>
-            </div>
-          </article>
-
-          <article className={styles.leader_card}>
-            <img src={teamPhoto} alt="Retrato de Jheremy String" />
-            <div>
-              <span>CO-FOUNDER & CTO</span>
-              <h3>Jheremy String</h3>
-              <p>
-                "Construimos algoritmos éticos que entienden la realidad humana, no solo los
-                números de una cuenta."
-              </p>
-            </div>
-          </article>
+        <div className={styles.about_stats}>
+          <div className={styles.about_stat}>
+            <strong>+10 años</strong>
+            <span>de experiencia en el sector financiero peruano</span>
+          </div>
+          <div className={styles.about_stat}>
+            <strong>IA propia</strong>
+            <span>modelos entrenados con datos reales del mercado local</span>
+          </div>
+          <div className={styles.about_stat}>
+            <strong>100% digital</strong>
+            <span>valuación y desembolso sin trámites presenciales</span>
+          </div>
         </div>
       </section>
 
-      <section className={styles.values} aria-labelledby="values-heading">
-        <div className={styles.values_collage}>
-          <div className={`${styles.tile} ${styles.tile_icon}`}>
-            <IconGroup />
-          </div>
-          <div className={`${styles.tile} ${styles.tile_photo_a}`} />
-          <div className={`${styles.tile} ${styles.tile_photo_b}`} />
-          <div className={`${styles.tile} ${styles.tile_icon_soft}`}>
-            <IconShield />
-          </div>
-        </div>
+      <section className={styles.principles} aria-labelledby="principles-heading">
+        <header className={styles.principles_header}>
+          <span className={styles.principles_eyebrow}>Nuestros principios</span>
+          <h2 id="principles-heading">Lo que nos guía<br />en cada decisión</h2>
+        </header>
 
-        <div className={styles.values_copy}>
-          <h2 id="values-heading">Tecnología con alma humana.</h2>
-          <div className={styles.value_item}>
-            <span className={`${styles.value_icon} ${styles.value_icon_green}`}>
-              <IconEye />
-            </span>
-            <div>
-              <h3>Transparencia Radical</h3>
-              <p>
-                Eliminamos la letra pequeña. Nuestra interfaz está diseñada para que cada sol de tu
-                cuenta sea rastreable y entendible.
-              </p>
-            </div>
-          </div>
-          <div className={styles.value_item}>
-            <span className={`${styles.value_icon} ${styles.value_icon_lilac}`}>
-              <IconHead />
-            </span>
-            <div>
-              <h3>Empatía Algorítmica</h3>
-              <p>
-                Nuestros sistemas de riesgo no solo miran el pasado, entienden el potencial y el
-                contexto de la economía local.
-              </p>
-            </div>
-          </div>
-          <div className={styles.value_item}>
-            <span className={`${styles.value_icon} ${styles.value_icon_pink}`}>
-              <IconLeaf />
-            </span>
-            <div>
-              <h3>Diseño Consciente</h3>
-              <p>
-                Minimalismo que reduce el estrés financiero. Un entorno digital que respira calma y
-                seguridad.
-              </p>
-            </div>
-          </div>
-        </div>
+        <ol className={styles.principles_list}>
+          <li className={styles.principle_row}>
+            <span className={styles.principle_num}>01</span>
+            <h3 className={styles.principle_name}>Rigor analítico</h3>
+            <p className={styles.principle_desc}>Cada decisión parte de datos verificados, no de suposiciones. Nuestros modelos de calificación usan bases de datos históricas reales de cada cliente.</p>
+          </li>
+          <li className={styles.principle_row}>
+            <span className={styles.principle_num}>02</span>
+            <h3 className={styles.principle_name}>Estructuras sólidas</h3>
+            <p className={styles.principle_desc}>Diseñamos los mecanismos operativos antes de que se necesiten. La protección al cliente está construida desde el día uno.</p>
+          </li>
+          <li className={styles.principle_row}>
+            <span className={styles.principle_num}>03</span>
+            <h3 className={styles.principle_name}>Vigilancia continua</h3>
+            <p className={styles.principle_desc}>El seguimiento no termina al cerrar el trato. Monitoreamos cada operación con reportes estandarizados y alertas tempranas.</p>
+          </li>
+          <li className={styles.principle_row}>
+            <span className={styles.principle_num}>04</span>
+            <h3 className={styles.principle_name}>Tecnología aplicada</h3>
+            <p className={styles.principle_desc}>Desarrollamos modelos de inteligencia artificial entrenados con datos históricos reales del mercado peruano de créditos y pagos.</p>
+          </li>
+        </ol>
       </section>
     </div>
   );

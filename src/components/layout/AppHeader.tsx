@@ -3,12 +3,11 @@ import { useTranslation } from 'react-i18next'
 import styles from "./AppHeader.module.css";
 import jemacashLogo from '../../assets/partner_logos/jemacashlogo.png'
 
-export type AppPage = "home" | "blog" | "nosotros" | "valuar";
+export type AppPage = "home" | "nosotros" | "valuar";
 
 type AppHeaderProps = {
   activePage: AppPage
   onGoHome: () => void
-  onGoBlog: () => void
   onGoNosotros: () => void
   onGoValuar: () => void
   onPidePrestamo: () => void
@@ -18,7 +17,6 @@ type AppHeaderProps = {
 export function AppHeader({
   activePage,
   onGoHome,
-  onGoBlog,
   onGoNosotros,
   onGoValuar,
   onPidePrestamo,
@@ -39,11 +37,6 @@ export function AppHeader({
     setMobileOpen(false);
     onGoNosotros();
   };
-  const goBlog = () => {
-    setMobileOpen(false);
-    onGoBlog();
-  };
-
   return (
     <header className={styles.topbar}>
       <div className={styles.topbar_inner}>
@@ -68,13 +61,6 @@ export function AppHeader({
             onClick={goNosotros}
           >
             {t('header.about')}
-          </button>
-          <button
-            type="button"
-            className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
-            onClick={goBlog}
-          >
-            {t('header.blog')}
           </button>
         </nav>
 
@@ -119,13 +105,6 @@ export function AppHeader({
           onClick={goNosotros}
         >
           {t('header.about')}
-        </button>
-        <button
-          type="button"
-          className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
-          onClick={goBlog}
-        >
-          {t('header.blog')}
         </button>
         <button className={styles.mobile_cta} type="button" onClick={onPidePrestamo}>
           {t('header.request')}

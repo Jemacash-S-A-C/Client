@@ -232,11 +232,14 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
 
       {/* ── Hero ── */}
       <section className={styles.hero}>
-        <h1>Valuación de Activos</h1>
-        <p>
-          Obtén una pre-visualización inmediata del valor de tu patrimonio con nuestro motor de
-          valuación inteligente, respaldado por datos del mercado local en tiempo real.
-        </p>
+        <div className={styles.hero_inner}>
+          <span className={styles.hero_tag}><IconSpark /> Motor de Valuación IA</span>
+          <h1>Descubre el valor real<br />de tus <em>activos</em></h1>
+          <p>
+            Pre-valuación inmediata respaldada por datos del mercado peruano en tiempo real.
+            Sin trámites, sin esperas.
+          </p>
+        </div>
       </section>
 
       {/* ── Pre-val form ── */}
@@ -245,7 +248,10 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
 
           {/* Step 1 — Category */}
           <article className={styles.box}>
-            <h2>1. SELECCIONA CATEGORÍA</h2>
+            <div className={styles.step_header}>
+              <span className={styles.step_num}>01</span>
+              <h2>Selecciona categoría</h2>
+            </div>
             <div className={styles.categories}>
               {/* Tecnología — active */}
               <button type="button" className={`${styles.category} ${styles.active}`}>
@@ -269,7 +275,10 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
 
           {/* Step 2 — Asset details */}
           <article className={styles.box}>
-            <h2>2. DETALLES DEL ACTIVO</h2>
+            <div className={styles.step_header}>
+              <span className={styles.step_num}>02</span>
+              <h2>Detalles del activo</h2>
+            </div>
 
             {/* Device type selector */}
             <div className={styles.device_types}>
@@ -363,7 +372,10 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
               className={styles.recalc}
               onClick={handleScan}
             >
-              Recalcular Valuación
+              Calcular valuación
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" width="16" height="16">
+                <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           </article>
         </div>
@@ -371,11 +383,16 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
         {/* ── Sidebar result teaser ── */}
         <aside className={styles.preval_side}>
           <article className={styles.result}>
-            <span className={styles.result_badge}><IconSpark /></span>
-            <p className={styles.result_kicker}>RESULTADO DE PRE-VALUACIÓN</p>
-            <p className={styles.result_meta}>Ingresa los datos de tu equipo y haz clic en "Recalcular"</p>
-            <p className={styles.result_label}>Rango Estimado (S/)</p>
-            <p className={styles.result_value}>— — —</p>
+            <div className={styles.result_top}>
+              <span className={styles.result_kicker}><IconSpark /> PRE-VALUACIÓN</span>
+              <span className={styles.result_lock}><IconLock /></span>
+            </div>
+            <p className={styles.result_meta}>Completa los datos y presiona calcular</p>
+            <div className={styles.result_main}>
+              <p className={styles.result_label}>Rango Estimado</p>
+              <p className={styles.result_currency}>S/</p>
+              <p className={styles.result_value}>— — —</p>
+            </div>
             <div className={styles.result_footer}>
               <div>
                 <span className={styles.meta_icon}>
@@ -388,7 +405,7 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
                 <strong>—</strong>
               </div>
               <div>
-                <span className={`${styles.meta_icon} ${styles.meta_icon_lilac}`}>
+                <span className={`${styles.meta_icon} ${styles.meta_icon_green}`}>
                   <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
                     <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8"/>
@@ -402,21 +419,39 @@ export default function ValuarEquipo({ onLogin, onRegister }: ValuarEquipoProps)
         </aside>
       </section>
 
-      {/* ── Editorial ── */}
+      {/* ── Sobre Nosotros ── */}
       <section className={styles.editorial}>
-        <img src={editorialVisual} alt="Analistas revisando valuación de activos" />
         <div className={styles.editorial_copy}>
-          <h2>Valuación Editorial: Más que Simples Números</h2>
+          <span className={styles.editorial_eyebrow}>Sobre Nosotros</span>
+          <h2>Tecnología peruana<br />al servicio de tu<br /><em>patrimonio</em></h2>
+          <div className={styles.editorial_stats}>
+            <div className={styles.editorial_stat}>
+              <strong>+100k</strong>
+              <span>Familias atendidas</span>
+            </div>
+            <div className={styles.editorial_stat}>
+              <strong>100%</strong>
+              <span>Digital</span>
+            </div>
+            <div className={styles.editorial_stat}>
+              <strong>24/7</strong>
+              <span>Disponible</span>
+            </div>
+          </div>
           <p>
-            Nuestro algoritmo no solo promedia precios; analiza la curva de depreciación específica
-            por marca, la demanda regional y factores macroeconómicos que influyen en el valor real
-            de reventa.
+            En Jemacash, orgullosamente peruana, nos dedicamos a brindar préstamos inmediatos
+            basándonos en los valores de confianza y cercanía que caracterizan a nuestra cultura.
+            Condiciones claras, seguras y sin trámites eternos.
           </p>
-          <ul>
-            <li><IconCheck /> Data-points de más de 50,000 transacciones mensuales.</li>
-            <li><IconCheck /> Ajuste por condición y antigüedad del modelo.</li>
-            <li><IconCheck /> Integración con registros de propiedad oficiales.</li>
-          </ul>
+          <p className={styles.editorial_p2}>
+            Nuestra plataforma digital es el único canal autorizado para subir documentos,
+            monitorear tu solicitud y recibir respuestas claras — garantizando siempre la
+            protección de tu información.
+          </p>
+        </div>
+        <div className={styles.editorial_visual}>
+          <img src={editorialVisual} alt="Familia peruana en la playa" />
+          <div className={styles.editorial_overlay} aria-hidden="true" />
         </div>
       </section>
 
