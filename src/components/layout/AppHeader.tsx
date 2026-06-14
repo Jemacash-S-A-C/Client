@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 import styles from "./AppHeader.module.css";
 import jemacashLogo from '../../assets/partner_logos/jemacashlogo.png'
 
-export type AppPage = "home" | "nosotros" | "valuar";
+export type AppPage = "home" | "nosotros" | "valuar" | "inversores";
 
 type AppHeaderProps = {
   activePage: AppPage
   onGoHome: () => void
   onGoNosotros: () => void
   onGoValuar: () => void
+  onGoInversores: () => void
   onPidePrestamo: () => void
   onLogin: () => void
 }
@@ -19,6 +20,7 @@ export function AppHeader({
   onGoHome,
   onGoNosotros,
   onGoValuar,
+  onGoInversores,
   onPidePrestamo,
   onLogin,
 }: AppHeaderProps) {
@@ -36,6 +38,10 @@ export function AppHeader({
   const goNosotros = () => {
     setMobileOpen(false);
     onGoNosotros();
+  };
+  const goInversores = () => {
+    setMobileOpen(false);
+    onGoInversores();
   };
   return (
     <header className={styles.topbar}>
@@ -61,6 +67,13 @@ export function AppHeader({
             onClick={goNosotros}
           >
             {t('header.about')}
+          </button>
+          <button
+            type="button"
+            className={`${styles.menu_link} ${activePage === "inversores" ? styles.menu_link_active : styles.menu_link_ghost}`}
+            onClick={goInversores}
+          >
+            Inversores
           </button>
         </nav>
 
@@ -105,6 +118,13 @@ export function AppHeader({
           onClick={goNosotros}
         >
           {t('header.about')}
+        </button>
+        <button
+          type="button"
+          className={`${styles.menu_link} ${activePage === "inversores" ? styles.menu_link_active : styles.menu_link_ghost}`}
+          onClick={goInversores}
+        >
+          Inversores
         </button>
         <button className={styles.mobile_cta} type="button" onClick={onPidePrestamo}>
           {t('header.request')}

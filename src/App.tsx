@@ -10,6 +10,7 @@ import './App.css'
 import Home from './pages/Home'
 import Nosotros from './pages/Nosotros'
 import ValuarEquipo from './pages/ValuarEquipo'
+import Inversores from './pages/Inversores'
 import UserDashboard from './pages/UserDashboard'
 import { getAccessToken, clearTokens, setTokens } from './utils/api'
 import { loginUser, registerUser, logoutUser, getMe } from './services/auth.service'
@@ -19,7 +20,7 @@ import { setAppTimezone } from './utils/tz'
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000'
 
 type AuthModal = null | 'register' | 'login'
-type Page = 'home' | 'nosotros' | 'valuar'
+type Page = 'home' | 'nosotros' | 'valuar' | 'inversores'
 
 function App() {
   const { i18n } = useTranslation()
@@ -163,6 +164,7 @@ function App() {
           onGoHome={() => setPage('home')}
           onGoNosotros={() => setPage('nosotros')}
           onGoValuar={() => setPage('valuar')}
+          onGoInversores={() => setPage('inversores')}
           onPidePrestamo={openRegister}
           onLogin={() => goToLogin()}
         />
@@ -171,6 +173,8 @@ function App() {
           <Home onRegister={goToRegister} />
         ) : page === 'valuar' ? (
           <ValuarEquipo onLogin={() => goToLogin()} onRegister={goToRegister} />
+        ) : page === 'inversores' ? (
+          <Inversores onRegister={goToRegister} />
         ) : (
           <Nosotros />
         )}
