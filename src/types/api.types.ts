@@ -49,7 +49,6 @@ export type GuaranteeSpecs = {
   ram?: string
   storage?: string
   battery_health?: string
-  screen_size?: string
   os_name?: string
   os_version?: string
   cpu_name?: string

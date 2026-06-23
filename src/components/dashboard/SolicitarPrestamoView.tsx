@@ -95,13 +95,13 @@ export function SolicitarPrestamoView({
   const selectedGuarantee = guarantees.find((g) => g.id === selectedGuaranteeId) ?? null
 
   const dynamicMax = selectedGuarantee
-    ? Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) * 0.8 || Number(selectedGuarantee.estimated_value) * 0.8 || MAX_AMOUNT)
+    ? Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) || Number(selectedGuarantee.estimated_value) || MAX_AMOUNT)
     : MAX_AMOUNT
   const dynamicMin = MIN_AMOUNT
 
   useEffect(() => {
     if (selectedGuarantee) {
-      const max = Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) * 0.8 || Number(selectedGuarantee.estimated_value) * 0.8 || MAX_AMOUNT)
+      const max = Math.floor(Number(selectedGuarantee.ai_max_loan) || Number(selectedGuarantee.ai_resale_value) || Number(selectedGuarantee.estimated_value) || MAX_AMOUNT)
       if (amount > max) setAmount(max)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

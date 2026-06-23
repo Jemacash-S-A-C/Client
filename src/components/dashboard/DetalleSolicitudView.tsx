@@ -67,55 +67,25 @@ interface TimelineStep {
 
 function buildTimeline(
   app: LoanApplication,
-  docsUploaded: boolean,
   tPending: string,
-  tInProgress: string,
   fmtLong: (d: Date | string) => string,
 ): TimelineStep[] {
   const created = fmtLong(app.created_at)
   const updated = fmtLong(app.updated_at ?? app.created_at)
 
-  // 5-step timeline — "Revisión" removed; signing auto-approves immediately
-  // 0 Enviada            → done once submitted/beyond
-  // 1 Documentos         → done once docs uploaded or beyond
-  // 2 Valuación y firma  → done once signed/approved/disbursed/defaulted/rejected
-  // 3 Aprobada           → active on approved; done on disbursed/defaulted
-  // 4 Recogida y desembolso → done on disbursed/defaulted
+  // 3-step timeline — the loan flow (documents → valuation → signing) is fully
+  // automated and completes within minutes, so it's folded into "Enviada".
+  // 0 Enviada               → done once submitted/beyond
+  // 1 Aprobada              → active on signed/approved; done on disbursed/defaulted; rejected on rejected
+  // 2 Recogida y desembolso → done on disbursed/defaulted
 
-  const postSign = (['signed','approved','disbursed','defaulted','rejected'] as LoanApplication['status'][])
-  const docsDone = docsUploaded || postSign.includes(app.status)
+  const submittedPlus = (['submitted','signed','approved','disbursed','defaulted','rejected'] as LoanApplication['status'][])
 
   return [
     {
       labelKey: 'detalle.timeline.enviada',
       date:  created,
-      state: (['submitted','signed','approved','disbursed','defaulted','rejected'] as LoanApplication['status'][]).includes(app.status)
-        ? 'done'
-        : 'active',
-    },
-    {
-      labelKey: 'detalle.timeline.documentos',
-      date:  docsDone
-        ? (postSign.includes(app.status) ? updated : created)
-        : app.status === 'submitted' ? tInProgress : tPending,
-      state: postSign.includes(app.status)
-        ? 'done'
-        : docsUploaded
-        ? 'done'
-        : app.status === 'submitted'
-        ? 'active'
-        : 'pending',
-    },
-    {
-      labelKey: 'detalle.timeline.valuacion',
-      date:  postSign.includes(app.status)
-        ? updated
-        : docsDone && app.status === 'submitted' ? tInProgress : tPending,
-      state: postSign.includes(app.status)
-        ? 'done'
-        : docsDone && app.status === 'submitted'
-        ? 'active'
-        : 'pending',
+      state: submittedPlus.includes(app.status) ? 'done' : 'active',
     },
     {
       labelKey: 'detalle.timeline.aprobada',
@@ -224,10 +194,8 @@ export function DetalleSolicitudView({ app, onBack, onContinue }: Props) {
     return () => { cancelled = true }
   }, [app.id])
 
-  const docsUploaded = REQUIRED_DOC_TYPES.every(type => appDocs.some(d => d.document_type === type))
-
   const statusCfgKey = STATUS_CFG_KEYS[app.status] ?? STATUS_CFG_KEYS.submitted
-  const timeline     = buildTimeline(app, docsUploaded, t('detalle.timeline.pending'), t('detalle.timeline.inProgress'), fmtLong)
+  const timeline     = buildTimeline(app, t('detalle.timeline.pending'), fmtLong)
   const guarantee    = app.guarantee ?? null
 
   const loanAmount  = evaluation?.approved_amount != null

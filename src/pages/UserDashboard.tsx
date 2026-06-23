@@ -1,4 +1,4 @@
-import { type ReactElement, useState, useRef, useEffect } from 'react'
+import { type ReactElement, useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './UserDashboard.module.css'
 import type { UserSession } from '../types/api.types'
@@ -39,7 +39,7 @@ import type { LoanPaymentInfo } from '../components/dashboard/PagarCuotaView'
 import type { LoanApplication } from '../types/api.types'
 import { getEvaluation } from '../services/evaluation.service'
 import { getDocumentsByApplication } from '../services/document.service'
-import { mpConfirm, mpSync } from '../services/payment.service'
+import { mpSync } from '../services/payment.service'
 
 type ActiveView =
   | 'resumen'
@@ -98,6 +98,8 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
   const [resumableApp, setResumableApp] = useState<LoanApplication | null>(null)
   const hasResumable = resumableApp !== null
   const [mpReturnMsg, setMpReturnMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  /** Bumped when an MP payment confirms, to force MisPrestamosView to re-fetch. */
+  const [paymentsRefreshKey, setPaymentsRefreshKey] = useState(0)
 
   const firstName = user.displayName.split(' ')[0] ?? user.displayName
 
@@ -122,54 +124,90 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
     window.history.pushState({ dashboardView: activeView }, '')
   }, [activeView])
 
-  // ── Handle Mercado Pago Checkout Pro return + auto-sync ──────────────────────
+  // ── Mercado Pago: confirm pending payments ───────────────────────────────────
+  /**
+   * Polls mpSync() up to `attempts` times. MP accredits the payment a moment
+   * after the redirect, so the first check often runs before it's `approved`.
+   * On confirmation, surfaces a message and bumps the refresh key so the loans
+   * card re-fetches. Returns whether anything was confirmed.
+   */
+  const syncPendingPayments = useCallback(
+    async (attempts = 1, delayMs = 2000): Promise<boolean> => {
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const confirmed = await mpSync()
+          if (confirmed.length > 0) {
+            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
+            setPaymentsRefreshKey((k) => k + 1)
+            return true
+          }
+        } catch { /* network/MP error — retry */ }
+        if (i < attempts - 1) await new Promise((resolve) => setTimeout(resolve, delayMs))
+      }
+      return false
+    },
+    [],
+  )
+
+  // Handle the MP "return to site" redirect (carries ?mp_status=…)
   useEffect(() => {
+    let cancelled = false
     const params = new URLSearchParams(window.location.search)
     const mpStatus = params.get('mp_status')
 
-    if (mpStatus) {
-      // Clean the URL so a refresh doesn't re-trigger
-      window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
+    void (async () => {
+      if (mpStatus) {
+        // Clean the URL so a refresh doesn't re-trigger
+        window.history.replaceState({ dashboardView: 'prestamos' }, '', window.location.pathname)
 
-      if (mpStatus === 'success') {
-        const collectionId = params.get('collection_id') ?? params.get('payment_id') ?? ''
-        // Try fast-path confirm via redirect params, then fall through to mpSync
-        if (collectionId) {
-          // We no longer have amount in URL — use mpSync to confirm from DB
-          mpSync()
-            .then((confirmed) => {
-              if (confirmed.length > 0) {
-                setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
-              } else {
-                // mpConfirm needs amount — fall back to mpSync which queries MP API
-                setMpReturnMsg({ ok: true, text: '¡Pago realizado! Actualizando tu historial…' })
-              }
-              setActiveView('prestamos')
-            })
-            .catch(() => setActiveView('prestamos'))
-        } else {
-          mpSync().then(() => setActiveView('prestamos')).catch(() => setActiveView('prestamos'))
-        }
-      } else if (mpStatus === 'failure') {
-        setMpReturnMsg({ ok: false, text: 'El pago fue rechazado. Puedes intentarlo de nuevo.' })
-        setActiveView('prestamos')
-      } else if (mpStatus === 'pending') {
-        setMpReturnMsg({ ok: false, text: 'Tu pago está pendiente de acreditación.' })
-        setActiveView('prestamos')
-      }
-    } else {
-      // Normal load — silently sync any pending MP payments in the background
-      mpSync()
-        .then((confirmed) => {
-          if (confirmed.length > 0) {
-            setMpReturnMsg({ ok: true, text: '¡Pago con Mercado Pago confirmado exitosamente!' })
-            setActiveView('prestamos')
+        if (mpStatus === 'success') {
+          setActiveView('prestamos')
+          setMpReturnMsg({ ok: true, text: 'Verificando tu pago con Mercado Pago…' })
+          const ok = await syncPendingPayments(5, 2000)
+          if (!cancelled && !ok) {
+            setMpReturnMsg({ ok: false, text: 'Tu pago está siendo procesado. Se reflejará en unos minutos.' })
           }
-        })
-        .catch(() => { /* silent — no pending payments or network error */ })
+        } else if (mpStatus === 'failure') {
+          setMpReturnMsg({ ok: false, text: 'El pago fue rechazado. Puedes intentarlo de nuevo.' })
+          setActiveView('prestamos')
+        } else if (mpStatus === 'pending') {
+          setMpReturnMsg({ ok: false, text: 'Tu pago está pendiente de acreditación.' })
+          setActiveView('prestamos')
+        }
+      } else {
+        // Normal load — silently sync any pending MP payment in the background
+        const ok = await syncPendingPayments(1)
+        if (!cancelled && ok) setActiveView('prestamos')
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [syncPendingPayments])
+
+  // Re-sync when the app regains visibility — covers returning from MP via the
+  // browser Back button or bfcache restore (no mp_status param, no page reload).
+  useEffect(() => {
+    let syncing = false
+    async function trigger() {
+      if (syncing || document.visibilityState !== 'visible') return
+      syncing = true
+      try {
+        const ok = await syncPendingPayments(1)
+        if (ok) setActiveView('prestamos')
+      } finally {
+        syncing = false
+      }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    function onVisibility() { void trigger() }
+    function onPageShow(e: PageTransitionEvent) { if (e.persisted) void trigger() }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pageshow', onPageShow)
+    }
+  }, [syncPendingPayments])
 
   /** Navigate to the correct save-point for a resumable application.
    *
@@ -430,6 +468,7 @@ export default function UserDashboard({ user, onLogout, onUserUpdate }: UserDash
           )}
           {activeView === 'prestamos' && (
             <MisPrestamosView
+              refreshKey={paymentsRefreshKey}
               onPay={(info) => {
                 setActiveLoanPayment(info)
                 setActiveView('pagar-cuota')

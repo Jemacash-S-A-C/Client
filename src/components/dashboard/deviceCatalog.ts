@@ -637,7 +637,10 @@ export function getYearRange(
   if (!brandEntry) return [2010, currentYear]
   const modelEntry = brandEntry.models.find((m) => m.model === model)
   if (!modelEntry) return [2010, currentYear]
-  return [modelEntry.release_year, modelEntry.end_year ?? currentYear]
+  // Cap the manufacture year to the model's production window (+1y margin), never
+  // beyond the current year — a "MacBook Air (M1, 2020)" was not built in 2025.
+  const max = Math.min(currentYear, (modelEntry.end_year ?? currentYear) + 1)
+  return [modelEntry.release_year, max]
 }
 
 export function buildYearOptions(
@@ -954,14 +957,6 @@ export const STORAGE_BY_CATEGORY: Record<DeviceCategory, string[]> = {
 
 // Categories that have a battery (slider visible)
 export const CATEGORY_HAS_BATTERY: Record<DeviceCategory, boolean> = {
-  laptop:     true,
-  smartphone: true,
-  tablet:     true,
-  desktop:    false,
-}
-
-// Categories that have a built-in screen (field visible)
-export const CATEGORY_HAS_SCREEN: Record<DeviceCategory, boolean> = {
   laptop:     true,
   smartphone: true,
   tablet:     true,

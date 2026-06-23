@@ -110,7 +110,7 @@ function buildLoanData(
   const movements: Movement[] = []
 
   // Disbursement event (oldest entry)
-  const signedAt = app.updated_at ? new Date(app.updated_at) : createdAt
+  const signedAt = app.updated_at ? new Date(app.updated_at) : new Date(app.created_at)
   movements.push({
     conceptKey: 'prestamos.movement.disbursement',
     conceptVars: { id: shortId(app.id) },
@@ -139,9 +139,11 @@ function buildLoanData(
 
 interface Props {
   onPay?: (info: LoanPaymentInfo) => void
+  /** Bump this to force a re-fetch (e.g. after an MP payment confirms). */
+  refreshKey?: number
 }
 
-export function MisPrestamosView({ onPay }: Props) {
+export function MisPrestamosView({ onPay, refreshKey = 0 }: Props) {
   const { t } = useTranslation()
   const { fmtLong, fmtShort } = useLocaleFormat()
   const [loans, setLoans] = useState<LoanData[]>([])
@@ -188,7 +190,8 @@ export function MisPrestamosView({ onPay }: Props) {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey])
 
   const activeLoans = loans
 
@@ -212,9 +215,11 @@ export function MisPrestamosView({ onPay }: Props) {
   const movTotal        = Math.max(1, Math.ceil(filteredMovements.length / MOV_PER_PAGE))
   const visibleMovements = filteredMovements.slice(movPage * MOV_PER_PAGE, (movPage + 1) * MOV_PER_PAGE)
 
-  useEffect(() => {
+  function selectFilter(filter: MovementFilter) {
+    setMovementFilter(filter)
     setMovPage(0)
-  }, [movementFilter])
+    setFilterMenuOpen(false)
+  }
 
   const filterLabel = movementFilter === 'all'
     ? 'Todos'
@@ -409,21 +414,21 @@ export function MisPrestamosView({ onPay }: Props) {
                     <button
                       type="button"
                       className={`${styles.filter_option} ${movementFilter === 'all' ? styles.filter_option_active : ''}`}
-                      onClick={() => { setMovementFilter('all'); setFilterMenuOpen(false) }}
+                      onClick={() => selectFilter('all')}
                     >
                       Todos
                     </button>
                     <button
                       type="button"
                       className={`${styles.filter_option} ${movementFilter === 'pago' ? styles.filter_option_active : ''}`}
-                      onClick={() => { setMovementFilter('pago'); setFilterMenuOpen(false) }}
+                      onClick={() => selectFilter('pago')}
                     >
                       {t('prestamos.movement.typePago')}
                     </button>
                     <button
                       type="button"
                       className={`${styles.filter_option} ${movementFilter === 'desembolso' ? styles.filter_option_active : ''}`}
-                      onClick={() => { setMovementFilter('desembolso'); setFilterMenuOpen(false) }}
+                      onClick={() => selectFilter('desembolso')}
                     >
                       {t('prestamos.movement.typeDesembolso')}
                     </button>

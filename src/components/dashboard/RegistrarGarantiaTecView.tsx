@@ -7,7 +7,7 @@ import { IconShield, IconCheck } from './icons'
 import {
   DEVICE_CATALOG, getYearRange, buildYearOptions,
   getProcessorGroups, RAM_BY_CATEGORY, STORAGE_BY_CATEGORY,
-  CATEGORY_HAS_BATTERY, CATEGORY_HAS_SCREEN,
+  CATEGORY_HAS_BATTERY,
 } from './deviceCatalog'
 import type { DeviceCategory } from './deviceCatalog'
 import styles from './RegistrarGarantiaTecView.module.css'
@@ -159,7 +159,6 @@ type Step2 = {
   ram: string
   storage: string
   battery_health: string
-  screen_size: string
 }
 
 type Step3 = { photos: Map<string, string> }
@@ -214,6 +213,8 @@ function detectOS(): ClientOS {
 // resume later. Photos are also persisted (compressed, typically < 200 KB each).
 
 const DRAFT_KEY = 'jemacash_reg_tec_draft_v1'
+const AUDITOR_DOWNLOAD_COOLDOWN_MS = 60_000
+const SUPPORT_PHONE = '+51 946276913'
 
 function loadFormDraft(): Record<string, unknown> | null {
   try {
@@ -274,7 +275,6 @@ export function RegistrarGarantiaTecView({
     ram: '',
     storage: '',
     battery_health: '85',
-    screen_size: '',
   })
 
   const [s3, setS3] = useState<Step3>({
@@ -294,6 +294,11 @@ export function RegistrarGarantiaTecView({
   const aiRef = useRef<{ cancelled: boolean; started: boolean }>({ cancelled: false, started: false })
   /** true when AI result came from localStorage → skip re-running on step 3 entry */
   const aiRestoredRef = useRef(_restoredAiResult !== null)
+  /** Specs snapshot used for the last successful valuation. Lets us reuse the
+   *  cached result when nothing relevant changed, and detect when it did. */
+  const [valuatedKey, setValuatedKey] = useState<string | null>(
+    typeof _d?.valuatedKey === 'string' ? _d.valuatedKey : null,
+  )
 
   // ── Guarantee + audit state ────────────────────────────────────────────────
 
@@ -310,13 +315,79 @@ export function RegistrarGarantiaTecView({
   const [discrepancyNotes, setDiscrepancyNotes] = useState<string | null>(
     typeof _d?.discrepancyNotes === 'string' ? _d.discrepancyNotes : null
   )
-  const [macDownloaded, setMacDownloaded] = useState<boolean>(_d?.macDownloaded === true)
+  /** Full specs returned by the hardware auditor (real detected components). */
+  const [auditedSpecs, setAuditedSpecs] = useState<GuaranteeSpecs | null>(
+    (_d?.auditedSpecs as GuaranteeSpecs | undefined) ?? null
+  )
+  /** true once the valuation was recomputed from the auditor's real hardware
+   *  (the verified, binding value). false = preliminary estimate from declared data. */
+  const [aiVerified, setAiVerified] = useState<boolean>(_d?.aiVerified === true)
+  const legacyMacDownloaded = _d?.macDownloaded === true
+  const [windowsDownloadedAt, setWindowsDownloadedAt] = useState<number | null>(
+    typeof _d?.windowsDownloadedAt === 'number' ? _d.windowsDownloadedAt as number : null
+  )
+  const [macDownloadedAt, setMacDownloadedAt] = useState<number | null>(
+    typeof _d?.macDownloadedAt === 'number'
+      ? _d.macDownloadedAt as number
+      : legacyMacDownloaded
+        ? Date.now()
+        : null
+  )
   const [macCopied, setMacCopied]         = useState(false)
+  const [cooldownNow, setCooldownNow]      = useState(() => Date.now())
   const clientOS = useMemo(() => detectOS(), [])
   /** true when AI data was already saved to the draft guarantee during a previous visit */
   const aiSavedRef = useRef(_restoredAiResult !== null && typeof _d?.draftGuaranteeId === 'string')
 
+  const now = cooldownNow
+  const getCooldownRemaining = (downloadedAt: number | null) => {
+    if (!downloadedAt) return 0
+    return Math.max(0, AUDITOR_DOWNLOAD_COOLDOWN_MS - (now - downloadedAt))
+  }
+  const formatCooldown = (remainingMs: number) => {
+    const totalSeconds = Math.ceil(remainingMs / 1000)
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${minutes}:${String(seconds).padStart(2, '0')}`
+  }
+  const windowsCooldownRemaining = getCooldownRemaining(windowsDownloadedAt)
+  const macCooldownRemaining = getCooldownRemaining(macDownloadedAt)
+
+  useEffect(() => {
+    if (windowsCooldownRemaining <= 0 && macCooldownRemaining <= 0) return
+    const timer = window.setInterval(() => {
+      // Trigger re-render so the countdown text updates while a cooldown is active.
+      setCooldownNow(Date.now())
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [windowsCooldownRemaining, macCooldownRemaining])
+
+  /** Stable key of every field that influences the AI valuation, so we can
+   *  detect when the user changed something relevant and skip needless re-runs. */
+  function computeSpecsKey(): string {
+    const cat = s1.device_category as DeviceCategory
+    const procLabel = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom.trim() : s2.processor
+    const photoSig = [...s3.photos.entries()]
+      .map(([slot, data]) => `${slot}:${data.length}`)
+      .sort()
+      .join('|')
+    return JSON.stringify({
+      category:      s1.device_category,
+      brand:         effectiveBrand(s1),
+      model:         effectiveModel(s1),
+      year:          s1.manufacture_year,
+      processor:     procLabel,
+      ram:           s2.ram,
+      storage:       s2.storage,
+      battery:       CATEGORY_HAS_BATTERY[cat] ? s2.battery_health : '',
+      condition:     s2.condition,
+      reconditioned: s1.is_reconditioned,
+      photos:        photoSig,
+    })
+  }
+
   async function runValuation() {
+    const keyAtStart = computeSpecsKey()
     try {
       const cat       = s1.device_category as DeviceCategory
       const rawPhotos = [...s3.photos.values()]
@@ -334,7 +405,6 @@ export function RegistrarGarantiaTecView({
         ram:              s2.ram,
         storage:          s2.storage,
         battery_health:   CATEGORY_HAS_BATTERY[cat] ? s2.battery_health : undefined,
-        screen_size:      CATEGORY_HAS_SCREEN[cat] && s2.screen_size ? s2.screen_size : undefined,
         condition:        s2.condition,
         is_reconditioned: s1.is_reconditioned,
         photos,
@@ -343,6 +413,7 @@ export function RegistrarGarantiaTecView({
       if (!aiRef.current.cancelled) {
         setAiResult(result)
         setAiState('done')
+        setValuatedKey(keyAtStart)
       }
     } catch {
       if (!aiRef.current.cancelled) {
@@ -355,34 +426,70 @@ export function RegistrarGarantiaTecView({
     aiRef.current = { cancelled: false, started: true }
     setAiState('running')
     setAiResult(null)
+    setAiVerified(false)
     aiSavedRef.current = false
     runValuation()
   }
 
-  // Auto-run AI when reaching step 3; reset all audit state on back-navigation
+  /** Re-runs the valuation using the REAL hardware the auditor detected, producing
+   *  the verified (binding) value. Keeps the preliminary value if it fails. */
+  async function revaluateWithAudit(fresh: Awaited<ReturnType<typeof getGuarantee>>) {
+    try {
+      const cat       = s1.device_category as DeviceCategory
+      const rawPhotos = [...s3.photos.values()]
+      const photos    = rawPhotos.length > 0
+        ? await Promise.all(rawPhotos.map((p) => compressImage(p)))
+        : []
+      const declaredProc = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom.trim() : s2.processor
+      const result = await valuateDevice({
+        device_category:  s1.device_category,
+        brand:            fresh.brand || effectiveBrand(s1),
+        model:            fresh.model || effectiveModel(s1),
+        manufacture_year: fresh.manufacture_year || s1.manufacture_year,
+        processor:        fresh.specs?.cpu_name || declaredProc,
+        ram:              fresh.specs?.total_ram_gb ? `${fresh.specs.total_ram_gb}GB` : s2.ram,
+        storage:          fresh.specs?.primary_disk_size_gb ? `${fresh.specs.primary_disk_size_gb}GB` : s2.storage,
+        battery_health:   CATEGORY_HAS_BATTERY[cat] ? s2.battery_health : undefined,
+        condition:        s2.condition,
+        is_reconditioned: s1.is_reconditioned,
+        photos,
+      })
+      setAiResult(result)
+      setAiState('done')
+      setAiVerified(true)
+      setValuatedKey(computeSpecsKey())
+      aiSavedRef.current = false // re-save: persist the verified valuation to the draft
+    } catch {
+      /* keep the preliminary valuation if the re-valuation fails */
+    }
+  }
+
+  // Run the AI valuation the first time step 3 is reached. On later entries the
+  // cached result is reused — we NEVER auto-re-run. If the user changed specs,
+  // the result is flagged stale in the UI and they re-evaluate explicitly.
   useEffect(() => {
     if (step !== 3) {
+      // Leaving step 3 — cancel any in-flight run but KEEP the cached result,
+      // draft and audit state so coming back doesn't trigger a re-valuation.
       aiRef.current.cancelled = true
       aiRef.current.started   = false
-      setAiState('idle')
-      setAiResult(null)
-      aiSavedRef.current = false
-      setDraftGuaranteeId(null)
-      setAuditVerified('none')
-      setDiscrepancyNotes(null)
-      setMacDownloaded(false)
       return
     }
-    if (!aiRef.current.started) {
-      aiRef.current = { cancelled: false, started: true }
-      if (aiRestoredRef.current) {
-        // AI result was restored from localStorage — no need to re-run the analysis
-        aiRestoredRef.current = false // allow normal re-run if user navigates away and returns
-      } else {
-        setAiState('running')
-        runValuation()
-      }
+    if (aiRef.current.started) return
+    aiRef.current = { cancelled: false, started: true }
+
+    if (aiRestoredRef.current) {
+      // Restored from localStorage — keep it, don't re-run.
+      aiRestoredRef.current = false
+      return
     }
+    if (aiResult) {
+      // Already valuated this session — reuse it (stale specs are handled in the UI).
+      return
+    }
+    // First valuation for this device.
+    setAiState('running')
+    runValuation()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
@@ -416,15 +523,19 @@ export function RegistrarGarantiaTecView({
         // Map → serializable array of [slotId, dataUrl] pairs
         photos: [...s3.photos.entries()],
         auditVerified,
-        macDownloaded,
+        windowsDownloadedAt,
+        macDownloadedAt,
       }
       if (aiResult)           data.aiResult           = aiResult
+      if (valuatedKey)        data.valuatedKey        = valuatedKey
+      if (aiVerified)         data.aiVerified         = aiVerified
       if (draftGuaranteeId)   data.draftGuaranteeId   = draftGuaranteeId
       if (discrepancyNotes)   data.discrepancyNotes   = discrepancyNotes
+      if (auditedSpecs)       data.auditedSpecs       = auditedSpecs
       localStorage.setItem(DRAFT_KEY, JSON.stringify(data))
     } catch { /* quota exceeded or private browsing — ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, s1, s2, s3, aiResult, draftGuaranteeId, auditVerified, discrepancyNotes, macDownloaded])
+  }, [step, s1, s2, s3, aiResult, valuatedKey, aiVerified, draftGuaranteeId, auditVerified, discrepancyNotes, auditedSpecs, windowsDownloadedAt, macDownloadedAt])
 
   // ── Guarantee helpers ──────────────────────────────────────────────────────
 
@@ -439,7 +550,6 @@ export function RegistrarGarantiaTecView({
       storage:   s2.storage,
     }
     if (CATEGORY_HAS_BATTERY[cat])                specs.battery_health    = s2.battery_health
-    if (CATEGORY_HAS_SCREEN[cat] && s2.screen_size) specs.screen_size     = s2.screen_size
     if (s1.imei)                                  specs.imei              = s1.imei
     if (s1.is_reconditioned)                      specs.is_reconditioned  = 'true'
     if (isUnknownModel(s1))                       specs.needs_verification = 'true'
@@ -499,6 +609,7 @@ export function RegistrarGarantiaTecView({
       a.download = 'Jemacash-Auditor.exe'
       a.click()
       URL.revokeObjectURL(url)
+      setWindowsDownloadedAt(Date.now())
     } catch (err) {
       console.error('Error descargando auditor:', err)
     }
@@ -526,7 +637,7 @@ export function RegistrarGarantiaTecView({
       a.download = 'Jemacash-Auditor.sh'
       a.click()
       URL.revokeObjectURL(url)
-      setMacDownloaded(true)
+      setMacDownloadedAt(Date.now())
     } catch (err) {
       console.error('Error descargando auditor macOS:', err)
     }
@@ -538,11 +649,14 @@ export function RegistrarGarantiaTecView({
     try {
       const fresh  = await getGuarantee(draftGuaranteeId)
       const audVer = fresh.specs?.audit_verified
+      if (fresh.specs) setAuditedSpecs(fresh.specs)
       if (audVer === 'true') {
         setAuditVerified('verified')
+        await revaluateWithAudit(fresh)   // recompute the verified value from real hardware
       } else if (audVer === 'discrepancy') {
         setAuditVerified('discrepancy')
         setDiscrepancyNotes(fresh.specs?.audit_discrepancy_notes ?? 'Los datos del dispositivo no coinciden con los declarados.')
+        await revaluateWithAudit(fresh)   // re-price on the real hardware despite the mismatch
       }
     } catch { /* ignore */ }
     finally { setCheckingAudit(false) }
@@ -885,7 +999,6 @@ export function RegistrarGarantiaTecView({
     const ramOptions  = cat ? RAM_BY_CATEGORY[cat]     : RAM_BY_CATEGORY.laptop
     const storOpts    = cat ? STORAGE_BY_CATEGORY[cat] : STORAGE_BY_CATEGORY.laptop
     const hasBattery  = !cat || CATEGORY_HAS_BATTERY[cat]
-    const hasScreen   = !cat || CATEGORY_HAS_SCREEN[cat]
 
     return (
       <div className={styles.reg_step_body}>
@@ -988,19 +1101,6 @@ export function RegistrarGarantiaTecView({
             </div>
           </FieldRow>
         )}
-
-        {/* ── Screen size (not for desktop) ── */}
-        {hasScreen && (
-          <FieldRow label={t('regGar.step1.screen')}>
-            <input
-              type="text"
-              className={styles.reg_input}
-              placeholder={t('regGar.step1.screenPlaceholder')}
-              value={s2.screen_size}
-              onChange={(e) => setS2((p) => ({ ...p, screen_size: e.target.value }))}
-            />
-          </FieldRow>
-        )}
       </div>
     )
   }
@@ -1074,7 +1174,6 @@ export function RegistrarGarantiaTecView({
     const cat          = s1.device_category as DeviceCategory
     const procLabel    = s2.processor === UNKNOWN_PROCESSOR ? s2.processor_custom : s2.processor
     const hasBattery   = !cat || CATEGORY_HAS_BATTERY[cat]
-    const hasScreen    = !cat || CATEGORY_HAS_SCREEN[cat]
 
     // All AI checks must pass before the auditor download is allowed
     const aiAnalysisOk =
@@ -1082,6 +1181,17 @@ export function RegistrarGarantiaTecView({
       aiResult !== null &&
       aiResult.device_match_valid === true &&
       aiResult.resale_value_pen >= 350
+
+    // Cached valuation no longer matches the current specs → user must re-evaluate
+    const aiStale = aiState === 'done' && aiResult !== null
+      && valuatedKey !== null && valuatedKey !== computeSpecsKey()
+    // AI must be ready (and not stale) before the hardware auditor can run
+    const aiReady = aiAnalysisOk && !aiStale
+    // Laptops / desktops require a passed hardware audit; phones/tablets don't
+    const requiresAudit = s1.device_category === 'laptop' || s1.device_category === 'desktop'
+    const auditDone = !requiresAudit || auditVerified === 'verified'
+    // Final summary only appears once AI + (if needed) the audit are complete
+    const summaryReady = aiReady && auditDone
 
     return (
       <div className={styles.reg_step_body}>
@@ -1104,11 +1214,49 @@ export function RegistrarGarantiaTecView({
 
             <div className={styles.reg_ai_result_header}>
               <span className={styles.reg_ai_result_badge}>IA · Groq</span>
-              <strong style={{ fontSize: '0.95rem', color: '#14230a' }}>{t('regGar.step3.ai.done')}</strong>
+              <strong style={{ fontSize: '0.95rem', color: '#14230a' }}>
+                {aiVerified ? 'Valuación verificada' : 'Valuación preliminar'}
+              </strong>
+              {aiVerified && (
+                <span style={{ fontSize: '0.62rem', background: '#dcfce7', color: '#166534', padding: '2px 7px', borderRadius: 99, fontWeight: 700 }}>
+                  ✓ hardware auditado
+                </span>
+              )}
               <button type="button" className={styles.reg_ai_reanalyze} onClick={handleRetryAi}>
                 {t('regGar.step3.ai.retryBtn')}
               </button>
             </div>
+
+            {/* Preliminary estimate notice — the verified value comes from the auditor */}
+            {!aiVerified && requiresAudit && (
+              <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0 0 0.6rem' }}>
+                Valor estimado con los datos declarados. Se ajustará automáticamente al verificar el hardware con el auditor técnico.
+              </p>
+            )}
+
+            {/* Specs changed since this valuation — prompt explicit re-evaluation */}
+            {aiStale && (
+              <div className={styles.reg_warn_box} style={{ marginBottom: '0.75rem' }}>
+                <IconAlert />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', marginBottom: '0.3rem' }}>Modificaste las características del equipo</strong>
+                  <p style={{ margin: '0 0 0.6rem' }}>
+                    Esta valuación corresponde a los datos anteriores. Guarda los cambios y vuelve a evaluar para actualizarla.
+                  </p>
+                  <button
+                    type="button"
+                    style={{
+                      fontSize: '0.8rem', fontWeight: 600, color: '#92400e',
+                      background: '#fef3c7', border: '1px solid #fcd34d',
+                      borderRadius: 6, padding: '0.3rem 0.75rem', cursor: 'pointer',
+                    }}
+                    onClick={handleRetryAi}
+                  >
+                    Guardar y re-evaluar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Device identity validation */}
             {aiResult.device_match_valid ? (
@@ -1204,22 +1352,65 @@ export function RegistrarGarantiaTecView({
 
         {/* ── AI Valuation — Failed ── */}
         {aiState === 'failed' && (
-          <div className={styles.reg_warn_box}>
-            <IconAlert />
-            <div style={{ flex: 1 }}>
-              <strong style={{ display: 'block', marginBottom: '0.3rem' }}>{t('regGar.step3.ai.failed')}</strong>
-              <p style={{ margin: '0 0 0.6rem' }}>{t('regGar.step3.ai.failedDesc')}</p>
-              <button
-                type="button"
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(3px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem',
+            }}
+          >
+            <div style={{
+              background: '#fff', borderRadius: 18, maxWidth: 440, width: '100%',
+              padding: '2rem 1.75rem', textAlign: 'center', boxShadow: '0 24px 70px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{
+                width: 60, height: 60, borderRadius: '50%', background: '#fee2e2', color: '#dc2626',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem',
+              }}>
+                <IconAlert />
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#14230a', margin: '0 0 0.5rem' }}>
+                {t('regGar.step3.ai.failed')}
+              </h3>
+              <p style={{ fontSize: '0.92rem', color: '#475569', margin: '0 0 1.1rem', lineHeight: 1.55 }}>
+                {t('regGar.step3.ai.failedDesc')}
+              </p>
+              <a
+                href={`tel:${SUPPORT_PHONE.replace(/\s/g, '')}`}
                 style={{
-                  fontSize: '0.8rem', fontWeight: 600, color: '#92400e',
-                  background: '#fef3c7', border: '1px solid #fcd34d',
-                  borderRadius: 6, padding: '0.3rem 0.75rem', cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                  fontSize: '1.05rem', fontWeight: 800, color: '#0f7d3f', textDecoration: 'none',
+                  background: '#d9f0da', padding: '0.65rem 1.2rem', borderRadius: 12, marginBottom: '1.4rem',
                 }}
-                onClick={handleRetryAi}
               >
-                {t('regGar.step3.ai.retryBtn')}
-              </button>
+                📞 {SUPPORT_PHONE}
+              </a>
+              <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  style={{
+                    fontSize: '0.9rem', fontWeight: 700, color: '#334155',
+                    background: '#f1f5f9', border: 'none', borderRadius: 10,
+                    padding: '0.65rem 1.2rem', cursor: 'pointer',
+                  }}
+                >
+                  {t('regGar.step3.ai.back')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRetryAi}
+                  style={{
+                    fontSize: '0.9rem', fontWeight: 700, color: '#fff',
+                    background: '#0f7d3f', border: 'none', borderRadius: 10,
+                    padding: '0.65rem 1.2rem', cursor: 'pointer',
+                  }}
+                >
+                  {t('regGar.step3.ai.retryBtn')}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1242,24 +1433,33 @@ export function RegistrarGarantiaTecView({
                   <span className={styles.reg_verify_coming} style={{ color: '#0f7d3f' }}>✓ Auditoría completada</span>
                 ) : auditVerified === 'discrepancy' ? (
                   <span className={styles.reg_verify_coming} style={{ color: '#dc2626' }}>✗ Discrepancia detectada</span>
-                ) : (
+                ) : aiReady ? (
                   <span className={styles.reg_verify_coming} style={{ color: '#d97706' }}>Requerido</span>
+                ) : (
+                  <span className={styles.reg_verify_coming} style={{ color: '#2563eb' }}>⏳ Esperando evaluación IA…</span>
                 )}
                 {auditVerified === 'discrepancy' && discrepancyNotes && (
                   <p style={{ fontSize: '0.7rem', color: '#dc2626', textAlign: 'center', margin: '0.25rem 0 0', lineHeight: 1.3 }}>
                     {discrepancyNotes}
                   </p>
                 )}
-                {auditVerified === 'none' && (
+                {auditVerified === 'none' && aiReady && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%' }}>
                     <button
                       type="button"
                       className={styles.reg_verify_download_btn}
                       onClick={handleDownloadAuditorSingle}
-                      disabled={!aiAnalysisOk}
+                      disabled={!aiAnalysisOk || windowsCooldownRemaining > 0}
                     >
-                      Descargar
+                      {windowsDownloadedAt
+                        ? (windowsCooldownRemaining > 0 ? `Reintentar en ${formatCooldown(windowsCooldownRemaining)}` : 'Descargar de nuevo')
+                        : 'Descargar'}
                     </button>
+                    {windowsDownloadedAt && windowsCooldownRemaining > 0 && (
+                      <span style={{ fontSize: '0.7rem', color: '#0f172a', textAlign: 'center' }}>
+                        Podrás volver a descargarlo en {formatCooldown(windowsCooldownRemaining)}.
+                      </span>
+                    )}
                     {draftGuaranteeId && (
                       <button
                         type="button"
@@ -1298,60 +1498,71 @@ export function RegistrarGarantiaTecView({
                   <span className={styles.reg_verify_coming} style={{ color: '#0f7d3f' }}>✓ Auditoría completada</span>
                 ) : auditVerified === 'discrepancy' ? (
                   <span className={styles.reg_verify_coming} style={{ color: '#dc2626' }}>✗ Discrepancia detectada</span>
-                ) : (
+                ) : aiReady ? (
                   <span className={styles.reg_verify_coming} style={{ color: '#d97706' }}>Requerido</span>
+                ) : (
+                  <span className={styles.reg_verify_coming} style={{ color: '#2563eb' }}>⏳ Esperando evaluación IA…</span>
                 )}
                 {auditVerified === 'discrepancy' && discrepancyNotes && (
                   <p style={{ fontSize: '0.7rem', color: '#dc2626', textAlign: 'center', margin: '0.25rem 0 0', lineHeight: 1.3 }}>
                     {discrepancyNotes}
                   </p>
                 )}
-                {auditVerified === 'none' && !macDownloaded && (
-                  <button
-                    type="button"
-                    className={styles.reg_verify_download_btn}
-                    onClick={handleDownloadAuditorMac}
-                    disabled={!aiAnalysisOk}
-                  >
-                    Descargar
-                  </button>
-                )}
-                {auditVerified === 'none' && macDownloaded && (
+                {auditVerified === 'none' && aiReady && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
-                    <span style={{ fontSize: '0.7rem', color: '#0f7d3f', fontWeight: 600, textAlign: 'center' }}>
-                      ✓ Archivo descargado
-                    </span>
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem', fontSize: '0.68rem', color: '#374151', lineHeight: 1.6 }}>
-                      <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>Cómo ejecutarlo:</p>
-                      <p style={{ margin: '0 0 0.25rem' }}>
-                        <strong>1.</strong> Abre <strong>Terminal</strong>
-                        <br />
-                        <span style={{ color: '#6b7280' }}>Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>⌘</kbd> + <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Espacio</kbd>, escribe <em>Terminal</em> y presiona Enter</span>
-                      </p>
-                      <p style={{ margin: '0 0 0.25rem' }}>
-                        <strong>2.</strong> Copia y pega este comando:
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#1e293b', borderRadius: 6, padding: '0.35rem 0.5rem' }}>
-                        <code style={{ color: '#86efac', fontSize: '0.63rem', flex: 1, wordBreak: 'break-all', fontFamily: 'monospace' }}>
-                          bash ~/Downloads/Jemacash-Auditor.sh
-                        </code>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('bash ~/Downloads/Jemacash-Auditor.sh').catch(() => {})
-                            setMacCopied(true)
-                            setTimeout(() => setMacCopied(false), 2000)
-                          }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: macCopied ? '#86efac' : '#94a3b8', fontSize: '0.75rem', padding: '0 2px', flexShrink: 0 }}
-                          title="Copiar comando"
-                        >
-                          {macCopied ? '✓' : '⧉'}
-                        </button>
-                      </div>
-                      <p style={{ margin: '0.25rem 0 0' }}>
-                        <strong>3.</strong> Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Enter</kbd> y espera el mensaje de éxito
-                      </p>
-                    </div>
+                    <button
+                      type="button"
+                      className={styles.reg_verify_download_btn}
+                      onClick={handleDownloadAuditorMac}
+                      disabled={!aiAnalysisOk || macCooldownRemaining > 0}
+                    >
+                      {macDownloadedAt
+                        ? (macCooldownRemaining > 0 ? `Reintentar en ${formatCooldown(macCooldownRemaining)}` : 'Descargar de nuevo')
+                        : 'Descargar'}
+                    </button>
+                    {macDownloadedAt && macCooldownRemaining > 0 && (
+                      <span style={{ fontSize: '0.7rem', color: '#0f172a', textAlign: 'center' }}>
+                        Podrás volver a descargarlo en {formatCooldown(macCooldownRemaining)}.
+                      </span>
+                    )}
+                    {macDownloadedAt && (
+                      <>
+                        <span style={{ fontSize: '0.7rem', color: '#0f7d3f', fontWeight: 600, textAlign: 'center' }}>
+                          ✓ Archivo descargado
+                        </span>
+                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.6rem', fontSize: '0.68rem', color: '#374151', lineHeight: 1.6 }}>
+                          <p style={{ margin: '0 0 0.4rem', fontWeight: 600 }}>Cómo ejecutarlo:</p>
+                          <p style={{ margin: '0 0 0.25rem' }}>
+                            <strong>1.</strong> Abre <strong>Terminal</strong>
+                            <br />
+                            <span style={{ color: '#6b7280' }}>Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>⌘</kbd> + <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Espacio</kbd>, escribe <em>Terminal</em> y presiona Enter</span>
+                          </p>
+                          <p style={{ margin: '0 0 0.25rem' }}>
+                            <strong>2.</strong> Copia y pega este comando:
+                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#1e293b', borderRadius: 6, padding: '0.35rem 0.5rem' }}>
+                            <code style={{ color: '#86efac', fontSize: '0.63rem', flex: 1, wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                              bash ~/Downloads/Jemacash-Auditor.sh
+                            </code>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('bash ~/Downloads/Jemacash-Auditor.sh').catch(() => {})
+                                setMacCopied(true)
+                                setTimeout(() => setMacCopied(false), 2000)
+                              }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: macCopied ? '#86efac' : '#94a3b8', fontSize: '0.75rem', padding: '0 2px', flexShrink: 0 }}
+                              title="Copiar comando"
+                            >
+                              {macCopied ? '✓' : '⧉'}
+                            </button>
+                          </div>
+                          <p style={{ margin: '0.25rem 0 0' }}>
+                            <strong>3.</strong> Presiona <kbd style={{ background: '#e5e7eb', padding: '0 3px', borderRadius: 3 }}>Enter</kbd> y espera el mensaje de éxito
+                          </p>
+                        </div>
+                      </>
+                    )}
                     <button
                       type="button"
                       className={styles.reg_verify_download_btn}
@@ -1391,35 +1602,85 @@ export function RegistrarGarantiaTecView({
           <p>{t('regGar.step3.verifyInfo')}</p>
         </div>
 
-        <div className={styles.reg_summary}>
-          <h3>{t('regGar.step3.summary.title')}</h3>
-          <div className={styles.reg_summary_grid}>
-            <div><span>{t('regGar.step3.summary.device')}</span><strong>{catLabel}</strong></div>
-            <div>
-              <span>{t('regGar.step3.summary.brand')}</span>
-              <strong>{brand} {model}{unknown ? ' *' : ''}</strong>
+        {/* ── Final summary — hidden until AI + (if needed) audit are complete ── */}
+        {!summaryReady ? (
+          <div className={styles.reg_info_box}>
+            <IconShield />
+            <p>
+              Completa la evaluación con IA{requiresAudit ? ' y la auditoría técnica' : ''} para ver
+              el resumen final de tu garantía con la información verificada del dispositivo.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.reg_summary}>
+            <h3>{t('regGar.step3.summary.title')}</h3>
+
+            {/* Identity / declared base data */}
+            <div className={styles.reg_summary_grid}>
+              <div><span>{t('regGar.step3.summary.device')}</span><strong>{catLabel}</strong></div>
+              <div>
+                <span>{t('regGar.step3.summary.brand')}</span>
+                <strong>{brand} {model}{unknown ? ' *' : ''}</strong>
+              </div>
+              <div><span>{t('regGar.step3.summary.year')}</span><strong>{s1.manufacture_year}</strong></div>
+              <div><span>{t('regGar.step3.summary.serial')}</span><strong>{s1.serial_number}</strong></div>
+              <div><span>{t('regGar.step3.summary.condition')}</span><strong>{condLabelStr}</strong></div>
+              <div><span>{t('regGar.step3.summary.photos')}</span><strong>{s3.photos.size} / 3</strong></div>
+              {s1.is_reconditioned && (
+                <div><span>{t('regGar.step3.summary.reconditioned')}</span><strong>{t('regGar.step3.summary.reconditionedValue')}</strong></div>
+              )}
             </div>
-            <div><span>{t('regGar.step3.summary.year')}</span><strong>{s1.manufacture_year}</strong></div>
-            <div><span>{t('regGar.step3.summary.serial')}</span><strong>{s1.serial_number}</strong></div>
-            <div><span>{t('regGar.step3.summary.condition')}</span><strong>{condLabelStr}</strong></div>
-            <div><span>{t('regGar.step3.summary.processor')}</span><strong>{procLabel}</strong></div>
-            <div><span>{t('regGar.step3.summary.ram')}</span><strong>{s2.ram}</strong></div>
-            <div><span>{t('regGar.step3.summary.storage')}</span><strong>{s2.storage}</strong></div>
-            {hasBattery && <div><span>{t('regGar.step3.summary.battery')}</span><strong>{s2.battery_health}%</strong></div>}
-            <div><span>{t('regGar.step3.summary.photos')}</span><strong>{s3.photos.size} / 3</strong></div>
-            {hasScreen && s2.screen_size && (
-              <div><span>{t('regGar.step3.summary.screen')}</span><strong>{s2.screen_size}</strong></div>
+
+            {/* Declared vs detected — components extracted by the hardware auditor */}
+            {auditedSpecs ? (
+              <div style={{ marginTop: '0.85rem', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr', fontSize: '0.7rem', fontWeight: 700, background: '#f1f5f9', color: '#475569', padding: '0.5rem 0.75rem' }}>
+                  <span>Componente</span><span>Declarado</span><span>Detectado</span>
+                </div>
+                {([
+                  ['Procesador',     procLabel, auditedSpecs.cpu_name],
+                  ['RAM',            s2.ram,    auditedSpecs.total_ram_gb ? `${auditedSpecs.total_ram_gb} GB` : undefined],
+                  ['Almacenamiento', s2.storage, auditedSpecs.primary_disk_size_gb ? `${auditedSpecs.primary_disk_size_gb} GB` : undefined],
+                ] as [string, string, string | undefined][]).map(([label, declared, detected]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr', fontSize: '0.8rem', padding: '0.5rem 0.75rem', borderTop: '1px solid #f1f5f9', alignItems: 'center' }}>
+                    <span style={{ color: '#64748b' }}>{label}</span>
+                    <span>{declared || '—'}</span>
+                    <strong style={{ color: detected ? '#0f7d3f' : '#94a3b8' }}>{detected || 'No detectado'}</strong>
+                  </div>
+                ))}
+                {(auditedSpecs.gpu_name || auditedSpecs.os_name) && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: '0.72rem', color: '#475569', padding: '0.5rem 0.75rem', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                    {auditedSpecs.gpu_name && <span>GPU: <strong>{auditedSpecs.gpu_name}</strong></span>}
+                    {auditedSpecs.os_name && <span>SO: <strong>{auditedSpecs.os_name}{auditedSpecs.os_version ? ` ${auditedSpecs.os_version}` : ''}</strong></span>}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className={styles.reg_summary_grid}>
+                <div><span>{t('regGar.step3.summary.processor')}</span><strong>{procLabel}</strong></div>
+                <div><span>{t('regGar.step3.summary.ram')}</span><strong>{s2.ram}</strong></div>
+                <div><span>{t('regGar.step3.summary.storage')}</span><strong>{s2.storage}</strong></div>
+                {hasBattery && <div><span>{t('regGar.step3.summary.battery')}</span><strong>{s2.battery_health}%</strong></div>}
+              </div>
             )}
-            {s1.is_reconditioned && (
-              <div><span>{t('regGar.step3.summary.reconditioned')}</span><strong>{t('regGar.step3.summary.reconditionedValue')}</strong></div>
+
+            {/* AI valuation summary */}
+            {aiResult && (
+              <div className={styles.reg_summary_grid} style={{ marginTop: '0.85rem' }}>
+                <div><span>Valor de reventa (IA)</span><strong>S/ {aiResult.resale_value_pen.toLocaleString('es-PE')}</strong></div>
+                <div><span>Valor de mercado (IA)</span><strong>S/ {aiResult.market_value_pen.toLocaleString('es-PE')}</strong></div>
+                <div><span>Préstamo máximo</span><strong>S/ {aiResult.max_loan_pen.toLocaleString('es-PE')}</strong></div>
+                <div><span>Score de condición</span><strong>{aiResult.condition_score.toFixed(1)} / 10</strong></div>
+              </div>
+            )}
+
+            {unknown && (
+              <p className={styles.reg_summary_unknown}>
+                {t('regGar.step3.summary.unknownNote')}
+              </p>
             )}
           </div>
-          {unknown && (
-            <p className={styles.reg_summary_unknown}>
-              {t('regGar.step3.summary.unknownNote')}
-            </p>
-          )}
-        </div>
+        )}
 
         <div className={styles.reg_legal}>
           <IconShield />
