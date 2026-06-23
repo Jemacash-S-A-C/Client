@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next'
 import styles from "./AppHeader.module.css";
 import jemacashLogo from '../../assets/partner_logos/jemacashlogo.png'
 
-export type AppPage = "home" | "blog" | "nosotros" | "valuar";
+export type AppPage = "home" | "nosotros" | "valuar" | "inversores";
 
 type AppHeaderProps = {
   activePage: AppPage
   onGoHome: () => void
-  onGoBlog: () => void
   onGoNosotros: () => void
   onGoValuar: () => void
+  onGoInversores: () => void
   onPidePrestamo: () => void
   onLogin: () => void
 }
@@ -18,9 +18,9 @@ type AppHeaderProps = {
 export function AppHeader({
   activePage,
   onGoHome,
-  onGoBlog,
   onGoNosotros,
   onGoValuar,
+  onGoInversores,
   onPidePrestamo,
   onLogin,
 }: AppHeaderProps) {
@@ -39,11 +39,10 @@ export function AppHeader({
     setMobileOpen(false);
     onGoNosotros();
   };
-  const goBlog = () => {
+  const goInversores = () => {
     setMobileOpen(false);
-    onGoBlog();
+    onGoInversores();
   };
-
   return (
     <header className={styles.topbar}>
       <div className={styles.topbar_inner}>
@@ -71,10 +70,10 @@ export function AppHeader({
           </button>
           <button
             type="button"
-            className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
-            onClick={goBlog}
+            className={`${styles.menu_link} ${activePage === "inversores" ? styles.menu_link_active : styles.menu_link_ghost}`}
+            onClick={goInversores}
           >
-            {t('header.blog')}
+            Inversores
           </button>
         </nav>
 
@@ -122,10 +121,10 @@ export function AppHeader({
         </button>
         <button
           type="button"
-          className={`${styles.menu_link} ${activePage === "blog" ? styles.menu_link_active : styles.menu_link_ghost}`}
-          onClick={goBlog}
+          className={`${styles.menu_link} ${activePage === "inversores" ? styles.menu_link_active : styles.menu_link_ghost}`}
+          onClick={goInversores}
         >
-          {t('header.blog')}
+          Inversores
         </button>
         <button className={styles.mobile_cta} type="button" onClick={onPidePrestamo}>
           {t('header.request')}

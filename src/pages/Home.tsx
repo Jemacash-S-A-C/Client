@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import heroImg from "../assets/partner_logos/principalima.png";
-import promoImg from "../assets/valuacion_img/valuacion_card.png";
+import personImg from "../assets/partner_logos/persona.png";
 import styles from "./Home.module.css";
 
 // ── Loan simulator constants (idénticos a SolicitarPrestamoView) ─────────────
@@ -48,14 +47,39 @@ function IconPaid() {
   );
 }
 
-function IconHeadset() {
+
+function IconBolt() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M3 11a9 9 0 0 1 18 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <rect x="2" y="11" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <rect x="18" y="11" width="4" height="6" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M22 17v1a4 4 0 0 1-4 4h-3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="13" cy="22" r="1.1" fill="currentColor" />
+      <path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconShield() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconClock() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconMoney() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M6 12h.01M18 12h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -80,13 +104,15 @@ function Home({ onRegister }: HomeProps) {
     <div className={styles.home_page}>
       <section className={styles.hero} aria-label="Hero principal">
         <div className={styles.hero_copy}>
-          <p className={styles.eyebrow}>Rápido • Seguro • Digital</p>
+          <p className={styles.eyebrow}>
+            <span className={styles.eyebrow_dot} />
+            Rápido · Seguro · Digital
+          </p>
           <h1>
-            Tu préstamo al toque con <em>Jemacash</em>
+            Tu préstamo<br />al toque con<br /><em>Jemacash</em>
           </h1>
           <p className={styles.hero_desc}>
-            Convertimos tus activos en liquidez inmediata con la precisión de nuestra inteligencia
-            artificial. Sin trámites eternos, sin complicaciones.
+            Convertimos tus activos en liquidez inmediata. Sin trámites eternos, sin complicaciones.
           </p>
 
           <article className={styles.loan_card}>
@@ -149,7 +175,7 @@ function Home({ onRegister }: HomeProps) {
 
         <div className={styles.hero_visual}>
           <div className={styles.hero_card}>
-            <img src={heroImg} alt="Visual principal de Jemacash" />
+            <img src={personImg} alt="Visual principal de Jemacash" />
             <div className={styles.trust_card}>
               <span aria-hidden="true">✓</span>
               <div>
@@ -162,90 +188,81 @@ function Home({ onRegister }: HomeProps) {
       </section>
 
       <section className={styles.workflow} aria-labelledby="workflow-heading">
-        <header>
+        <div className={styles.workflow_left}>
           <span className={styles.workflow_eyebrow}>Cómo funciona</span>
-          <h2 id="workflow-heading">Precision Workflow</h2>
-          <p>Tu dinero en tres pasos simples impulsados por IA</p>
-        </header>
+          <h2 id="workflow-heading">
+            Tu préstamo<br />en tres<br /><em>simples pasos</em>
+          </h2>
+          <button type="button" className={styles.workflow_cta_btn} onClick={onRegister}>
+            Solicitar préstamo
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+              <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
         <ol className={styles.workflow_grid}>
-          <li>
-            <article className={styles.step_card}>
-              <div className={styles.step_card_top}>
-                <div className={styles.step_icon}><IconScan /></div>
-                <span className={styles.step_num}>01</span>
+          <li className={styles.workflow_step}>
+            <span className={styles.workflow_num}>01</span>
+            <div className={styles.workflow_step_body}>
+              <div className={styles.step_icon_box}><IconScan /></div>
+              <div>
+                <h3>Escanea tu artículo</h3>
+                <p>Escanea tu identificación y el artículo que deseas valuar usando nuestra app.</p>
               </div>
-              <h3>Scan</h3>
-              <p>Escanea tu identificación y el artículo que deseas valuar usando nuestra app intuitiva.</p>
-            </article>
+            </div>
           </li>
-          <li>
-            <article className={styles.step_card}>
-              <div className={styles.step_card_top}>
-                <div className={styles.step_icon}><IconVerify /></div>
-                <span className={styles.step_num}>02</span>
+          <li className={styles.workflow_step}>
+            <span className={styles.workflow_num}>02</span>
+            <div className={styles.workflow_step_body}>
+              <div className={styles.step_icon_box}><IconVerify /></div>
+              <div>
+                <h3>Verificamos tu equipo</h3>
+                <p>Validamos la condición de tu equipo y tu identidad en tiempo real.</p>
               </div>
-              <h3>Verify</h3>
-              <p>Validamos la condición de tu equipo y tu identidad en tiempo real para una oferta precisa.</p>
-            </article>
+            </div>
           </li>
-          <li>
-            <article className={styles.step_card}>
-              <div className={styles.step_card_top}>
-                <div className={styles.step_icon}><IconPaid /></div>
-                <span className={styles.step_num}>03</span>
+          <li className={styles.workflow_step}>
+            <span className={styles.workflow_num}>03</span>
+            <div className={styles.workflow_step_body}>
+              <div className={styles.step_icon_box}><IconPaid /></div>
+              <div>
+                <h3>Recibe tu dinero</h3>
+                <p>El dinero se transfiere directo a tu cuenta o billetera digital.</p>
               </div>
-              <h3>Get Paid</h3>
-              <p>Una vez aceptada la oferta, el dinero se transfiere directo a tu cuenta o billetera digital.</p>
-            </article>
+            </div>
           </li>
         </ol>
       </section>
 
-      <section className={styles.promo} aria-label="Valuación y soporte">
-        <article className={styles.promo_main}>
-          <img src={promoImg} alt="" aria-hidden="true" />
-          <div className={styles.promo_overlay}>
-            <h3>
-              Valuación en segundos,
-              <br />
-              dinero en minutos.
-            </h3>
-            <p>
-              Nuestra tecnología de punta analiza el mercado global para darte siempre el precio más
-              justo por tus artículos electrónicos.
-            </p>
-            <button type="button">Descarga la App</button>
+      <section className={styles.benefits} aria-labelledby="benefits-heading">
+        <div className={styles.benefits_header}>
+          <h2 id="benefits-heading">
+            Por qué elegir <em>Jemacash</em>
+          </h2>
+          <p>Todo lo que necesitas para tu préstamo, en un solo lugar.</p>
+        </div>
+        <div className={styles.benefits_grid}>
+          <div className={styles.benefit_card}>
+            <div className={styles.benefit_icon_wrap}><IconBolt /></div>
+            <h3>Agilidad</h3>
+            <p>Te evaluamos 100% en línea para un rápido desembolso sin trámites presenciales.</p>
           </div>
-        </article>
-
-        <aside className={styles.promo_side}>
-          <article className={styles.promo_stat}>
-            <div className={styles.promo_stat_inner}>
-              <strong>+500,000</strong>
-              <span>Usuarios satisfechos en todo Perú</span>
-            </div>
-            <div className={styles.promo_stat_badge}>
-              <span>#1 en valuación</span>
-            </div>
-          </article>
-          <article className={styles.promo_help}>
-            <div className={styles.promo_help_header}>
-              <div className={styles.support_icon}><IconHeadset /></div>
-              <div className={styles.live_badge}>
-                <span className={styles.live_dot} />
-                Disponible ahora
-              </div>
-            </div>
-            <h4>¿Necesitas ayuda?</h4>
-            <p>Nuestros asesores están disponibles 24/7 para apoyarte en cada paso del proceso.</p>
-            <button type="button" className={styles.promo_help_cta}>
-              Contactar soporte
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" width="15" height="15">
-                <path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </article>
-        </aside>
+          <div className={styles.benefit_card}>
+            <div className={styles.benefit_icon_wrap}><IconShield /></div>
+            <h3>Seguridad</h3>
+            <p>Tu información se encuentra segura y protegida en todo momento.</p>
+          </div>
+          <div className={styles.benefit_card}>
+            <div className={styles.benefit_icon_wrap}><IconClock /></div>
+            <h3>Disponibilidad</h3>
+            <p>Obtén tu dinero al instante en tu cuenta bancaria o billetera digital.</p>
+          </div>
+          <div className={styles.benefit_card}>
+            <div className={styles.benefit_icon_wrap}><IconMoney /></div>
+            <h3>Inmediatez</h3>
+            <p>Recibe el monto de tu préstamo en minutos una vez aceptada la oferta.</p>
+          </div>
+        </div>
       </section>
     </div>
   );

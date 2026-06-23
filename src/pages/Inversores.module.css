@@ -1,0 +1,465 @@
+.page {
+  --bg: #e8eee4;
+  --green: #0f7d35;
+  --ink: #17211b;
+  --muted: #465248;
+  width: 100%;
+  background: var(--bg);
+  padding: clamp(1rem, 2.2vw, 2rem) clamp(0.95rem, 2vw, 1.9rem) 0;
+  box-sizing: border-box;
+}
+
+/* ── Hero ───────────────────────────── */
+.hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+  border-bottom: 1px solid #c8d4c4;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 480px);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  align-items: center;
+}
+
+.hero_left {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 3.5vw, 3rem);
+}
+
+.hero_visual {
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(23, 33, 27, 0.18);
+}
+
+.hero_visual img {
+  width: 100%;
+  height: clamp(340px, 42vw, 540px);
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.eyebrow {
+  display: inline-block;
+  background: #e6f4e8;
+  color: var(--green);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.8rem;
+  border-radius: 999px;
+  margin-bottom: 1.1rem;
+}
+
+.hero_copy h1 {
+  margin: 0 0 1.2rem;
+  color: var(--ink);
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
+.hero_copy h1 em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.hero_desc {
+  margin: 0 0 2rem;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.3vw, 1.25rem);
+  line-height: 1.55;
+  max-width: 48ch;
+}
+
+.hero_actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn_primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--green);
+  color: #edf8ef;
+  font-weight: 700;
+  font-size: 0.94rem;
+  padding: 0.9rem 1.6rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(15, 125, 53, 0.3);
+  transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+
+.btn_primary:hover {
+  background: #0a6030;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(15, 125, 53, 0.38);
+}
+
+.btn_ghost {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.94rem;
+  padding: 0.88rem 1.6rem;
+  border-radius: 999px;
+  border: 2px solid #9aab9b;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+
+.btn_ghost:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.hero_stats {
+  display: flex;
+  align-items: center;
+  background: #f4f7f2;
+  border-radius: 1.2rem;
+  padding: clamp(1.2rem, 2vw, 1.8rem) clamp(1.2rem, 2.5vw, 2rem);
+  gap: clamp(1.2rem, 2.5vw, 2.5rem);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.stat_item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat_item strong {
+  display: block;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.stat_item span {
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: var(--muted);
+  line-height: 1.35;
+  max-width: 16ch;
+}
+
+.stat_divider {
+  width: 1px;
+  height: 3rem;
+  background: #c8d4c4;
+  flex-shrink: 0;
+}
+
+/* ── How it works ───────────────────── */
+.how {
+  max-width: 1100px;
+  margin: clamp(3rem, 6vw, 5.5rem) auto 0;
+  padding: 0 0 clamp(3rem, 6vw, 5rem);
+  border-bottom: 1px solid #c8d4c4;
+}
+
+.how_header {
+  margin-bottom: clamp(2rem, 3.5vw, 3rem);
+}
+
+.section_eyebrow {
+  display: inline-block;
+  background: #e6f4e8;
+  color: var(--green);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.8rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.how_header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.how_header h2 em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.how_steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.how_step {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 2rem;
+  align-items: baseline;
+  padding: clamp(1.6rem, 2.5vw, 2rem) 0;
+  border-top: 1px solid #c8d4c4;
+}
+
+.step_num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: 0.14em;
+}
+
+.step_body h3 {
+  margin: 0 0 0.45rem;
+  color: var(--ink);
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.step_body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(0.88rem, 1vw, 0.96rem);
+  line-height: 1.72;
+  max-width: 62ch;
+}
+
+/* ── Benefits ───────────────────────── */
+.benefits {
+  max-width: 1100px;
+  margin: clamp(3rem, 6vw, 5.5rem) auto 0;
+  padding: 0 0 clamp(3rem, 6vw, 5rem);
+  border-bottom: 1px solid #c8d4c4;
+}
+
+.benefits_header {
+  margin-bottom: clamp(2rem, 3.5vw, 3rem);
+}
+
+.benefits_header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.7rem, 3vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.benefits_header h2 em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.benefits_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.15rem;
+}
+
+.benefit_card {
+  background: #f4f7f2;
+  border: 1px solid #dce4d8;
+  border-radius: 1.25rem;
+  padding: 1.6rem 1.4rem;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.benefit_card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(15, 125, 53, 0.1);
+  border-color: #b4cdb8;
+}
+
+.benefit_icon {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 0.75rem;
+  background: #ddeee0;
+  color: var(--green);
+  display: grid;
+  place-items: center;
+  margin-bottom: 1.1rem;
+}
+
+.benefit_icon svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.benefit_card h3 {
+  margin: 0 0 0.45rem;
+  color: var(--ink);
+  font-size: 0.97rem;
+  font-weight: 700;
+}
+
+.benefit_card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.87rem;
+  line-height: 1.62;
+}
+
+/* ── CTA Banner ─────────────────────── */
+.cta_banner {
+  max-width: 1100px;
+  margin: clamp(3rem, 6vw, 5.5rem) auto;
+  background: #0b1f12;
+  border-radius: 1.8rem;
+  padding: clamp(2.5rem, 5vw, 4rem) clamp(2rem, 4vw, 3.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.cta_copy h2 {
+  margin: 0 0 0.9rem;
+  color: #e4ede6;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.cta_copy p {
+  margin: 0 0 1.8rem;
+  color: rgba(228, 237, 230, 0.6);
+  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+  line-height: 1.6;
+  max-width: 52ch;
+}
+
+.cta_btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #5ec97a;
+  color: #0b1f12;
+  font-weight: 700;
+  font-size: 0.94rem;
+  padding: 0.88rem 1.6rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+}
+
+.cta_btn:hover {
+  background: #7be094;
+  transform: translateY(-2px);
+}
+
+.cta_badge {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  background: rgba(94, 201, 122, 0.12);
+  border: 1px solid rgba(94, 201, 122, 0.2);
+  border-radius: 1.4rem;
+  padding: 1.8rem 2.2rem;
+}
+
+.cta_badge span {
+  color: #5ec97a;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cta_badge strong {
+  color: #e4ede6;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.cta_badge small {
+  color: rgba(228, 237, 230, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+/* ── Responsive ─────────────────────── */
+@media (max-width: 1000px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero_visual {
+    order: -1;
+  }
+
+  .hero_visual img {
+    height: clamp(260px, 44vw, 400px);
+  }
+}
+
+@media (max-width: 900px) {
+  .benefits_grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cta_banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cta_badge {
+    align-self: flex-start;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .cta_badge strong {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero_stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .stat_divider {
+    width: 3rem;
+    height: 1px;
+  }
+
+  .benefits_grid {
+    grid-template-columns: 1fr;
+  }
+
+  .how_step {
+    grid-template-columns: 44px 1fr;
+  }
+
+  .btn_primary,
+  .btn_ghost {
+    width: 100%;
+    justify-content: center;
+  }
+}
